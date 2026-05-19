@@ -1,0 +1,27 @@
+# Backend module breakdown
+
+Semua modul ada di paket `com.hadivo.attendance.modules`. Tiap modul minimal berisi entity, repository, service, controller, dan DTO. Modul boleh memanggil service modul lain langsung (in-process), tapi tidak boleh menyentuh repository modul lain.
+
+| Modul | Tanggung jawab utama |
+| --- | --- |
+| `auth` | User entity, JWT login/refresh/logout, refresh token rotation, super admin seeder |
+| `tenant` | Tenant CRUD; pembuatan tenant otomatis bikin TENANT_ADMIN, settings, dan subscription FREE |
+| `membership` | Daftar anggota per tenant, role enforcement (`MembershipGuard`) |
+| `parentlink` | Relasi parent ↔ student per tenant |
+| `subscription` | Plan + batas anggota; cek limit di `MembershipService` |
+| `location` | Lokasi & radius geofence per tenant |
+| `settings` | `tenant_attendance_settings` per tenant |
+| `attendance` | Clock-in/out, attempts, history, event publishing |
+| `geofence` | Validator jarak menggunakan Haversine |
+| `face` | Interface `FaceVerifier` + impl demo |
+| `notification` | RabbitMQ publisher (after commit) + listener + tabel `notifications` |
+| `audit` | `AuditLogger` untuk menulis `audit_logs` |
+| `reporting` | Laporan harian & bulanan dari `attendance_records` |
+
+## Cross-cutting
+
+- `common/exception` — `DomainException` + `GlobalExceptionHandler` map ke `ApiResponse`.
+- `common/response` — `ApiResponse<T>`, `PageResponse<T>`.
+- `common/security` — `JwtService`, `JwtAuthenticationFilter`, `@CurrentUser`.
+- `common/util` — `GeoUtils` (Haversine), `TimeUtils` (timezone helper).
+- `config` — Security, RabbitMQ, OpenAPI, properties.

@@ -1,0 +1,35 @@
+{
+  "users": [],
+  "vhosts": [],
+  "permissions": [],
+  "exchanges": [
+    {
+      "name": "attendance.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "attendance.notifications",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "attendance.events",
+      "vhost": "/",
+      "destination": "attendance.notifications",
+      "destination_type": "queue",
+      "routing_key": "attendance.#",
+      "arguments": {}
+    }
+  ]
+}

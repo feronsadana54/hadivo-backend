@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:hadivo}
+    username: ${POSTGRES_USER:hadivo}
+    password: ${POSTGRES_PASSWORD:hadivo}
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+hadivo:
+  jwt:
+    secret: test-secret-key-for-junit-please-do-not-use-anywhere-else
+    access-ttl-minutes: 15
+    refresh-ttl-days: 1
+  seed:
+    super-admin-email: super@test.local
+    super-admin-password: TestPass123!
+
+logging:
+  level:
+    com.hadivo: INFO
+    org.hibernate.SQL: WARN

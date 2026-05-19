@@ -1,0 +1,44 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# VS Code
+.vscode/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env & secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+
+# Test reports
+**/test-results/
+**/coverage/
+
+# Docker volumes
+docker/postgres/data/
+docker/rabbitmq/data/
