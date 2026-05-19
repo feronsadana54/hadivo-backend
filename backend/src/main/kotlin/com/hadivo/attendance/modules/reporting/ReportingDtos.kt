@@ -6,10 +6,13 @@ import java.util.UUID
 
 data class DailyReportRow(
     val userId: UUID,
+    val fullName: String?,
+    val email: String?,
     val status: AttendanceStatus,
     val clockInAt: java.time.Instant?,
     val clockOutAt: java.time.Instant?,
     val workDurationMinutes: Int?,
+    val clockOutOutsideRadius: Boolean,
 )
 
 data class DailyReport(

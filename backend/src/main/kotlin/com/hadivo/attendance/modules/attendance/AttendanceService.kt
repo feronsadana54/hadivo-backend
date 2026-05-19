@@ -4,6 +4,8 @@ import com.hadivo.attendance.common.exception.DomainException
 import com.hadivo.attendance.common.exception.ErrorCode
 import com.hadivo.attendance.common.util.TimeUtils
 import com.hadivo.attendance.modules.audit.AuditLogger
+import com.hadivo.attendance.modules.auth.User
+import com.hadivo.attendance.modules.auth.UserRepository
 import com.hadivo.attendance.modules.face.FaceVerifier
 import com.hadivo.attendance.modules.geofence.GeofenceValidator
 import com.hadivo.attendance.modules.location.LocationService
@@ -27,6 +29,7 @@ class AttendanceService(
     private val faceVerifier: FaceVerifier,
     private val audit: AuditLogger,
     private val publisher: ApplicationEventPublisher,
+    private val users: UserRepository,
 ) {
 
     @Transactional
@@ -167,12 +170,15 @@ class AttendanceService(
     fun history(tenantId: UUID, userId: UUID, from: LocalDate, to: LocalDate): List<AttendanceRecord> =
         records.findAllByTenantIdAndUserIdAndDateBetweenOrderByDateDesc(tenantId, userId, from, to)
 
-    fun listAttempts(tenantId: UUID, userId: UUID?, from: Instant, to: Instant): List<AttendanceAttempt> =
-        if (userId != null) {
+    fun listAttempts(tenantId: UUID, userId: UUID?, from: Instant, to: Instant): List<AttendanceAttemptView> {
+        val attemptRows = if (userId != null) {
             attempts.findAllByTenantIdAndUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(tenantId, userId, from, to)
         } else {
             attempts.findAllByTenantIdAndCreatedAtBetweenOrderByCreatedAtDesc(tenantId, from, to)
         }
+        val usersById = users.findAllById(attemptRows.map { it.userId }.distinct()).associateBy { it.id }
+        return attemptRows.map { it.toView(usersById[it.userId]) }
+    }
 
     private fun logAttempt(
         tenantId: UUID,
@@ -225,10 +231,11 @@ fun AttendanceRecord.toView(): AttendanceRecordView = AttendanceRecordView(
     workDurationMinutes = workDurationMinutes,
 )
 
-fun AttendanceAttempt.toView(): AttendanceAttemptView = AttendanceAttemptView(
-    id = id ?: error("attempt id null"),
-    tenantId = tenantId,
+fun AttendanceAttempt.toView(user: User? = null): AttendanceAttemptView = AttendanceAttemptView(
+    attemptId = id ?: error("attempt id null"),
     userId = userId,
+    fullName = user?.fullName,
+    email = user?.email,
     type = type,
     reason = reason,
     latitude = latitude,

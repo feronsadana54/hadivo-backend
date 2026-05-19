@@ -9,7 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useDailyReport } from "@/hooks/use-api";
 import { getErrorMessage } from "@/lib/api/client";
-import { formatDateTime, formatMinutes, shortId } from "@/lib/utils";
+import { displayEmail, displayName, formatDateTime, formatMinutes } from "@/lib/utils";
 import type { AttendanceStatus } from "@/types/api";
 
 const statuses: Array<"ALL" | AttendanceStatus> = ["ALL", "ON_TIME", "LATE", "COMPLETED", "EARLY_LEAVE"];
@@ -77,7 +77,8 @@ export default function AttendancePage() {
               {rows.map((row) => (
                 <TableRow key={`${row.userId}-${row.clockInAt ?? date}`}>
                   <TableCell>
-                    <div className="font-medium">User ID: {shortId(row.userId)}</div>
+                    <div className="font-medium">{displayName(row.fullName)}</div>
+                    <div className="text-xs text-muted-foreground">{displayEmail(row.email, row.userId)}</div>
                   </TableCell>
                   <TableCell>
                     <AttendanceStatusBadge status={row.status} />

@@ -42,9 +42,10 @@ data class AttendanceRecordView(
 )
 
 data class AttendanceAttemptView(
-    val id: UUID,
-    val tenantId: UUID,
+    val attemptId: UUID,
     val userId: UUID,
+    val fullName: String?,
+    val email: String?,
     val type: AttendanceType,
     val reason: AttemptReason,
     val latitude: Double?,

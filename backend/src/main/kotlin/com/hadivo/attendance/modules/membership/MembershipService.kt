@@ -30,6 +30,8 @@ class MembershipService(
 
     fun list(tenantId: UUID): List<Membership> = memberships.findAllByTenantId(tenantId)
 
+    fun listResponses(tenantId: UUID): List<MembershipResponse> = memberships.findResponsesByTenantId(tenantId)
+
     @Transactional
     fun remove(tenantId: UUID, membershipId: UUID) {
         val membership = memberships.findById(membershipId)

@@ -28,6 +28,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -57,7 +58,7 @@ class ClockInIntegrationTest {
 
     @Test
     fun `clock-in inside the radius creates an attendance record`() {
-        val ctx = seedTenantWithEmployee()
+        val ctx = seedTenantWithEmployee(role = Role.TENANT_ADMIN)
         val token = jwt.issueAccessToken(ctx.userId, ctx.userEmail).token
         val body = mapper.writeValueAsString(
             mapOf(
@@ -80,11 +81,30 @@ class ClockInIntegrationTest {
         val saved = records.findByTenantIdAndUserIdAndDate(ctx.tenantId, ctx.userId, java.time.LocalDate.now(java.time.ZoneId.of("Asia/Jakarta")))
         assertThat(saved).isNotNull
         assertThat(saved!!.clockInDeviceId).isEqualTo("device-test-001")
+
+        mvc.perform(
+            get("/api/v1/tenants/${ctx.tenantId}/memberships")
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data[0].membershipId").exists())
+            .andExpect(jsonPath("$.data[0].fullName").value("Test Employee"))
+            .andExpect(jsonPath("$.data[0].email").value(ctx.userEmail))
+
+        mvc.perform(
+            get("/api/v1/tenants/${ctx.tenantId}/reports/attendance/daily")
+                .param("date", java.time.LocalDate.now(java.time.ZoneId.of("Asia/Jakarta")).toString())
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.rows[0].fullName").value("Test Employee"))
+            .andExpect(jsonPath("$.data.rows[0].email").value(ctx.userEmail))
+            .andExpect(jsonPath("$.data.rows[0].clockOutOutsideRadius").value(false))
     }
 
     @Test
     fun `clock-in outside the radius is rejected and logged as attempt`() {
-        val ctx = seedTenantWithEmployee()
+        val ctx = seedTenantWithEmployee(role = Role.TENANT_ADMIN)
         val token = jwt.issueAccessToken(ctx.userId, ctx.userEmail).token
         val body = mapper.writeValueAsString(
             mapOf(
@@ -112,9 +132,21 @@ class ClockInIntegrationTest {
         )
         assertThat(loggedAttempts).isNotEmpty
         assertThat(loggedAttempts.first().reason).isEqualTo(AttemptReason.OUT_OF_RADIUS)
+
+        mvc.perform(
+            get("/api/v1/tenants/${ctx.tenantId}/attendance-attempts")
+                .param("from", now.minusSeconds(60).toString())
+                .param("to", now.plusSeconds(60).toString())
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data[0].attemptId").exists())
+            .andExpect(jsonPath("$.data[0].fullName").value("Test Employee"))
+            .andExpect(jsonPath("$.data[0].email").value(ctx.userEmail))
+            .andExpect(jsonPath("$.data[0].reason").value("OUT_OF_RADIUS"))
     }
 
-    private fun seedTenantWithEmployee(): TestContext {
+    private fun seedTenantWithEmployee(role: Role = Role.EMPLOYEE): TestContext {
         val user = users.save(
             User(
                 email = "employee-${UUID.randomUUID()}@test.local",
@@ -132,7 +164,7 @@ class ClockInIntegrationTest {
         val tenantId = tenant.id!!
         val userId = user.id!!
 
-        memberships.save(Membership(tenantId = tenantId, userId = userId, role = Role.EMPLOYEE))
+        memberships.save(Membership(tenantId = tenantId, userId = userId, role = role))
         subscriptions.save(
             Subscription(
                 tenantId = tenantId,

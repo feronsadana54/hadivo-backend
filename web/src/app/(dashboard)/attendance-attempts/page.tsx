@@ -9,7 +9,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAttempts } from "@/hooks/use-api";
 import { getErrorMessage } from "@/lib/api/client";
-import { formatDateTime, shortId } from "@/lib/utils";
+import { displayEmail, displayName, formatDateTime } from "@/lib/utils";
 
 function toStart(date: string) {
   return new Date(`${date}T00:00:00`).toISOString();
@@ -53,9 +53,12 @@ export default function AttendanceAttemptsPage() {
             </TableHeader>
             <TableBody>
               {attempts.data.map((attempt) => (
-                <TableRow key={attempt.id}>
+                <TableRow key={attempt.attemptId}>
                   <TableCell>{formatDateTime(attempt.createdAt)}</TableCell>
-                  <TableCell>User ID: {shortId(attempt.userId)}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{displayName(attempt.fullName)}</div>
+                    <div className="text-xs text-muted-foreground">{displayEmail(attempt.email, attempt.userId)}</div>
+                  </TableCell>
                   <TableCell>{attempt.type}</TableCell>
                   <TableCell>
                     <AttemptReasonBadge reason={attempt.reason} />

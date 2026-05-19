@@ -39,19 +39,25 @@ export type Tenant = {
 };
 
 export type Membership = {
-  id: string;
-  tenantId: string;
+  membershipId: string;
   userId: string;
+  fullName?: string | null;
+  email?: string | null;
+  phone?: string | null;
   role: Role;
   active: boolean;
+  createdAt: string;
 };
 
 export type DailyReportRow = {
   userId: string;
+  fullName?: string | null;
+  email?: string | null;
   status: AttendanceStatus;
   clockInAt?: string | null;
   clockOutAt?: string | null;
   workDurationMinutes?: number | null;
+  clockOutOutsideRadius: boolean;
 };
 
 export type DailyReport = {
@@ -74,9 +80,10 @@ export type MonthlyReport = {
 };
 
 export type AttendanceAttempt = {
-  id: string;
-  tenantId: string;
+  attemptId: string;
   userId: string;
+  fullName?: string | null;
+  email?: string | null;
   type: AttendanceType;
   reason: AttemptReason;
   latitude?: number | null;

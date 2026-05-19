@@ -77,6 +77,6 @@ class AttendanceController(
         @CurrentUser principal: AuthPrincipal,
     ): ApiResponse<List<AttendanceAttemptView>> {
         guard.requireRole(principal, tenantId, Role.TENANT_ADMIN, Role.SUPER_ADMIN, Role.MANAGER, Role.TEACHER)
-        return ApiResponse.ok(service.listAttempts(tenantId, userId, from, to).map { it.toView() })
+        return ApiResponse.ok(service.listAttempts(tenantId, userId, from, to))
     }
 }

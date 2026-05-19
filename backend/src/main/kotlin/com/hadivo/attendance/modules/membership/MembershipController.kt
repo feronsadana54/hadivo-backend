@@ -37,9 +37,9 @@ class MembershipController(
     fun list(
         @PathVariable tenantId: UUID,
         @CurrentUser principal: AuthPrincipal,
-    ): ApiResponse<List<MembershipView>> {
+    ): ApiResponse<List<MembershipResponse>> {
         guard.requireMember(principal, tenantId)
-        return ApiResponse.ok(service.list(tenantId).map { it.toView() })
+        return ApiResponse.ok(service.listResponses(tenantId))
     }
 
     @DeleteMapping("/{membershipId}")

@@ -18,7 +18,19 @@ async function ensureOutputDir() {
 
 async function waitForDashboardData(page) {
   await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(500);
+  await page.waitForFunction(
+    () => !document.body.innerText.includes("Preparing dashboard") && !document.body.innerText.includes("Loading "),
+    null,
+    { timeout: 30000 },
+  );
+  await page.waitForTimeout(750);
+}
+
+async function prepareScreenshot(page) {
+  await page.mouse.move(1, 1);
+  await page.addStyleTag({
+    content: "nextjs-portal, #nextjs__container { display: none !important; }",
+  });
 }
 
 async function assertNoHorizontalOverflow(page, label) {
@@ -35,6 +47,7 @@ async function assertNoHorizontalOverflow(page, label) {
 
 async function login(page) {
   await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
+  await prepareScreenshot(page);
   await page.screenshot({ path: path.join(outputDir, "web-login.png"), fullPage: true });
   await page.fill("#email", credentials.email);
   await page.fill("#password", credentials.password);
@@ -46,6 +59,7 @@ async function login(page) {
 async function capturePage(page, route, filename) {
   await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
   await waitForDashboardData(page);
+  await prepareScreenshot(page);
   await page.screenshot({ path: path.join(outputDir, filename), fullPage: true });
 }
 
@@ -61,6 +75,7 @@ async function captureResponsive(page) {
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
     await waitForDashboardData(page);
     await assertNoHorizontalOverflow(page, `Dashboard ${viewport.name}`);
+    await prepareScreenshot(page);
     await page.screenshot({ path: path.join(outputDir, viewport.file), fullPage: true });
   }
 }
@@ -74,6 +89,7 @@ async function main() {
 
   try {
     await login(page);
+    await prepareScreenshot(page);
     await page.screenshot({ path: path.join(outputDir, "web-dashboard.png"), fullPage: true });
 
     await capturePage(page, "/attendance", "web-attendance.png");

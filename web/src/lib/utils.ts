@@ -10,6 +10,16 @@ export function shortId(value?: string | null) {
   return value.length > 12 ? `${value.slice(0, 8)}...${value.slice(-4)}` : value;
 }
 
+export function displayName(fullName?: string | null) {
+  const name = fullName?.trim();
+  return name || "Unknown member";
+}
+
+export function displayEmail(email?: string | null, userId?: string | null) {
+  const value = email?.trim();
+  return value || `User ID: ${shortId(userId)}`;
+}
+
 export function formatDateTime(value?: string | null) {
   if (!value) return "-";
   return new Intl.DateTimeFormat("en", {

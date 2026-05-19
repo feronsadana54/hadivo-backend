@@ -6,7 +6,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useMemberships } from "@/hooks/use-api";
 import { getErrorMessage } from "@/lib/api/client";
-import { shortId } from "@/lib/utils";
+import { displayEmail, displayName, shortId } from "@/lib/utils";
 
 export default function MembersPage() {
   const memberships = useMemberships();
@@ -36,16 +36,16 @@ export default function MembersPage() {
             </TableHeader>
             <TableBody>
               {memberships.data.map((membership) => (
-                <TableRow key={membership.id}>
-                  <TableCell className="font-medium">Unknown member</TableCell>
-                  <TableCell>User ID: {shortId(membership.userId)}</TableCell>
+                <TableRow key={membership.membershipId}>
+                  <TableCell className="font-medium">{displayName(membership.fullName)}</TableCell>
+                  <TableCell>{displayEmail(membership.email, membership.userId)}</TableCell>
                   <TableCell>
                     <RoleBadge role={membership.role} />
                   </TableCell>
                   <TableCell>
                     <ActiveBadge active={membership.active} />
                   </TableCell>
-                  <TableCell>Member ID: {shortId(membership.id)}</TableCell>
+                  <TableCell>Member ID: {shortId(membership.membershipId)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
