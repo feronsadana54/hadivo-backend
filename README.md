@@ -1,5 +1,8 @@
 # Hadivo Attendance System
 
+[![Backend CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/backend-ci.yml)
+[![Web CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml)
+
 Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot dan Web Dashboard Next.js untuk kebutuhan portfolio SaaS attendance system.
 
 Repository ini berisi backend Fase 1 (MVP) dan web dashboard admin Fase 2. Folder `mobile/` masih placeholder dan akan dikerjakan di fase berikutnya.
@@ -67,6 +70,15 @@ npm run dev
 Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
 
 Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-development.md).
+
+## Continuous Integration
+
+Repository ini memakai GitHub Actions untuk validasi setiap push dan pull request ke branch `main`.
+
+- **Backend CI** menjalankan Java 21, Gradle cache, PostgreSQL 16, RabbitMQ 3, lalu `./gradlew clean test` dari folder `backend/`.
+- **Web CI** menjalankan Node.js 20, `npm ci`, `npm run lint`, dan `npm run build` dari folder `web/`.
+
+CI memakai konfigurasi local/test dan tidak membutuhkan file `.env` asli atau secret production.
 
 ## Screenshots
 

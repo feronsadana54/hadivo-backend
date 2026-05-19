@@ -1,0 +1,73 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Gradle test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: hadivo
+          POSTGRES_USER: hadivo
+          POSTGRES_PASSWORD: hadivo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hadivo -d hadivo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rabbitmq:
+        image: rabbitmq:3.13-management
+        env:
+          RABBITMQ_DEFAULT_USER: hadivo
+          RABBITMQ_DEFAULT_PASS: hadivo
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      SPRING_PROFILES_ACTIVE: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: hadivo
+      POSTGRES_USER: hadivo
+      POSTGRES_PASSWORD: hadivo
+      RABBITMQ_HOST: localhost
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: hadivo
+      RABBITMQ_PASSWORD: hadivo
+      JWT_SECRET: test-secret-key-for-ci-please-do-not-use-anywhere-else
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run backend tests
+        working-directory: backend
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean test
