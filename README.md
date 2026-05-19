@@ -2,7 +2,7 @@
 
 Backend untuk sistem absensi multi-tenant berbasis lokasi dan (opsional) verifikasi wajah. Mendukung dua mode tenant: sekolah dan perusahaan.
 
-Repository ini berisi backend Fase 1 (MVP). Folder `mobile/` dan `web/` masih placeholder dan akan dikerjakan di fase berikutnya.
+Repository ini berisi backend Fase 1 (MVP) dan web dashboard admin Fase 2. Folder `mobile/` masih placeholder dan akan dikerjakan di fase berikutnya.
 
 ## Stack
 
@@ -13,6 +13,7 @@ Repository ini berisi backend Fase 1 (MVP). Folder `mobile/` dan `web/` masih pl
 - Gradle Kotlin DSL
 - JWT (access + refresh) dengan refresh token disimpan sebagai SHA-256 hash
 - springdoc-openapi untuk Swagger UI
+- Next.js + TypeScript + Tailwind CSS untuk web dashboard admin
 
 ## Struktur
 
@@ -23,7 +24,7 @@ hadivo-attendance-system/
 ├── docs/             dokumentasi internal (overview, flow, schema, ADR)
 ├── postman/          Postman collection untuk QA manual
 ├── mobile/           placeholder, akan diisi Flutter di fase berikutnya
-└── web/              placeholder, akan diisi web admin di fase berikutnya
+└── web/              dashboard admin tenant
 ```
 
 ## Menjalankan lokal
@@ -43,6 +44,19 @@ hadivo-attendance-system/
 5. Swagger UI: <http://localhost:8080/swagger-ui.html>
 6. Login pakai user seed `superadmin@hadivo.local` / `ChangeMe123!` (ganti password segera).
 
+## Menjalankan web dashboard
+
+Backend harus berjalan di <http://localhost:8080>.
+
+```
+cd web
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
+
 Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-development.md).
 
 ## Fitur Fase 1
@@ -60,6 +74,7 @@ Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-dev
 - Audit log untuk operasi absensi
 - Postman collection siap pakai
 - Unit test Haversine + integration test clock-in memakai PostgreSQL dari Docker Compose
+- Web dashboard admin tenant untuk login, summary, attendance, attempts, members, settings, locations, dan subscription
 
 ## Known limitation (Fase 1)
 
