@@ -1,19 +1,28 @@
 # Hadivo Attendance System
 
-Backend untuk sistem absensi multi-tenant berbasis lokasi dan (opsional) verifikasi wajah. Mendukung dua mode tenant: sekolah dan perusahaan.
+Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot dan Web Dashboard Next.js untuk kebutuhan portfolio SaaS attendance system.
 
 Repository ini berisi backend Fase 1 (MVP) dan web dashboard admin Fase 2. Folder `mobile/` masih placeholder dan akan dikerjakan di fase berikutnya.
 
 ## Stack
 
-- Kotlin + Spring Boot 3.3
+- Backend Kotlin + Spring Boot 3.3
+- Web Dashboard Next.js + TypeScript + Tailwind CSS
 - Java 21
 - PostgreSQL 16 + Flyway
 - RabbitMQ 3 (notification event)
 - Gradle Kotlin DSL
 - JWT (access + refresh) dengan refresh token disimpan sebagai SHA-256 hash
 - springdoc-openapi untuk Swagger UI
-- Next.js + TypeScript + Tailwind CSS untuk web dashboard admin
+
+## Highlight
+
+- Geolocation attendance validation dengan Haversine radius check.
+- Attendance attempts audit untuk percobaan gagal seperti `OUT_OF_RADIUS`, `FACE_MISMATCH`, dan `DUPLICATE_CLOCK_IN`.
+- Role-based dashboard untuk admin tenant, manager, teacher, employee, student, dan parent.
+- Web dashboard untuk login, summary, attendance, attempts, members, settings, locations, dan subscription.
+- Event notification pipeline memakai RabbitMQ.
+- Database migration memakai Flyway dan PostgreSQL.
 
 ## Struktur
 
@@ -58,6 +67,28 @@ npm run dev
 Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
 
 Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-development.md).
+
+## Screenshots
+
+Screenshot belum disertakan di repository. Setelah menjalankan backend dan web secara lokal, capture halaman berikut lalu simpan ke path yang sudah disiapkan:
+
+| Area | Path |
+| --- | --- |
+| Login page | `docs/images/web-login.png` |
+| Dashboard summary | `docs/images/web-dashboard.png` |
+| Attendance table | `docs/images/web-attendance.png` |
+| Attendance attempts audit | `docs/images/web-attempts.png` |
+| Swagger UI | `docs/images/swagger.png` |
+
+Setelah file gambar tersedia, bagian ini bisa diganti menjadi preview gambar langsung:
+
+```md
+![Hadivo web login](docs/images/web-login.png)
+![Hadivo dashboard](docs/images/web-dashboard.png)
+![Hadivo attendance](docs/images/web-attendance.png)
+![Hadivo attempts audit](docs/images/web-attempts.png)
+![Hadivo Swagger UI](docs/images/swagger.png)
+```
 
 ## Fitur Fase 1
 

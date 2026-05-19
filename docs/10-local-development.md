@@ -6,17 +6,36 @@
 - Docker + Docker Compose.
 - (Opsional) IntelliJ IDEA Community / Ultimate dengan plugin Kotlin.
 
-## Setup
+## Setup backend
 
 ```bash
 cp .env.example .env
 docker compose -f docker/docker-compose.yml up -d
 cd backend
-.\gradlew.bat clean test
 .\gradlew.bat bootRun
 ```
 
-Aplikasi listen di `http://localhost:8080`.
+Backend listen di `http://localhost:8080`.
+
+Untuk validasi test backend:
+
+```bash
+cd backend
+.\gradlew.bat clean test
+```
+
+## Setup web dashboard
+
+Backend harus berjalan sebelum dashboard dipakai.
+
+```bash
+cd web
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Web dashboard listen di `http://localhost:3000`.
 
 ## Default credentials
 
