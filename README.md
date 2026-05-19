@@ -70,25 +70,23 @@ Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-dev
 
 ## Screenshots
 
-Screenshot belum disertakan di repository. Setelah menjalankan backend dan web secara lokal, capture halaman berikut lalu simpan ke path yang sudah disiapkan:
+Screenshot berikut diambil dari aplikasi web yang berjalan lokal.
 
-| Area | Path |
-| --- | --- |
-| Login page | `docs/images/web-login.png` |
-| Dashboard summary | `docs/images/web-dashboard.png` |
-| Attendance table | `docs/images/web-attendance.png` |
-| Attendance attempts audit | `docs/images/web-attempts.png` |
-| Swagger UI | `docs/images/swagger.png` |
-
-Setelah file gambar tersedia, bagian ini bisa diganti menjadi preview gambar langsung:
-
-```md
 ![Hadivo web login](docs/images/web-login.png)
 ![Hadivo dashboard](docs/images/web-dashboard.png)
 ![Hadivo attendance](docs/images/web-attendance.png)
 ![Hadivo attempts audit](docs/images/web-attempts.png)
-![Hadivo Swagger UI](docs/images/swagger.png)
-```
+![Hadivo settings](docs/images/web-settings.png)
+![Hadivo locations](docs/images/web-locations.png)
+![Hadivo subscription](docs/images/web-subscription.png)
+
+Responsive dashboard:
+
+![Hadivo dashboard mobile](docs/images/responsive-dashboard-mobile.png)
+![Hadivo dashboard tablet](docs/images/responsive-dashboard-tablet.png)
+![Hadivo dashboard desktop](docs/images/responsive-dashboard-desktop.png)
+
+Swagger and Postman screenshots can be added after manual capture.
 
 ## Fitur Fase 1
 
