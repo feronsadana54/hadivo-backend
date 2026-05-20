@@ -6,9 +6,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.AuthenticationException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -35,6 +37,30 @@ class GlobalExceptionHandler {
                 code = ErrorCode.VALIDATION_FAILED.name,
                 message = ErrorCode.VALIDATION_FAILED.defaultMessage,
                 details = mapOf("fields" to fields),
+            ),
+        )
+        return ResponseEntity.status(ErrorCode.VALIDATION_FAILED.status).body(body)
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException::class)
+    fun handleMissingRequestParam(ex: MissingServletRequestParameterException): ResponseEntity<ApiResponse<Nothing>> {
+        val body = ApiResponse.fail(
+            ApiError(
+                code = ErrorCode.VALIDATION_FAILED.name,
+                message = "Parameter ${ex.parameterName} wajib diisi",
+                details = mapOf("parameter" to ex.parameterName),
+            ),
+        )
+        return ResponseEntity.status(ErrorCode.VALIDATION_FAILED.status).body(body)
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    fun handleTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ApiResponse<Nothing>> {
+        val body = ApiResponse.fail(
+            ApiError(
+                code = ErrorCode.VALIDATION_FAILED.name,
+                message = "Parameter ${ex.name} tidak valid",
+                details = mapOf("parameter" to ex.name, "value" to ex.value),
             ),
         )
         return ResponseEntity.status(ErrorCode.VALIDATION_FAILED.status).body(body)

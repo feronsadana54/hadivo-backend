@@ -6,6 +6,9 @@ import com.hadivo.attendance.common.security.CurrentUser
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import com.hadivo.attendance.modules.membership.Role
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -40,5 +43,20 @@ class ReportingController(
     ): ApiResponse<MonthlyReport> {
         guard.requireRole(principal, tenantId, Role.TENANT_ADMIN, Role.SUPER_ADMIN, Role.MANAGER, Role.TEACHER)
         return ApiResponse.ok(service.monthly(tenantId, YearMonth.parse(month)))
+    }
+
+    @GetMapping("/export.csv", produces = ["text/csv"])
+    fun exportCsv(
+        @PathVariable tenantId: UUID,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
+        @CurrentUser principal: AuthPrincipal,
+    ): ResponseEntity<String> {
+        guard.requireRole(principal, tenantId, Role.TENANT_ADMIN, Role.SUPER_ADMIN, Role.MANAGER, Role.TEACHER)
+        val filename = "hadivo-attendance-report-$from-to-$to.csv"
+        return ResponseEntity.ok()
+            .contentType(MediaType.valueOf("text/csv"))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
+            .body(service.exportCsv(tenantId, from, to))
     }
 }

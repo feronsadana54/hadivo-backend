@@ -52,3 +52,51 @@ export const api = {
     return unwrap<Subscription>(await apiClient.get(endpoints.subscription(tenantId)));
   },
 };
+
+export async function downloadCsvReport(tenantId: string, from: string, to: string) {
+  try {
+    const response = await apiClient.get(endpoints.attendanceReportCsv(tenantId), {
+      params: { from, to },
+      responseType: "blob",
+    });
+    const fallbackFilename = `hadivo-attendance-report-${from}-to-${to}.csv`;
+    const filename = parseFilename(response.headers["content-disposition"]) ?? fallbackFilename;
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    throw await normalizeDownloadError(error);
+  }
+}
+
+function parseFilename(contentDisposition?: string) {
+  if (!contentDisposition) return null;
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1]);
+  const quotedMatch = contentDisposition.match(/filename="([^"]+)"/i);
+  if (quotedMatch?.[1]) return quotedMatch[1];
+  const plainMatch = contentDisposition.match(/filename=([^;]+)/i);
+  return plainMatch?.[1]?.trim() ?? null;
+}
+
+async function normalizeDownloadError(error: unknown) {
+  const responseData = (error as { response?: { data?: unknown } })?.response?.data;
+
+  if (responseData instanceof Blob) {
+    const text = await responseData.text();
+    try {
+      const parsed = JSON.parse(text) as { error?: { message?: string; code?: string } };
+      return new Error(parsed.error?.message ?? parsed.error?.code ?? "Failed to export CSV");
+    } catch {
+      return new Error(text || "Failed to export CSV");
+    }
+  }
+
+  return error;
+}

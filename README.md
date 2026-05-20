@@ -111,7 +111,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - `attendance_records` hanya menyimpan absensi sah; `attendance_attempts` mencatat percobaan gagal
 - Event publish ke RabbitMQ **after commit** menggunakan `@TransactionalEventListener`
 - Notifikasi disimpan di tabel `notifications`; untuk student, fan-out ke parent
-- Reporting harian & bulanan (JSON)
+- Reporting harian & bulanan (JSON) serta export CSV laporan attendance
 - Audit log untuk operasi absensi
 - Postman collection siap pakai
 - Unit test Haversine + integration test clock-in memakai PostgreSQL dari Docker Compose
@@ -124,7 +124,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Tidak ada gateway notifikasi nyata (FCM/email/SMS). Hanya tabel `notifications`.
 - Subscription dibuat manual, belum terintegrasi dengan payment gateway.
 - Tidak ada WebSocket atau realtime push.
-- Reporting hanya JSON, tidak ada export PDF/Excel.
+- Tidak ada export PDF/Excel untuk laporan attendance.
 - Device binding belum strict; `DEVICE_MISMATCH` masih reserved enum.
 
 ## Roadmap

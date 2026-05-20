@@ -63,6 +63,10 @@ Response gagal:
 
 - `GET /tenants/{tenantId}/reports/attendance/daily?date=`
 - `GET /tenants/{tenantId}/reports/attendance/monthly?month=`
+- `GET /tenants/{tenantId}/reports/attendance/export.csv?from=YYYY-MM-DD&to=YYYY-MM-DD`
+
+Endpoint export attendance mengembalikan `text/csv` dengan attachment filename
+`hadivo-attendance-report-{from}-to-{to}.csv`. Range MVP maksimal 31 hari.
 
 ## Body clock-in / clock-out
 
