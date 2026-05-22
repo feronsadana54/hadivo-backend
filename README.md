@@ -124,6 +124,10 @@ Repository ini memakai GitHub Actions untuk validasi setiap push dan pull reques
 
 CI memakai konfigurasi local/test dan tidak membutuhkan file `.env` asli atau secret production.
 
+## Release Notes
+
+Release notes untuk `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). Rilis ini mencakup Backend MVP, Web Dashboard MVP, Flutter Mobile Attendance MVP, CSV export, dokumentasi, screenshot web, dan CI untuk backend, web, serta mobile.
+
 ## Screenshots
 
 Screenshot berikut diambil dari aplikasi web yang berjalan lokal.
