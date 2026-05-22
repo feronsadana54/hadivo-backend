@@ -51,7 +51,7 @@ async function login(page) {
   await page.screenshot({ path: path.join(outputDir, "web-login.png"), fullPage: true });
   await page.fill("#email", credentials.email);
   await page.fill("#password", credentials.password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: /Masuk|Sign in/i }).click();
   await page.waitForURL("**/dashboard", { timeout: 30000 });
   await waitForDashboardData(page);
 }

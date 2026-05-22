@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AttemptReasonBadge } from "@/components/attendance/status-badge";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,10 @@ function toEnd(date: string) {
   return new Date(`${date}T23:59:59`).toISOString();
 }
 
+function typeLabel(type: string) {
+  return type === "CLOCK_IN" ? "Clock-in" : "Clock-out";
+}
+
 export default function AttendanceAttemptsPage() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const attempts = useAttempts(toStart(date), toEnd(date));
@@ -26,29 +31,29 @@ export default function AttendanceAttemptsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-normal">Attendance attempts</h1>
-        <p className="text-sm text-muted-foreground">Failed clock-in and clock-out attempts for audit review.</p>
+        <h1 className="text-2xl font-semibold tracking-normal">Percobaan Absensi</h1>
+        <p className="text-sm text-muted-foreground">Absensi yang belum berhasil, misalnya karena lokasi di luar area.</p>
       </div>
       <div className="max-w-xs space-y-2">
-        <Label htmlFor="date">Date</Label>
+        <Label htmlFor="date">Tanggal</Label>
         <Input id="date" type="date" value={date} onChange={(event) => setDate(event.target.value)} />
       </div>
-      {attempts.isLoading ? <LoadingState label="Loading attempts" /> : null}
+      {attempts.isLoading ? <LoadingState label="Memuat percobaan absensi..." /> : null}
       {attempts.isError ? <ErrorState message={getErrorMessage(attempts.error)} /> : null}
       {attempts.isSuccess && !attempts.data.length ? (
-        <EmptyState title="No failed attempts" description="Out-of-radius and other rejected attempts will appear here." />
+        <EmptyState title="Belum ada percobaan gagal" description="Jika ada absensi yang ditolak sistem, datanya akan tampil di sini." />
       ) : null}
       {attempts.isSuccess && attempts.data.length ? (
         <Card>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Time</TableHead>
+                <TableHead>Waktu</TableHead>
                 <TableHead>User</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Device</TableHead>
-                <TableHead>Location</TableHead>
+                <TableHead>Jenis</TableHead>
+                <TableHead>Alasan</TableHead>
+                <TableHead>Perangkat</TableHead>
+                <TableHead>Lokasi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -59,9 +64,12 @@ export default function AttendanceAttemptsPage() {
                     <div className="font-medium">{displayName(attempt.fullName)}</div>
                     <div className="text-xs text-muted-foreground">{displayEmail(attempt.email, attempt.userId)}</div>
                   </TableCell>
-                  <TableCell>{attempt.type}</TableCell>
+                  <TableCell>{typeLabel(attempt.type)}</TableCell>
                   <TableCell>
-                    <AttemptReasonBadge reason={attempt.reason} />
+                    <div className="flex flex-col items-start gap-1">
+                      <AttemptReasonBadge reason={attempt.reason} />
+                      <Badge variant="muted">{attempt.reason}</Badge>
+                    </div>
                   </TableCell>
                   <TableCell>{attempt.deviceId ?? "-"}</TableCell>
                   <TableCell>

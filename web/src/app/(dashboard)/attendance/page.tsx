@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
-import { AttendanceStatusBadge } from "@/components/attendance/status-badge";
+import { AttendanceStatusBadge, attendanceStatusLabel } from "@/components/attendance/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,11 +36,11 @@ export default function AttendancePage() {
   async function handleExport() {
     setExportError(null);
     if (!fromDate || !toDate) {
-      setExportError("From date and to date are required.");
+      setExportError("Pilih tanggal awal dan tanggal akhir terlebih dahulu.");
       return;
     }
     if (fromDate > toDate) {
-      setExportError("From date cannot be after to date.");
+      setExportError("Tanggal awal tidak boleh lebih baru dari tanggal akhir.");
       return;
     }
 
@@ -57,16 +57,16 @@ export default function AttendancePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-normal">Attendance</h1>
-        <p className="text-sm text-muted-foreground">Daily attendance records by status.</p>
+        <h1 className="text-2xl font-semibold tracking-normal">Data Absensi</h1>
+        <p className="text-sm text-muted-foreground">Lihat absensi harian dan unduh laporan CSV saat dibutuhkan.</p>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle>Filter data</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
           <div className="space-y-2">
-            <Label htmlFor="fromDate">From Date</Label>
+            <Label htmlFor="fromDate">Tanggal awal</Label>
             <Input
               id="fromDate"
               type="date"
@@ -75,35 +75,35 @@ export default function AttendancePage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="toDate">To Date</Label>
+            <Label htmlFor="toDate">Tanggal akhir</Label>
             <Input id="toDate" type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
             <select
               id="status"
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={status}
               onChange={(event) => setStatus(event.target.value as "ALL" | AttendanceStatus)}
             >
               {statuses.map((item) => (
                 <option key={item} value={item}>
-                  {item}
+                  {item === "ALL" ? "Semua status" : attendanceStatusLabel(item)}
                 </option>
               ))}
             </select>
           </div>
           <Button className="w-full gap-2 xl:w-auto" disabled={isExporting} onClick={handleExport}>
             <Download className="h-4 w-4" aria-hidden="true" />
-            {isExporting ? "Exporting" : "Export CSV"}
+            {isExporting ? "Menyiapkan CSV..." : "Unduh CSV"}
           </Button>
           {exportError ? <p className="text-sm text-destructive sm:col-span-2 xl:col-span-4">{exportError}</p> : null}
         </CardContent>
       </Card>
-      {report.isLoading ? <LoadingState label="Loading attendance" /> : null}
+      {report.isLoading ? <LoadingState label="Memuat data absensi..." /> : null}
       {report.isError ? <ErrorState message={getErrorMessage(report.error)} /> : null}
       {report.isSuccess && !rows.length ? (
-        <EmptyState title="No attendance records" description="Records will appear after members clock in." />
+        <EmptyState title="Belum ada data absensi untuk tanggal ini." description="Data akan muncul setelah karyawan atau siswa melakukan clock-in." />
       ) : null}
       {report.isSuccess && rows.length ? (
         <Card>
@@ -112,9 +112,9 @@ export default function AttendancePage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Clock in</TableHead>
-                <TableHead>Clock out</TableHead>
-                <TableHead>Work duration</TableHead>
+                <TableHead>Jam masuk</TableHead>
+                <TableHead>Jam keluar</TableHead>
+                <TableHead>Durasi kerja</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

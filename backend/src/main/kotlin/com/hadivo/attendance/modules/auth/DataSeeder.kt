@@ -27,6 +27,8 @@ class DataSeeder(
     @Transactional
     fun seed() {
         seedSuperAdmin()
+        seedAttendanceDemoUser("employee@hadivo.local", "Demo Employee", Role.EMPLOYEE)
+        seedAttendanceDemoUser("student@hadivo.local", "Demo Student", Role.STUDENT)
     }
 
     private fun seedSuperAdmin() {
@@ -52,7 +54,33 @@ class DataSeeder(
         log.info("Seeded super admin user={} with role SUPER_ADMIN on demo tenant", email)
     }
 
+    private fun seedAttendanceDemoUser(email: String, fullName: String, role: Role) {
+        val normalizedEmail = email.lowercase()
+        val user = users.findByEmail(normalizedEmail) ?: users.save(
+            User(
+                email = normalizedEmail,
+                passwordHash = passwordEncoder.encode(DEMO_MOBILE_PASSWORD),
+                fullName = fullName,
+            )
+        ).also {
+            log.info("Seeded demo mobile user={} with role {}", normalizedEmail, role)
+        }
+
+        val userId = user.id ?: error("demo mobile user id null")
+        if (memberships.findByTenantIdAndUserId(DEMO_TENANT_ID, userId) == null) {
+            memberships.save(
+                Membership(
+                    tenantId = DEMO_TENANT_ID,
+                    userId = userId,
+                    role = role,
+                )
+            )
+            log.info("Seeded demo mobile membership user={} role={} tenant={}", normalizedEmail, role, DEMO_TENANT_ID)
+        }
+    }
+
     private companion object {
         val DEMO_TENANT_ID: UUID = UUID.fromString("11111111-1111-1111-1111-111111111111")
+        const val DEMO_MOBILE_PASSWORD: String = "ChangeMe123!"
     }
 }

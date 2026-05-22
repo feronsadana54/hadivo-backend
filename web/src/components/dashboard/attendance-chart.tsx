@@ -12,16 +12,17 @@ export function AttendanceChart({ report }: { report?: MonthlyReport }) {
     onTime: day.byStatus.ON_TIME ?? 0,
     late: day.byStatus.LATE ?? 0,
   }));
+  const hasRecords = data?.some((day) => day.total > 0);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Monthly attendance</CardTitle>
-        <CardDescription>Daily totals from the backend monthly report.</CardDescription>
+        <CardTitle>Absensi bulan ini</CardTitle>
+        <CardDescription>Ringkasan jumlah absensi per hari.</CardDescription>
       </CardHeader>
       <CardContent className="h-80">
-        {!data?.length ? (
-          <EmptyState title="No chart data available yet" description="Clock-in data will appear after attendance records exist." />
+        {!data?.length || !hasRecords ? (
+          <EmptyState title="Belum ada data grafik" description="Grafik akan muncul setelah ada user yang melakukan clock-in." />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
@@ -29,9 +30,8 @@ export function AttendanceChart({ report }: { report?: MonthlyReport }) {
               <XAxis dataKey="date" tickLine={false} axisLine={false} />
               <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip />
-              <Bar dataKey="onTime" stackId="a" fill="#0f766e" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="late" stackId="a" fill="#d97706" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="total" fill="#075985" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="onTime" name="Tepat waktu" stackId="a" fill="#047857" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="late" name="Terlambat" stackId="a" fill="#B45309" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

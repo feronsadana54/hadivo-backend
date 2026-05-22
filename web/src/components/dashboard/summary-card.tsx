@@ -20,7 +20,7 @@ export function SummaryCard({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-semibold">{value}</div>
-        {note ? <p className="mt-1 text-xs text-muted-foreground">{note}</p> : null}
+        {note ? <p className="mt-2 text-sm leading-5 text-muted-foreground">{note}</p> : null}
       </CardContent>
     </Card>
   );

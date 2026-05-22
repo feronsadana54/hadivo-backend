@@ -41,17 +41,17 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-normal">Tenant settings</h1>
-        <p className="text-sm text-muted-foreground">Attendance policy and operating timezone.</p>
+        <h1 className="text-2xl font-semibold tracking-normal">Pengaturan Absensi</h1>
+        <p className="text-sm text-muted-foreground">Atur jam kerja, toleransi terlambat, dan aturan lokasi.</p>
       </div>
-      {settings.isLoading ? <LoadingState label="Loading settings" /> : null}
+      {settings.isLoading ? <LoadingState label="Memuat pengaturan..." /> : null}
       {settings.isError ? <ErrorState message={getErrorMessage(settings.error)} /> : null}
-      {settings.isSuccess && !settings.data ? <EmptyState title="Settings are not configured" /> : null}
+      {settings.isSuccess && !settings.data ? <EmptyState title="Pengaturan belum tersedia" /> : null}
       {settings.data ? (
         <Card>
           <CardHeader>
-            <CardTitle>Attendance settings</CardTitle>
-            <CardDescription>Changes are saved to the backend attendance settings endpoint.</CardDescription>
+            <CardTitle>Aturan absensi</CardTitle>
+            <CardDescription>Gunakan label berikut sebagai panduan saat mengubah aturan tenant.</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -59,29 +59,45 @@ export default function SettingsPage() {
               onSubmit={form.handleSubmit((values) => update.mutate(values))}
             >
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Work start time" htmlFor="workStartTime">
+                <Field label="Jam mulai kerja/sekolah" htmlFor="workStartTime">
                   <Input id="workStartTime" type="time" step="1" {...form.register("workStartTime")} />
                 </Field>
-                <Field label="Work end time" htmlFor="workEndTime">
+                <Field label="Jam selesai kerja/sekolah" htmlFor="workEndTime">
                   <Input id="workEndTime" type="time" step="1" {...form.register("workEndTime")} />
                 </Field>
-                <Field label="Late threshold minutes" htmlFor="lateThresholdMinutes">
+                <Field label="Batas toleransi terlambat (menit)" htmlFor="lateThresholdMinutes">
                   <Input id="lateThresholdMinutes" type="number" {...form.register("lateThresholdMinutes")} />
                 </Field>
-                <Field label="Timezone" htmlFor="timezone">
+                <Field label="Zona waktu tenant" htmlFor="timezone">
                   <Input id="timezone" {...form.register("timezone")} />
                 </Field>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <Checkbox label="Require face clock-in" {...form.register("requireFaceClockIn")} />
-                <Checkbox label="Require face clock-out" {...form.register("requireFaceClockOut")} />
-                <Checkbox label="Allow clock-out outside radius" {...form.register("allowClockOutOutsideRadius")} />
-                <Checkbox label="Allow late clock-in" {...form.register("allowLateClockIn")} />
+                <Checkbox
+                  label="Wajib verifikasi wajah saat masuk"
+                  description="User harus mengirim data wajah ketika clock-in."
+                  {...form.register("requireFaceClockIn")}
+                />
+                <Checkbox
+                  label="Wajib verifikasi wajah saat keluar"
+                  description="User harus mengirim data wajah ketika clock-out."
+                  {...form.register("requireFaceClockOut")}
+                />
+                <Checkbox
+                  label="Izinkan clock-out di luar area"
+                  description="Jika aktif, user tetap bisa clock-out walau berada di luar radius lokasi."
+                  {...form.register("allowClockOutOutsideRadius")}
+                />
+                <Checkbox
+                  label="Izinkan clock-in terlambat"
+                  description="Jika nonaktif, clock-in setelah batas toleransi akan ditolak."
+                  {...form.register("allowLateClockIn")}
+                />
               </div>
               {update.isError ? <p className="text-sm text-red-600">{getErrorMessage(update.error)}</p> : null}
-              {update.isSuccess ? <p className="text-sm text-emerald-700">Settings saved successfully.</p> : null}
+              {update.isSuccess ? <p className="text-sm text-emerald-700">Pengaturan berhasil disimpan.</p> : null}
               <Button type="submit" disabled={update.isPending}>
-                {update.isPending ? "Saving..." : "Save settings"}
+                {update.isPending ? "Menyimpan..." : "Simpan pengaturan"}
               </Button>
             </form>
           </CardContent>
@@ -100,11 +116,18 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor: string; c
   );
 }
 
-function Checkbox({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+function Checkbox({
+  label,
+  description,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string; description?: string }) {
   return (
-    <label className="flex items-center gap-3 rounded-md border px-3 py-3 text-sm">
-      <input type="checkbox" className="h-4 w-4 accent-primary" {...props} />
-      {label}
+    <label className="flex min-h-16 items-start gap-3 rounded-md border px-3 py-3 text-sm">
+      <input type="checkbox" className="mt-1 h-5 w-5 accent-primary" {...props} />
+      <span>
+        <span className="block font-medium">{label}</span>
+        {description ? <span className="mt-1 block text-muted-foreground">{description}</span> : null}
+      </span>
     </label>
   );
 }

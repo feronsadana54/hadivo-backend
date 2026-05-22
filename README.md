@@ -3,14 +3,15 @@
 [![Backend CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/backend-ci.yml)
 [![Web CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml)
 
-Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot dan Web Dashboard Next.js untuk kebutuhan portfolio SaaS attendance system.
+Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot, Web Dashboard Next.js, dan Flutter Mobile Attendance App MVP untuk kebutuhan portfolio SaaS attendance system.
 
-Repository ini berisi backend Fase 1 (MVP) dan web dashboard admin Fase 2. Folder `mobile/` masih placeholder dan akan dikerjakan di fase berikutnya.
+Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobile app MVP untuk user attendance.
 
 ## Stack
 
 - Backend Kotlin + Spring Boot 3.3
 - Web Dashboard Next.js + TypeScript + Tailwind CSS
+- Mobile Flutter + Dart
 - Java 21
 - PostgreSQL 16 + Flyway
 - RabbitMQ 3 (notification event)
@@ -24,6 +25,8 @@ Repository ini berisi backend Fase 1 (MVP) dan web dashboard admin Fase 2. Folde
 - Attendance attempts audit untuk percobaan gagal seperti `OUT_OF_RADIUS`, `FACE_MISMATCH`, dan `DUPLICATE_CLOCK_IN`.
 - Role-based dashboard untuk admin tenant, manager, teacher, employee, student, dan parent.
 - Web dashboard untuk login, summary, attendance, attempts, members, settings, locations, dan subscription.
+- Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
+- UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
 - Event notification pipeline memakai RabbitMQ.
 - Database migration memakai Flyway dan PostgreSQL.
 
@@ -35,7 +38,7 @@ hadivo-attendance-system/
 ├── docker/           docker-compose untuk Postgres + RabbitMQ
 ├── docs/             dokumentasi internal (overview, flow, schema, ADR)
 ├── postman/          Postman collection untuk QA manual
-├── mobile/           placeholder, akan diisi Flutter di fase berikutnya
+├── mobile/           Flutter mobile attendance MVP
 └── web/              dashboard admin tenant
 ```
 
@@ -70,6 +73,31 @@ npm run dev
 Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
 
 Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-development.md).
+
+## Menjalankan mobile app
+
+Backend lokal harus berjalan di port 8080.
+
+```
+cd mobile
+flutter pub get
+flutter run
+```
+
+Default API base URL mobile adalah `http://10.0.2.2:8080` untuk Android emulator. Untuk target web/local biasa gunakan:
+
+```
+flutter run --dart-define=HADIVO_API_BASE_URL=http://localhost:8080
+```
+
+Login demo mobile:
+
+- `employee@hadivo.local` / `ChangeMe123!`
+- `student@hadivo.local` / `ChangeMe123!`
+
+Mobile app memakai tenant demo `11111111-1111-1111-1111-111111111111`. Mode demo location aktif secara default agar clock-in/out memakai koordinat seed tenant (`-6.2`, `106.816666`) dan bisa berhasil tanpa mengatur GPS emulator manual. Detail ada di [`mobile/README.md`](mobile/README.md).
+
+UI mobile dirancang sederhana untuk kebutuhan employee/student: user cukup login, melihat status hari ini, clock-in, clock-out, membuka riwayat, dan logout.
 
 ## Continuous Integration
 
@@ -116,6 +144,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Postman collection siap pakai
 - Unit test Haversine + integration test clock-in memakai PostgreSQL dari Docker Compose
 - Web dashboard admin tenant untuk login, summary, attendance, attempts, members, settings, locations, dan subscription
+- Flutter mobile attendance MVP untuk employee/student demo
 
 ## Known limitation (Fase 1)
 
@@ -126,6 +155,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Tidak ada WebSocket atau realtime push.
 - Tidak ada export PDF/Excel untuk laporan attendance.
 - Device binding belum strict; `DEVICE_MISMATCH` masih reserved enum.
+- Mobile app belum memiliki offline mode, push notification, map view, dan face recognition asli.
 
 ## Roadmap
 

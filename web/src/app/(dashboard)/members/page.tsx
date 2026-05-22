@@ -14,38 +14,39 @@ export default function MembersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-normal">Members</h1>
-        <p className="text-sm text-muted-foreground">Tenant membership roster and role status.</p>
+        <h1 className="text-2xl font-semibold tracking-normal">Anggota</h1>
+        <p className="text-sm text-muted-foreground">Daftar user yang terhubung ke tenant ini.</p>
       </div>
-      {memberships.isLoading ? <LoadingState label="Loading members" /> : null}
+      {memberships.isLoading ? <LoadingState label="Memuat anggota..." /> : null}
       {memberships.isError ? <ErrorState message={getErrorMessage(memberships.error)} /> : null}
       {memberships.isSuccess && !memberships.data.length ? (
-        <EmptyState title="No members yet" description="Memberships will appear after users join this tenant." />
+        <EmptyState title="Belum ada anggota" description="Anggota tenant akan tampil di sini setelah user ditambahkan." />
       ) : null}
       {memberships.isSuccess && memberships.data.length ? (
         <Card>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>Nama dan email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Active status</TableHead>
+                <TableHead>Status akun</TableHead>
                 <TableHead>Member ID</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {memberships.data.map((membership) => (
                 <TableRow key={membership.membershipId}>
-                  <TableCell className="font-medium">{displayName(membership.fullName)}</TableCell>
-                  <TableCell>{displayEmail(membership.email, membership.userId)}</TableCell>
+                  <TableCell>
+                    <div className="font-semibold">{displayName(membership.fullName)}</div>
+                    <div className="text-sm text-muted-foreground">{displayEmail(membership.email, membership.userId)}</div>
+                  </TableCell>
                   <TableCell>
                     <RoleBadge role={membership.role} />
                   </TableCell>
                   <TableCell>
                     <ActiveBadge active={membership.active} />
                   </TableCell>
-                  <TableCell>Member ID: {shortId(membership.membershipId)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{shortId(membership.membershipId)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
