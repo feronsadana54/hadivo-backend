@@ -75,9 +75,21 @@ Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@ha
 
 Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-development.md).
 
-## Menjalankan mobile app
+## Mobile App
 
-Backend lokal harus berjalan di port 8080.
+Flutter Mobile Attendance App MVP tersedia di folder [`mobile/`](mobile). App ini ditujukan untuk user attendance seperti employee/student, bukan dashboard admin.
+
+Fitur mobile saat ini:
+
+- Login.
+- Melihat status attendance hari ini.
+- Clock-in.
+- Clock-out.
+- Attendance history.
+- Profile sederhana.
+- Logout.
+
+Backend lokal harus berjalan di port 8080 sebelum app dipakai untuk login dan absensi.
 
 ```
 cd mobile
@@ -99,6 +111,8 @@ Login demo mobile:
 Mobile app memakai tenant demo `11111111-1111-1111-1111-111111111111`. Mode demo location aktif secara default agar clock-in/out memakai koordinat seed tenant (`-6.2`, `106.816666`) dan bisa berhasil tanpa mengatur GPS emulator manual. Detail ada di [`mobile/README.md`](mobile/README.md).
 
 UI mobile dirancang sederhana untuk kebutuhan employee/student: user cukup login, melihat status hari ini, clock-in, clock-out, membuka riwayat, dan logout.
+
+Screenshot mobile belum tersedia di repo karena belum ada capture emulator asli. Folder placeholder sudah disiapkan di `docs/images/mobile/`, dan panduan capture manual tersedia di [`mobile/README.md`](mobile/README.md).
 
 ## Continuous Integration
 
