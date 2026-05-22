@@ -11,6 +11,11 @@ node_modules/
 dist/
 coverage/
 
+# Flutter / mobile
+mobile/.dart_tool/
+mobile/build/
+mobile/android/.gradle/
+
 # IntelliJ
 .idea/
 *.iws

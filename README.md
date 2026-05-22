@@ -2,6 +2,7 @@
 
 [![Backend CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/backend-ci.yml)
 [![Web CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml)
+[![Mobile CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/mobile-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/mobile-ci.yml)
 
 Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot, Web Dashboard Next.js, dan Flutter Mobile Attendance App MVP untuk kebutuhan portfolio SaaS attendance system.
 
@@ -105,6 +106,7 @@ Repository ini memakai GitHub Actions untuk validasi setiap push dan pull reques
 
 - **Backend CI** menjalankan Java 21, Gradle cache, PostgreSQL 16, RabbitMQ 3, lalu `./gradlew clean test` dari folder `backend/`.
 - **Web CI** menjalankan Node.js 20, `npm ci`, `npm run lint`, dan `npm run build` dari folder `web/`.
+- **Mobile CI** menjalankan Flutter stable, `flutter pub get`, `flutter analyze`, dan `flutter test` dari folder `mobile/`.
 
 CI memakai konfigurasi local/test dan tidak membutuhkan file `.env` asli atau secret production.
 
