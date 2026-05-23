@@ -3,6 +3,7 @@ package com.hadivo.attendance.modules.reporting
 import com.hadivo.attendance.common.response.ApiResponse
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.common.security.CurrentUser
+import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import com.hadivo.attendance.modules.membership.Role
 import org.springframework.format.annotation.DateTimeFormat
@@ -23,6 +24,7 @@ import java.util.UUID
 class ReportingController(
     private val service: ReportingService,
     private val guard: MembershipGuard,
+    private val audit: AuditLogger,
 ) {
 
     @GetMapping("/daily")
@@ -54,9 +56,17 @@ class ReportingController(
     ): ResponseEntity<String> {
         guard.requireRole(principal, tenantId, Role.TENANT_ADMIN, Role.SUPER_ADMIN, Role.MANAGER, Role.TEACHER)
         val filename = "hadivo-attendance-report-$from-to-$to.csv"
+        val csv = service.exportCsv(tenantId, from, to)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "REPORT_CSV_EXPORTED",
+            resourceType = "AttendanceReport",
+            metadata = mapOf("from" to from.toString(), "to" to to.toString()),
+        )
         return ResponseEntity.ok()
             .contentType(MediaType.valueOf("text/csv"))
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
-            .body(service.exportCsv(tenantId, from, to))
+            .body(csv)
     }
 }

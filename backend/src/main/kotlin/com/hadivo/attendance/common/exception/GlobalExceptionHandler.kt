@@ -69,7 +69,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException::class)
     fun handleAuth(ex: AuthenticationException): ResponseEntity<ApiResponse<Nothing>> {
         val body = ApiResponse.fail(
-            ApiError(ErrorCode.UNAUTHORIZED.name, ex.message ?: ErrorCode.UNAUTHORIZED.defaultMessage),
+            ApiError(ErrorCode.UNAUTHORIZED.name, ErrorCode.UNAUTHORIZED.defaultMessage),
         )
         return ResponseEntity.status(ErrorCode.UNAUTHORIZED.status).body(body)
     }
@@ -77,7 +77,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException::class)
     fun handleAccessDenied(ex: AccessDeniedException): ResponseEntity<ApiResponse<Nothing>> {
         val body = ApiResponse.fail(
-            ApiError(ErrorCode.FORBIDDEN.name, ex.message ?: ErrorCode.FORBIDDEN.defaultMessage),
+            ApiError(ErrorCode.FORBIDDEN.name, ErrorCode.FORBIDDEN.defaultMessage),
         )
         return ResponseEntity.status(ErrorCode.FORBIDDEN.status).body(body)
     }

@@ -3,6 +3,7 @@ package com.hadivo.attendance.modules.settings
 import com.hadivo.attendance.common.response.ApiResponse
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.common.security.CurrentUser
+import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,6 +19,7 @@ import java.util.UUID
 class SettingsController(
     private val service: SettingsService,
     private val guard: MembershipGuard,
+    private val audit: AuditLogger,
 ) {
 
     @GetMapping
@@ -36,6 +38,26 @@ class SettingsController(
         @CurrentUser principal: AuthPrincipal,
     ): ApiResponse<SettingsView> {
         guard.requireAdmin(principal, tenantId)
-        return ApiResponse.ok(service.update(tenantId, request).toView())
+        val settings = service.update(tenantId, request)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "ATTENDANCE_SETTINGS_UPDATED",
+            resourceType = "TenantAttendanceSettings",
+            resourceId = tenantId.toString(),
+            metadata = mapOf("changedFields" to request.changedFields()),
+        )
+        return ApiResponse.ok(settings.toView())
     }
+}
+
+private fun UpdateSettingsRequest.changedFields(): List<String> = buildList {
+    if (requireFaceClockIn != null) add("requireFaceClockIn")
+    if (requireFaceClockOut != null) add("requireFaceClockOut")
+    if (allowClockOutOutsideRadius != null) add("allowClockOutOutsideRadius")
+    if (allowLateClockIn != null) add("allowLateClockIn")
+    if (workStartTime != null) add("workStartTime")
+    if (workEndTime != null) add("workEndTime")
+    if (lateThresholdMinutes != null) add("lateThresholdMinutes")
+    if (timezone != null) add("timezone")
 }

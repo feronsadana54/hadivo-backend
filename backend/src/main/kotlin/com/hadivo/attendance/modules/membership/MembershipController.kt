@@ -3,6 +3,7 @@ package com.hadivo.attendance.modules.membership
 import com.hadivo.attendance.common.response.ApiResponse
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.common.security.CurrentUser
+import com.hadivo.attendance.modules.audit.AuditLogger
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,6 +21,7 @@ import java.util.UUID
 class MembershipController(
     private val service: MembershipService,
     private val guard: MembershipGuard,
+    private val audit: AuditLogger,
 ) {
 
     @PostMapping
@@ -30,6 +32,14 @@ class MembershipController(
     ): ResponseEntity<ApiResponse<MembershipView>> {
         guard.requireAdmin(principal, tenantId)
         val membership = service.add(tenantId, request)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "MEMBER_ADDED",
+            resourceType = "Membership",
+            resourceId = membership.id?.toString(),
+            metadata = mapOf("userId" to request.userId.toString(), "role" to request.role.name),
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(membership.toView()))
     }
 
@@ -50,6 +60,13 @@ class MembershipController(
     ): ResponseEntity<Void> {
         guard.requireAdmin(principal, tenantId)
         service.remove(tenantId, membershipId)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "MEMBER_REMOVED",
+            resourceType = "Membership",
+            resourceId = membershipId.toString(),
+        )
         return ResponseEntity.noContent().build()
     }
 }

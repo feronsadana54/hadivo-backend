@@ -8,7 +8,7 @@ import java.util.UUID
 
 data class RegisterRequest(
     @field:Email val email: String,
-    @field:NotBlank @field:Size(min = 8, max = 100) val password: String,
+    @field:NotBlank @field:Size(min = 8, max = 100, message = "Password minimal 8 karakter.") val password: String,
     @field:NotBlank val fullName: String,
     val phone: String? = null,
 )

@@ -31,6 +31,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
 - Event notification pipeline memakai RabbitMQ.
 - Database migration memakai Flyway dan PostgreSQL.
+- Security baseline mencakup tenant isolation, role guard, audit log, login protection, refresh token rotation, dan security headers dasar.
 
 ## Struktur
 
@@ -126,6 +127,16 @@ Repository ini memakai GitHub Actions untuk validasi setiap push dan pull reques
 - **Mobile CI** menjalankan Flutter stable, `flutter pub get`, `flutter analyze`, dan `flutter test` dari folder `mobile/`.
 
 CI memakai konfigurasi local/test dan tidak membutuhkan file `.env` asli atau secret production.
+
+## Security Baseline
+
+Hadivo memakai tenant isolation berbasis `tenantId` path dan membership guard untuk endpoint tenant-scoped. Refresh token disimpan sebagai hash, dirotasi saat refresh berhasil, dan dicabut saat logout.
+
+Login protection MVP memakai in-memory failed login counter: 5 kali gagal dalam 15 menit akan mengunci login sementara selama 15 menit. Limitasi: production multi-instance sebaiknya memakai Redis atau rate limiter terpusat.
+
+Audit log mencatat aksi penting seperti login, logout, refresh token, tenant changes, member changes, location changes, attendance settings update, attendance flow, subscription update, dan CSV export. Audit metadata tidak boleh menyimpan password, access token, refresh token, JWT, secret, atau data rahasia.
+
+Detail baseline tersedia di [`docs/12-security-baseline.md`](docs/12-security-baseline.md).
 
 ## Release Notes
 

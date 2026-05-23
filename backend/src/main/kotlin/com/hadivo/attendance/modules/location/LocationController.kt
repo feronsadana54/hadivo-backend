@@ -3,6 +3,7 @@ package com.hadivo.attendance.modules.location
 import com.hadivo.attendance.common.response.ApiResponse
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.common.security.CurrentUser
+import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -21,6 +22,7 @@ import java.util.UUID
 class LocationController(
     private val service: LocationService,
     private val guard: MembershipGuard,
+    private val audit: AuditLogger,
 ) {
 
     @PostMapping
@@ -31,6 +33,14 @@ class LocationController(
     ): ResponseEntity<ApiResponse<LocationView>> {
         guard.requireAdmin(principal, tenantId)
         val location = service.create(tenantId, request)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "LOCATION_CREATED",
+            resourceType = "TenantLocation",
+            resourceId = location.id?.toString(),
+            metadata = mapOf("radiusMeters" to location.radiusMeters),
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(location.toView()))
     }
 
@@ -51,6 +61,23 @@ class LocationController(
         @CurrentUser principal: AuthPrincipal,
     ): ApiResponse<LocationView> {
         guard.requireAdmin(principal, tenantId)
-        return ApiResponse.ok(service.update(tenantId, locationId, request).toView())
+        val location = service.update(tenantId, locationId, request)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "LOCATION_UPDATED",
+            resourceType = "TenantLocation",
+            resourceId = locationId.toString(),
+            metadata = mapOf("changedFields" to request.changedFields()),
+        )
+        return ApiResponse.ok(location.toView())
     }
+}
+
+private fun UpdateLocationRequest.changedFields(): List<String> = buildList {
+    if (name != null) add("name")
+    if (latitude != null) add("latitude")
+    if (longitude != null) add("longitude")
+    if (radiusMeters != null) add("radiusMeters")
+    if (active != null) add("active")
 }

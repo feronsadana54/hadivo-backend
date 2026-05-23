@@ -3,6 +3,7 @@ package com.hadivo.attendance.modules.parentlink
 import com.hadivo.attendance.common.response.ApiResponse
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.common.security.CurrentUser
+import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -21,6 +22,7 @@ import java.util.UUID
 class ParentLinkController(
     private val service: ParentLinkService,
     private val guard: MembershipGuard,
+    private val audit: AuditLogger,
 ) {
 
     @PostMapping
@@ -31,6 +33,17 @@ class ParentLinkController(
     ): ResponseEntity<ApiResponse<ParentLinkView>> {
         guard.requireAdmin(principal, tenantId)
         val link = service.create(tenantId, request)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "PARENT_LINK_CREATED",
+            resourceType = "ParentStudentLink",
+            resourceId = link.id?.toString(),
+            metadata = mapOf(
+                "parentUserId" to request.parentUserId.toString(),
+                "studentUserId" to request.studentUserId.toString(),
+            ),
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(link.toView()))
     }
 
@@ -51,6 +64,13 @@ class ParentLinkController(
     ): ResponseEntity<Void> {
         guard.requireAdmin(principal, tenantId)
         service.remove(tenantId, linkId)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "PARENT_LINK_REMOVED",
+            resourceType = "ParentStudentLink",
+            resourceId = linkId.toString(),
+        )
         return ResponseEntity.noContent().build()
     }
 }

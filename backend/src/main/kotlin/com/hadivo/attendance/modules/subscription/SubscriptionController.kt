@@ -3,6 +3,7 @@ package com.hadivo.attendance.modules.subscription
 import com.hadivo.attendance.common.response.ApiResponse
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.common.security.CurrentUser
+import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,6 +19,7 @@ import java.util.UUID
 class SubscriptionController(
     private val service: SubscriptionService,
     private val guard: MembershipGuard,
+    private val audit: AuditLogger,
 ) {
 
     @PostMapping
@@ -27,7 +29,16 @@ class SubscriptionController(
         @CurrentUser principal: AuthPrincipal,
     ): ApiResponse<SubscriptionView> {
         guard.requireAdmin(principal, tenantId)
-        return ApiResponse.ok(service.create(tenantId, request).toView())
+        val subscription = service.create(tenantId, request)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "SUBSCRIPTION_UPDATED",
+            resourceType = "Subscription",
+            resourceId = subscription.id?.toString(),
+            metadata = mapOf("plan" to subscription.plan.name, "status" to subscription.status.name),
+        )
+        return ApiResponse.ok(subscription.toView())
     }
 
     @GetMapping("/current")

@@ -3,6 +3,7 @@ package com.hadivo.attendance.modules.tenant
 import com.hadivo.attendance.common.response.ApiResponse
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.common.security.CurrentUser
+import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -21,6 +22,7 @@ import java.util.UUID
 class TenantController(
     private val service: TenantService,
     private val guard: MembershipGuard,
+    private val audit: AuditLogger,
 ) {
 
     @PostMapping
@@ -29,6 +31,14 @@ class TenantController(
         @CurrentUser principal: AuthPrincipal,
     ): ResponseEntity<ApiResponse<TenantView>> {
         val tenant = service.create(request, principal.userId)
+        audit.log(
+            tenantId = tenant.id,
+            actorUserId = principal.userId,
+            action = "TENANT_CREATED",
+            resourceType = "Tenant",
+            resourceId = tenant.id?.toString(),
+            metadata = mapOf("mode" to tenant.mode.name),
+        )
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(tenant.toView()))
     }
 
@@ -48,6 +58,21 @@ class TenantController(
         @CurrentUser principal: AuthPrincipal,
     ): ApiResponse<TenantView> {
         guard.requireAdmin(principal, tenantId)
-        return ApiResponse.ok(service.update(tenantId, request).toView())
+        val tenant = service.update(tenantId, request)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "TENANT_UPDATED",
+            resourceType = "Tenant",
+            resourceId = tenantId.toString(),
+            metadata = mapOf("changedFields" to request.changedFields()),
+        )
+        return ApiResponse.ok(tenant.toView())
     }
+}
+
+private fun UpdateTenantRequest.changedFields(): List<String> = buildList {
+    if (name != null) add("name")
+    if (timezone != null) add("timezone")
+    if (active != null) add("active")
 }

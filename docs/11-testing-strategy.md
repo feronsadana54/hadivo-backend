@@ -27,6 +27,18 @@ Kasus yang ditest:
 
 RabbitTemplate di-mock pakai `@MockitoBean` agar test tidak butuh broker hidup. Listener queue `attendance.notifications` dimatikan via `spring.rabbitmq.listener.simple.auto-startup: false` di `application-test.yml`.
 
+## Integration test — `SecurityHardeningIntegrationTest`
+
+Test security hardening mengecek baseline v0.4.0:
+
+- cross-tenant membership access ditolak;
+- failed login lockout tidak membocorkan apakah email terdaftar;
+- login sukses mereset failed counter;
+- password policy diterapkan saat register;
+- refresh token lama ditolak setelah rotation dan token aktif dicabut saat logout;
+- security headers dasar ada di response backend;
+- update attendance settings dan CSV export tercatat di audit log.
+
 ## Cara menjalankan
 
 ```bash

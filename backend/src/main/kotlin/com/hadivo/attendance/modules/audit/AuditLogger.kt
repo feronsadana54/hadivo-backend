@@ -1,11 +1,14 @@
 package com.hadivo.attendance.modules.audit
 
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Component
 class AuditLogger(private val repository: AuditLogRepository) {
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun log(
         tenantId: UUID?,
         actorUserId: UUID?,
