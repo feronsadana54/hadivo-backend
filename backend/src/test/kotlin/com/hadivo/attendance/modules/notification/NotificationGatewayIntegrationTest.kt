@@ -110,6 +110,19 @@ class NotificationGatewayIntegrationTest {
     }
 
     @Test
+    fun `tenant admin from another tenant cannot read notification delivery logs`() {
+        val target = seedTenantWithUser(Role.EMPLOYEE)
+        val otherTenantAdmin = seedTenantWithUser(Role.TENANT_ADMIN)
+        seedDeliveryLog(target.tenantId, target.userId)
+
+        mvc.perform(
+            get("/api/v1/tenants/${target.tenantId}/notification-deliveries")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${otherTenantAdmin.token}")
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
     fun `employee and student cannot read notification delivery logs`() {
         val employee = seedTenantWithUser(Role.EMPLOYEE)
         val student = addUserToTenant(employee.tenantId, Role.STUDENT)

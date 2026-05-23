@@ -19,6 +19,13 @@ class MockPushNotificationGateway : NotificationGateway {
         if (request.metadata["simulatePushFailure"] == true) {
             throw IllegalStateException("Mock push gateway failure")
         }
+        if (recipient.userId == null || destination.isNullOrBlank()) {
+            return NotificationGatewayResult(
+                status = NotificationDeliveryStatus.SKIPPED,
+                provider = PROVIDER,
+                errorMessage = "Recipient push destination is not available",
+            )
+        }
         log.info("Mock push notification event={} recipient={}", request.eventType, recipient.userId)
         return NotificationGatewayResult(
             status = NotificationDeliveryStatus.SENT,
