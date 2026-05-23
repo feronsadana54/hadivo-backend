@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.2.0 - Map-Based Location Picker
+
+### Web Dashboard
+
+- Added Leaflet + OpenStreetMap map picker for attendance locations.
+- Admin can click map to choose attendance point.
+- Marker and radius circle update automatically.
+- Latitude and longitude can still be edited manually.
+- Radius preview is shown on map.
+- Existing locations can be edited through the map form.
+- OpenStreetMap attribution is preserved.
+- No Google Maps API key or billing required.
+- Web screenshots refreshed.
+
+### Notes
+
+- Backend attendance validation and location API contract are unchanged.
+- Address search, autocomplete, and geocoding are not included yet.
+- Mobile app map view is not included yet.
+- For large production traffic, use an official/paid tile provider or self-hosted tiles that follow OpenStreetMap policy.
+
 ## v0.1.0 - Hadivo MVP
 
 Initial MVP release for Hadivo Attendance System.

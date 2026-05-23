@@ -21,11 +21,18 @@ d = R · c
 - Clock-in: harus ada lokasi yang match. Tidak ada match → reject.
 - Clock-out: kalau `allow_clock_out_outside_radius = true`, lokasi yang tidak match boleh dilanjut tapi ditandai `clock_out_outside_radius = true`.
 
+## Web location picker
+
+Halaman Locations di web dashboard menyediakan map picker berbasis Leaflet + OpenStreetMap untuk membantu admin memilih latitude/longitude dan melihat radius geofence. Fitur ini hanya memperbaiki input admin; validasi clock-in/clock-out tetap dilakukan backend dengan aturan Haversine yang sama.
+
 ## Limitation
 
 - Tidak ada perhitungan elevasi.
 - Tidak ada deteksi spoofing GPS.
 - Tidak ada tracking pergerakan saat di dalam radius. Hanya snapshot saat clock-in / clock-out.
+- Tidak ada address search, autocomplete, atau geocoding.
+- Tidak ada map view di mobile app.
+- Untuk traffic production yang besar, tile OpenStreetMap public sebaiknya diganti tile provider resmi/berbayar atau self-hosted tile sesuai policy OpenStreetMap.
 
 ## Test
 

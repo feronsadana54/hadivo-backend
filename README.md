@@ -129,7 +129,7 @@ CI memakai konfigurasi local/test dan tidak membutuhkan file `.env` asli atau se
 
 ## Release Notes
 
-Release notes untuk `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). Rilis ini mencakup Backend MVP, Web Dashboard MVP, Flutter Mobile Attendance MVP, CSV export, dokumentasi, screenshot web, dan CI untuk backend, web, serta mobile.
+Release notes untuk `v0.2.0` dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.2.0` menambahkan map picker Leaflet + OpenStreetMap di halaman Locations web tanpa perubahan business logic backend.
 
 ## Screenshots
 
@@ -178,6 +178,9 @@ Swagger and Postman screenshots can be added after manual capture.
 - Tidak ada WebSocket atau realtime push.
 - Tidak ada export PDF/Excel untuk laporan attendance.
 - Device binding belum strict; `DEVICE_MISMATCH` masih reserved enum.
+- Locations web belum memiliki address search, autocomplete, atau geocoding.
+- Tidak ada integrasi Google Maps.
+- Tile OpenStreetMap public sebaiknya diganti tile provider resmi/berbayar atau self-hosted tile untuk traffic production yang besar.
 - Mobile app belum memiliki offline mode, push notification, map view, dan face recognition asli.
 
 ## Roadmap
