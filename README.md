@@ -129,7 +129,7 @@ CI memakai konfigurasi local/test dan tidak membutuhkan file `.env` asli atau se
 
 ## Release Notes
 
-Release notes untuk `v0.2.0` dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.2.0` menambahkan map picker Leaflet + OpenStreetMap di halaman Locations web tanpa perubahan business logic backend.
+Release notes untuk `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.3.0` menambahkan address search Nominatim OpenStreetMap di map picker halaman Locations web tanpa perubahan business logic backend.
 
 ## Screenshots
 
@@ -180,6 +180,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Device binding belum strict; `DEVICE_MISMATCH` masih reserved enum.
 - Address search Locations web memakai Nominatim OpenStreetMap untuk demo/portfolio dan request ringan, bukan live autocomplete.
 - Tidak ada integrasi Google Maps.
+- Tidak ada routing atau navigasi peta.
 - Tile OpenStreetMap public dan public Nominatim sebaiknya diganti provider resmi/berbayar atau self-hosted tile/Nominatim untuk traffic production yang besar.
 - Mobile app belum memiliki offline mode, push notification, map view, dan face recognition asli.
 

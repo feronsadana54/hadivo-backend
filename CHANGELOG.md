@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.3.0 - Address Search for Location Picker
+
+### Web Dashboard
+
+- Added address/place search to web location picker.
+- Uses Nominatim OpenStreetMap search.
+- Search is explicit via button/Enter, not live autocomplete.
+- Admin can select a result to move map, marker, latitude, and longitude.
+- Location name can be auto-filled when the name field is empty.
+- Search validates minimum 3 characters.
+- Request spam is reduced with loading guard and cancellation.
+- No Google Maps, Mapbox, API key, or billing required.
+- Web location screenshot refreshed.
+
+### Notes
+
+- Backend attendance validation, backend API, and database schema are unchanged.
+- Routing/navigation is not included.
+- Mobile app map view is not included yet.
+- Public Nominatim is intended here for demo/portfolio and light requests; use an official/paid geocoding provider or self-hosted Nominatim for heavy production traffic.
+
 ## v0.2.0 - Map-Based Location Picker
 
 ### Web Dashboard

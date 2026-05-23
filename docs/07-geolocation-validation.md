@@ -33,6 +33,7 @@ Halaman Locations di web dashboard menyediakan map picker berbasis Leaflet + Ope
 - Address search memakai public Nominatim untuk demo/portfolio dan request ringan.
 - Tidak ada live autocomplete.
 - Tidak ada map view di mobile app.
+- Tidak ada routing atau navigasi peta.
 - Untuk traffic production yang besar, tile OpenStreetMap public dan public Nominatim sebaiknya diganti provider resmi/berbayar atau self-hosted tile/Nominatim sesuai policy OpenStreetMap.
 
 ## Test
