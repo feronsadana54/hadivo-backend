@@ -169,6 +169,14 @@ export default function LocationsPage() {
                 form.setValue("latitude", coordinate.latitude, { shouldDirty: true, shouldValidate: true });
                 form.setValue("longitude", coordinate.longitude, { shouldDirty: true, shouldValidate: true });
               }}
+              onPlaceSelect={(place) => {
+                if (!form.getValues("name").trim()) {
+                  form.setValue("name", getPlaceNameSuggestion(place.displayName), {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }
+              }}
             />
             {!selectedCoordinate ? (
               <p className="text-sm text-muted-foreground">Pilih titik di peta atau isi latitude dan longitude secara manual.</p>
@@ -361,4 +369,8 @@ function getDefaultMapCenter(locations?: Location[]): Coordinate {
     latitude: location.latitude,
     longitude: location.longitude,
   };
+}
+
+function getPlaceNameSuggestion(displayName: string) {
+  return displayName.split(",")[0]?.trim() || displayName;
 }

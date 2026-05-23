@@ -26,7 +26,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Attendance attempts audit untuk percobaan gagal seperti `OUT_OF_RADIUS`, `FACE_MISMATCH`, dan `DUPLICATE_CLOCK_IN`.
 - Role-based dashboard untuk admin tenant, manager, teacher, employee, student, dan parent.
 - Web dashboard untuk login, summary, attendance, attempts, members, settings, locations, dan subscription.
-- Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap untuk memilih titik absensi dan melihat radius geofence.
+- Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
 - Event notification pipeline memakai RabbitMQ.
@@ -74,7 +74,7 @@ npm run dev
 
 Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
 
-Halaman Locations menyediakan map picker berbasis Leaflet + OpenStreetMap. Admin dapat klik peta untuk mengisi latitude/longitude, melihat marker, dan melihat circle radius sebelum menyimpan. Fitur ini tidak membutuhkan Google Maps API key, billing, atau akun pihak ketiga. Untuk traffic production yang besar, gunakan tile provider resmi/berbayar atau self-hosted tile yang sesuai dengan policy OpenStreetMap.
+Halaman Locations menyediakan map picker berbasis Leaflet + OpenStreetMap. Admin dapat klik peta untuk mengisi latitude/longitude, melihat marker, dan melihat circle radius sebelum menyimpan. Admin juga dapat mencari alamat atau nama tempat memakai Nominatim OpenStreetMap lewat tombol Cari Lokasi atau tombol Enter; fitur ini bukan live autocomplete. Fitur ini tidak membutuhkan Google Maps API key, billing, atau akun pihak ketiga. Untuk traffic production yang besar, gunakan tile/geocoding provider resmi/berbayar atau self-hosted tile/Nominatim yang sesuai dengan policy OpenStreetMap.
 
 Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-development.md).
 
@@ -178,9 +178,9 @@ Swagger and Postman screenshots can be added after manual capture.
 - Tidak ada WebSocket atau realtime push.
 - Tidak ada export PDF/Excel untuk laporan attendance.
 - Device binding belum strict; `DEVICE_MISMATCH` masih reserved enum.
-- Locations web belum memiliki address search, autocomplete, atau geocoding.
+- Address search Locations web memakai Nominatim OpenStreetMap untuk demo/portfolio dan request ringan, bukan live autocomplete.
 - Tidak ada integrasi Google Maps.
-- Tile OpenStreetMap public sebaiknya diganti tile provider resmi/berbayar atau self-hosted tile untuk traffic production yang besar.
+- Tile OpenStreetMap public dan public Nominatim sebaiknya diganti provider resmi/berbayar atau self-hosted tile/Nominatim untuk traffic production yang besar.
 - Mobile app belum memiliki offline mode, push notification, map view, dan face recognition asli.
 
 ## Roadmap

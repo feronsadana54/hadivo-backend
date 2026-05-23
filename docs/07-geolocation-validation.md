@@ -23,16 +23,17 @@ d = R · c
 
 ## Web location picker
 
-Halaman Locations di web dashboard menyediakan map picker berbasis Leaflet + OpenStreetMap untuk membantu admin memilih latitude/longitude dan melihat radius geofence. Fitur ini hanya memperbaiki input admin; validasi clock-in/clock-out tetap dilakukan backend dengan aturan Haversine yang sama.
+Halaman Locations di web dashboard menyediakan map picker berbasis Leaflet + OpenStreetMap untuk membantu admin memilih latitude/longitude dan melihat radius geofence. Admin juga dapat mencari alamat atau nama tempat memakai Nominatim OpenStreetMap lewat tombol Cari Lokasi atau Enter. Search ini tidak memakai Google Maps, Mapbox, API key, atau live autocomplete. Fitur ini hanya memperbaiki input admin; validasi clock-in/clock-out tetap dilakukan backend dengan aturan Haversine yang sama.
 
 ## Limitation
 
 - Tidak ada perhitungan elevasi.
 - Tidak ada deteksi spoofing GPS.
 - Tidak ada tracking pergerakan saat di dalam radius. Hanya snapshot saat clock-in / clock-out.
-- Tidak ada address search, autocomplete, atau geocoding.
+- Address search memakai public Nominatim untuk demo/portfolio dan request ringan.
+- Tidak ada live autocomplete.
 - Tidak ada map view di mobile app.
-- Untuk traffic production yang besar, tile OpenStreetMap public sebaiknya diganti tile provider resmi/berbayar atau self-hosted tile sesuai policy OpenStreetMap.
+- Untuk traffic production yang besar, tile OpenStreetMap public dan public Nominatim sebaiknya diganti provider resmi/berbayar atau self-hosted tile/Nominatim sesuai policy OpenStreetMap.
 
 ## Test
 
