@@ -52,6 +52,8 @@ hadivo:
       clock-out: attendance.clockout
       attempt-failed: attendance.attempt.failed
     notification-queue: attendance.notifications
+    notification-events-queue: hadivo.notification.events
+    notification-routing-key: notification.event
   seed:
     super-admin-email: ${SEED_SUPER_ADMIN_EMAIL:superadmin@hadivo.local}
     super-admin-password: ${SEED_SUPER_ADMIN_PASSWORD:ChangeMe123!}

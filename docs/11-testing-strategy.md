@@ -27,6 +27,19 @@ Kasus yang ditest:
 
 RabbitTemplate di-mock pakai `@MockitoBean` agar test tidak butuh broker hidup. Listener queue `attendance.notifications` dimatikan via `spring.rabbitmq.listener.simple.auto-startup: false` di `application-test.yml`.
 
+## Integration test — `NotificationGatewayIntegrationTest`
+
+Test notification gateway v0.7.0 mengecek:
+
+- clock-in success menghasilkan `NotificationRequest` dan delivery log `SENT`;
+- device mismatch menghasilkan notification event/log;
+- endpoint delivery log dapat diakses `TENANT_ADMIN` dan `SUPER_ADMIN` sesuai guard tenant;
+- `EMPLOYEE` dan `STUDENT` ditolak 403 untuk delivery log tenant;
+- kegagalan publish RabbitMQ tidak menggagalkan attendance flow;
+- kegagalan mock gateway dicatat sebagai delivery `FAILED`.
+
+RabbitTemplate tetap di-mock agar test tidak membutuhkan broker aktif untuk memverifikasi publish dan best-effort behavior.
+
 ## Integration test — `SecurityHardeningIntegrationTest`
 
 Test security hardening mengecek baseline v0.4.0:
@@ -53,7 +66,7 @@ Integration test memerlukan Docker daemon hidup dan service `hadivo-postgres` be
 
 - Test untuk clock-out dan attempt flow lain.
 - Test untuk subscription limit.
-- Test untuk parent fan-out di NotificationListener.
+- Test lebih dalam untuk parent fan-out dan preference notification.
 - Test kontrak API (mis. Pact / OpenAPI conformance).
 
 Ini masuk backlog Fase 2.

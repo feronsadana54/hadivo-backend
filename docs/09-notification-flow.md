@@ -1,52 +1,86 @@
 # Notification flow
 
-## Tujuan utama: tidak boleh ada notifikasi palsu
+## Tujuan utama
 
-Kalau transaksi DB rollback (mis. constraint UNIQUE jebol di detik terakhir), tidak boleh ada event yang sudah terkirim. Karena itu publish ke RabbitMQ harus dilakukan **setelah** commit.
+Notification Gateway Foundation v0.7.0 menyiapkan jalur notifikasi yang rapi tanpa mengirim FCM atau email sungguhan. Semua delivery dicatat agar mudah diaudit, sementara provider `EMAIL` dan `PUSH` masih mock/log-only.
+
+Notification failure tidak boleh menggagalkan attendance mutation. Publish ke RabbitMQ dilakukan setelah transaksi utama commit supaya tidak ada notifikasi untuk absensi yang rollback.
 
 ## Pola
 
 ```
-AttendanceService (Transactional)
-   │
-   │  publisher.publishEvent(ClockInOccurred(...))
-   ▼
-ApplicationEventMulticaster (Spring)
-   │
-   │  @TransactionalEventListener(phase = AFTER_COMMIT)
-   ▼
+AttendanceService (transactional)
+   |
+   |  publisher.publishEvent(ClockInOccurred / ClockOutOccurred / AttemptFailed)
+   v
+Spring application event
+   |
+   |  @TransactionalEventListener(phase = AFTER_COMMIT)
+   v
 AttendanceRabbitPublisher
-   │
-   │  rabbitTemplate.convertAndSend(exchange, routingKey, NotificationMessage)
-   ▼
+   |
+   |  NotificationPublisher.publish(NotificationRequest)
+   v
 RabbitMQ exchange "attendance.events"
-   │
-   │  routing-key binding: attendance.#
-   ▼
-Queue "attendance.notifications"
-   │
-   │  @RabbitListener
-   ▼
-NotificationListener  →  notifications table
+   |
+   |  routing key: notification.event
+   v
+Queue "hadivo.notification.events"
+   |
+   |  @RabbitListener
+   v
+NotificationConsumer
+   |
+   v
+NotificationService
+   |
+   +--> IN_APP  -> notifications table + delivery log
+   +--> EMAIL   -> MockEmailNotificationGateway + delivery log
+   +--> PUSH    -> MockPushNotificationGateway + delivery log
 ```
 
-## Event domain
+## Event yang didukung
 
-`ClockInOccurred`, `ClockOutOccurred`, `AttemptFailed`. Semua mengandung `tenantId`, `userId`, `occurredAt`, dan data spesifik.
+- `CLOCK_IN_SUCCESS`
+- `CLOCK_OUT_SUCCESS`
+- `ATTENDANCE_OUT_OF_RADIUS`
+- `DEVICE_MISMATCH`
+- `ATTENDANCE_FAILED_ATTEMPT`
 
-## Routing keys
+`AttemptFailed` dengan reason `OUT_OF_RADIUS` dipetakan ke `ATTENDANCE_OUT_OF_RADIUS`. Reason `DEVICE_MISMATCH` dipetakan ke `DEVICE_MISMATCH`. Reason lain dipetakan ke `ATTENDANCE_FAILED_ATTEMPT`.
 
-- `attendance.clockin`
-- `attendance.clockout`
-- `attendance.attempt.failed`
+## Channel
 
-Queue `attendance.notifications` binding ke pattern `attendance.#` sehingga menerima ketiganya. Di fase berikutnya boleh tambah queue khusus per channel (mis. queue terpisah untuk FCM, email).
+- `IN_APP`: menulis ke tabel `notifications`.
+- `EMAIL`: mock/log-only provider `mock-email`.
+- `PUSH`: mock/log-only provider `mock-push`.
 
-## Fan-out parent
+Fase ini belum memakai FCM, Resend, SMTP, SMS, API key provider, device token, atau mobile push token registration.
 
-Saat `NotificationListener` memproses pesan, kalau pelaku ber-role `STUDENT` maka query `parent_student_links` aktif dan menulis baris notifikasi tambahan per parent. Implementasi di `NotificationListener.handle`.
+## Delivery log
+
+Semua percobaan delivery dicatat di `notification_delivery_logs` dengan status:
+
+- `PENDING`
+- `SENT`
+- `FAILED`
+- `SKIPPED`
+
+Delivery log menyimpan event type, channel, recipient user, destination, title, body, provider, provider message id mock jika ada, error message jika gagal, metadata aman, `created_at`, dan `sent_at`.
+
+Metadata tidak boleh menyimpan password, access token, refresh token, JWT, API key, secret, atau credential provider.
+
+## Access
+
+Endpoint read-only:
+
+`GET /api/v1/tenants/{tenantId}/notification-deliveries`
+
+Admin tenant dapat melihat delivery log tenant-nya. `SUPER_ADMIN` mengikuti guard tenant yang berlaku. User biasa seperti `EMPLOYEE`, `STUDENT`, dan `PARENT` tidak boleh melihat seluruh delivery log tenant.
 
 ## Robustness
 
-- `convertAndSend` dibungkus try/catch di `AttendanceRabbitPublisher`. Bila RabbitMQ down, kegagalan dilog tapi tidak meledak ke caller — record sudah tersimpan.
-- Untuk Fase 2 tinggal tambahkan outbox table kalau butuh guarantee at-least-once yang lebih kuat saat broker outage.
+- Publish RabbitMQ dibungkus try/catch. Jika broker bermasalah, attendance flow tetap selesai.
+- Consumer juga menangkap exception agar satu pesan gagal tidak menjatuhkan proses aplikasi.
+- Gateway failure dicatat sebagai delivery `FAILED`.
+- Retry scheduler dan outbox durable belum dibuat di fase ini.

@@ -1,12 +1,12 @@
 # Security baseline
 
-Dokumen ini merangkum baseline keamanan Hadivo setelah fase Security & Tenant Hardening v0.4.0, Super Admin Console v0.5.0, dan Device Binding v0.6.0.
+Dokumen ini merangkum baseline keamanan Hadivo setelah fase Security & Tenant Hardening v0.4.0, Super Admin Console v0.5.0, Device Binding v0.6.0, dan Notification Gateway Foundation v0.7.0.
 
 ## Tenant isolation
 
 Endpoint tenant-scoped memakai `tenantId` dari path dan harus memvalidasi membership aktif user melalui `MembershipGuard` atau service yang setara. Data tenant tidak boleh diambil hanya berdasarkan input request tanpa cek akses tenant.
 
-Endpoint yang dijaga termasuk tenant profile, memberships, member devices, parent links, subscriptions, locations, attendance settings, attendance, attendance attempts, dan reports. Endpoint lintas tenant `/api/v1/super-admin/**` hanya untuk role `SUPER_ADMIN` dan tidak bergantung pada membership tenant yang sedang dibuka.
+Endpoint yang dijaga termasuk tenant profile, memberships, member devices, parent links, subscriptions, locations, attendance settings, attendance, attendance attempts, notification deliveries, dan reports. Endpoint lintas tenant `/api/v1/super-admin/**` hanya untuk role `SUPER_ADMIN` dan tidak bergantung pada membership tenant yang sedang dibuka.
 
 ## Role-based access
 
@@ -69,6 +69,8 @@ Mobile app memakai random UUID yang disimpan di secure storage sebagai device ID
 
 Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, device binding, subscription update, CSV export report, dan read access Super Admin Console.
 
+Notification gateway v0.7.0 mencatat delivery log terpisah di `notification_delivery_logs` dan audit action `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, serta `NOTIFICATION_FAILED`. Metadata audit dan metadata delivery tidak boleh menyimpan token, secret, API key, password, atau credential provider.
+
 Audit log menyimpan data secukupnya:
 
 - `tenantId` jika ada;
@@ -94,4 +96,4 @@ Content Security Policy belum dipaksa secara ketat agar Swagger UI tetap dapat d
 
 ## Future sensitive features
 
-Real face recognition, payment gateway, production-grade device attestation, dan notification gateway nyata belum aktif. Saat fitur tersebut ditambahkan, perlu review tambahan untuk privacy, consent, data retention, provider security, secret management, dan audit coverage.
+Real face recognition, payment gateway, production-grade device attestation, dan notification provider production belum aktif. Saat fitur tersebut ditambahkan, perlu review tambahan untuk privacy, consent, data retention, provider security, secret management, dan audit coverage.

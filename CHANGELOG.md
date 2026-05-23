@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.7.0 - Notification Gateway Foundation
+
+### Backend
+
+- Added notification gateway domain abstractions for event type, channel, recipient, template, delivery status, delivery log, publisher, consumer, and gateway providers.
+- Added `notification_delivery_logs` table for tenant-scoped notification delivery audit.
+- Added RabbitMQ queue `hadivo.notification.events` for async notification processing.
+- Added mock/log-only email and push gateways; no real FCM, Resend, or external provider integration.
+- Added in-app delivery through the existing `notifications` table.
+- Added templates for clock-in success, clock-out success, out-of-radius attendance, device mismatch, and failed attendance attempts.
+- Integrated notification publishing with attendance success and failed attempt events after commit.
+- Added read-only endpoint `GET /api/v1/tenants/{tenantId}/notification-deliveries`.
+- Added audit logging for `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, and `NOTIFICATION_FAILED`.
+- Added integration tests for delivery logs, access guard, device mismatch notification, and best-effort publish failure handling.
+
+### Web Dashboard
+
+- Added Notifications menu item and `/notifications` page.
+- Added delivery log table with event, channel, status, provider, recipient, and delivery timing.
+- Added event, channel, and status filters.
+- Added friendly empty, loading, and error states.
+- Added Notification screenshot.
+
+### Notes
+
+- Notification gateway v0.7.0 is a foundation only.
+- Email and push channels use mock/log-only providers.
+- No Firebase Cloud Messaging, Resend, SMTP, SMS, API key, or production notification provider is active yet.
+- No notification preference center, retry scheduler, or mobile push token registration yet.
+- Attendance flow remains best effort for notification delivery, so notification failure does not fail the attendance mutation.
+
 ## v0.6.0 - Device Binding & Multi-Device Policy
 
 ### Backend

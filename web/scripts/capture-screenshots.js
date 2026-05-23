@@ -77,8 +77,9 @@ async function captureSuperAdminTenants(page) {
   await page.screenshot({ path: path.join(outputDir, "web-super-admin-tenants.png"), fullPage: true });
 }
 
-async function assertSuperAdminResponsive(page) {
+async function assertDashboardRoutesResponsive(page) {
   const routes = [
+    "/notifications",
     "/super-admin",
     "/super-admin/tenants",
     "/super-admin/tenants/11111111-1111-1111-1111-111111111111",
@@ -93,7 +94,7 @@ async function assertSuperAdminResponsive(page) {
     for (const route of routes) {
       await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
       await waitForDashboardData(page);
-      await assertNoHorizontalOverflow(page, `Super Admin ${route} ${viewport.name}`);
+      await assertNoHorizontalOverflow(page, `Dashboard ${route} ${viewport.name}`);
     }
   }
 }
@@ -132,6 +133,7 @@ async function main() {
     await capturePage(page, "/settings", "web-settings.png");
     await capturePage(page, "/locations", "web-locations.png");
     await capturePage(page, "/subscription", "web-subscription.png");
+    await capturePage(page, "/notifications", "web-notifications.png");
     await capturePage(page, "/super-admin", "web-super-admin.png");
     await captureSuperAdminTenants(page);
     await capturePage(
@@ -140,7 +142,7 @@ async function main() {
       "web-super-admin-tenant-detail.png",
     );
     await captureResponsive(page);
-    await assertSuperAdminResponsive(page);
+    await assertDashboardRoutesResponsive(page);
   } finally {
     await browser.close();
   }

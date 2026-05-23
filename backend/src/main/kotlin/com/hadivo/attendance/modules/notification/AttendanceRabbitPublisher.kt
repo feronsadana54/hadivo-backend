@@ -1,67 +1,64 @@
 package com.hadivo.attendance.modules.notification
 
-import com.hadivo.attendance.config.AppProperties
 import com.hadivo.attendance.modules.attendance.AttemptFailed
+import com.hadivo.attendance.modules.attendance.AttemptReason
 import com.hadivo.attendance.modules.attendance.ClockInOccurred
 import com.hadivo.attendance.modules.attendance.ClockOutOccurred
-import org.slf4j.LoggerFactory
-import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
 class AttendanceRabbitPublisher(
-    private val rabbit: RabbitTemplate,
-    private val props: AppProperties,
+    private val notifications: NotificationPublisher,
 ) {
-    private val log = LoggerFactory.getLogger(javaClass)
-
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onClockIn(event: ClockInOccurred) {
-        val message = NotificationMessage(
-            type = "ATTENDANCE_CLOCK_IN",
-            tenantId = event.tenantId,
-            userId = event.userId,
-            occurredAt = event.occurredAt,
-            data = mapOf("recordId" to event.recordId, "status" to event.status.name),
+        notifications.publish(
+            NotificationRequest(
+                eventType = NotificationEventType.CLOCK_IN_SUCCESS,
+                tenantId = event.tenantId,
+                actorUserId = event.userId,
+                occurredAt = event.occurredAt,
+                metadata = mapOf("recordId" to event.recordId, "status" to event.status.name),
+            )
         )
-        send(props.messaging.routingKeys.clockIn, message)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onClockOut(event: ClockOutOccurred) {
-        val message = NotificationMessage(
-            type = "ATTENDANCE_CLOCK_OUT",
-            tenantId = event.tenantId,
-            userId = event.userId,
-            occurredAt = event.occurredAt,
-            data = mapOf(
-                "recordId" to event.recordId,
-                "status" to event.status.name,
-                "workDurationMinutes" to event.workDurationMinutes,
-            ),
+        notifications.publish(
+            NotificationRequest(
+                eventType = NotificationEventType.CLOCK_OUT_SUCCESS,
+                tenantId = event.tenantId,
+                actorUserId = event.userId,
+                occurredAt = event.occurredAt,
+                metadata = mapOf(
+                    "recordId" to event.recordId,
+                    "status" to event.status.name,
+                    "workDurationMinutes" to event.workDurationMinutes,
+                ),
+            )
         )
-        send(props.messaging.routingKeys.clockOut, message)
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onAttemptFailed(event: AttemptFailed) {
-        val message = NotificationMessage(
-            type = "ATTENDANCE_ATTEMPT_FAILED",
-            tenantId = event.tenantId,
-            userId = event.userId,
-            occurredAt = event.occurredAt,
-            data = mapOf("attemptType" to event.type.name, "reason" to event.reason.name),
+        notifications.publish(
+            NotificationRequest(
+                eventType = event.reason.toNotificationEventType(),
+                tenantId = event.tenantId,
+                actorUserId = event.userId,
+                occurredAt = event.occurredAt,
+                metadata = mapOf("attemptType" to event.type.name, "reason" to event.reason.name),
+            )
         )
-        send(props.messaging.routingKeys.attemptFailed, message)
     }
 
-    private fun send(routingKey: String, message: NotificationMessage) {
-        try {
-            rabbit.convertAndSend(props.messaging.exchange, routingKey, message)
-        } catch (ex: Exception) {
-            log.warn("Failed to publish {} to RabbitMQ: {}", routingKey, ex.message)
+    private fun AttemptReason.toNotificationEventType(): NotificationEventType =
+        when (this) {
+            AttemptReason.OUT_OF_RADIUS -> NotificationEventType.ATTENDANCE_OUT_OF_RADIUS
+            AttemptReason.DEVICE_MISMATCH -> NotificationEventType.DEVICE_MISMATCH
+            else -> NotificationEventType.ATTENDANCE_FAILED_ATTEMPT
         }
-    }
 }

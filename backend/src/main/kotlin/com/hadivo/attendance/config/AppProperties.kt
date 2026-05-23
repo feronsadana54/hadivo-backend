@@ -19,6 +19,8 @@ data class AppProperties(
         val exchange: String,
         val routingKeys: RoutingKeys,
         val notificationQueue: String,
+        val notificationEventsQueue: String,
+        val notificationRoutingKey: String,
     ) {
         data class RoutingKeys(
             val clockIn: String,

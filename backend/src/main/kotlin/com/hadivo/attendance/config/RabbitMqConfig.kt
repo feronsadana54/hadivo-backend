@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter
 import org.springframework.amqp.support.converter.MessageConverter
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -22,8 +23,18 @@ class RabbitMqConfig(private val props: AppProperties) {
     fun notificationQueue(): Queue = Queue(props.messaging.notificationQueue, true)
 
     @Bean
-    fun notificationBinding(queue: Queue, exchange: TopicExchange): Binding =
+    fun notificationEventsQueue(): Queue = Queue(props.messaging.notificationEventsQueue, true)
+
+    @Bean
+    fun notificationBinding(@Qualifier("notificationQueue") queue: Queue, exchange: TopicExchange): Binding =
         BindingBuilder.bind(queue).to(exchange).with("attendance.#")
+
+    @Bean
+    fun notificationEventsBinding(
+        @Qualifier("notificationEventsQueue") notificationEventsQueue: Queue,
+        exchange: TopicExchange,
+    ): Binding =
+        BindingBuilder.bind(notificationEventsQueue).to(exchange).with(props.messaging.notificationRoutingKey)
 
     @Bean
     fun messageConverter(objectMapper: ObjectMapper): MessageConverter =

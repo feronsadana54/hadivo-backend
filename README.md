@@ -4,7 +4,7 @@
 [![Web CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml)
 [![Mobile CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/mobile-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/mobile-ci.yml)
 
-Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot, Web Dashboard Next.js, Flutter Mobile Attendance App MVP, dan Super Admin Console read-only untuk kebutuhan portfolio SaaS attendance system.
+Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot, Web Dashboard Next.js, Flutter Mobile Attendance App MVP, Super Admin Console read-only, Device Binding, dan Notification Gateway Foundation untuk kebutuhan portfolio SaaS attendance system.
 
 Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobile app MVP untuk user attendance.
 
@@ -15,7 +15,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Mobile Flutter + Dart
 - Java 21
 - PostgreSQL 16 + Flyway
-- RabbitMQ 3 (notification event)
+- RabbitMQ 3 (notification event gateway)
 - Gradle Kotlin DSL
 - JWT (access + refresh) dengan refresh token disimpan sebagai SHA-256 hash
 - springdoc-openapi untuk Swagger UI
@@ -25,9 +25,10 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Geolocation attendance validation dengan Haversine radius check.
 - Attendance attempts audit untuk percobaan gagal seperti `OUT_OF_RADIUS`, `FACE_MISMATCH`, dan `DUPLICATE_CLOCK_IN`.
 - Role-based dashboard untuk admin tenant, manager, teacher, employee, student, dan parent.
-- Web dashboard untuk login, summary, attendance, attempts, members, settings, locations, subscription, dan Super Admin Console.
+- Web dashboard untuk login, summary, attendance, attempts, notifications, members, settings, locations, subscription, dan Super Admin Console.
 - Super Admin Console v0.5.0 untuk memantau tenant lintas platform secara read-only.
 - Device Binding v0.6.0 untuk membatasi absensi user ke satu trusted device per tenant, dengan reset perangkat oleh admin.
+- Notification Gateway Foundation v0.7.0 dengan RabbitMQ async flow, delivery log, in-app delivery, dan mock/log-only email/push provider.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
@@ -77,9 +78,11 @@ npm run dev
 
 Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
 
-Super Admin Console tersedia di `/super-admin`. Fitur ini read-only untuk platform owner, hanya boleh diakses role `SUPER_ADMIN`, dan menampilkan overview lintas tenant, daftar tenant, detail tenant, ringkasan member, absensi hari ini, failed attempts hari ini, serta status subscription. Console ini tidak menyediakan edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email gateway, atau device binding.
+Super Admin Console tersedia di `/super-admin`. Fitur ini read-only untuk platform owner, hanya boleh diakses role `SUPER_ADMIN`, dan menampilkan overview lintas tenant, daftar tenant, detail tenant, ringkasan member, absensi hari ini, failed attempts hari ini, serta status subscription. Console ini tidak menyediakan edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email production, atau device management dari Super Admin.
 
 Device Binding v0.6.0 mendaftarkan perangkat absensi pertama user sebagai trusted device untuk tenant tersebut. Clock-in/clock-out dari perangkat berbeda akan ditolak dengan pesan agar user menghubungi admin. Admin tenant dapat reset perangkat dari halaman Members agar user bisa mendaftarkan perangkat baru pada absensi berikutnya. Mobile app memakai random device UUID yang disimpan di secure storage, bukan hardware identifier mentah.
+
+Notification Gateway Foundation v0.7.0 memproses event absensi lewat RabbitMQ queue `hadivo.notification.events`, menyimpan delivery log tenant-scoped, dan memakai provider mock/log-only untuk email dan push. Halaman `/notifications` menampilkan delivery log secara read-only untuk admin. Fase ini belum mengirim FCM, email production, SMS, atau memakai API key provider eksternal.
 
 Halaman Locations menyediakan map picker berbasis Leaflet + OpenStreetMap. Admin dapat klik peta untuk mengisi latitude/longitude, melihat marker, dan melihat circle radius sebelum menyimpan. Admin juga dapat mencari alamat atau nama tempat memakai Nominatim OpenStreetMap lewat tombol Cari Lokasi atau tombol Enter; fitur ini bukan live autocomplete. Fitur ini tidak membutuhkan Google Maps API key, billing, atau akun pihak ketiga. Untuk traffic production yang besar, gunakan tile/geocoding provider resmi/berbayar atau self-hosted tile/Nominatim yang sesuai dengan policy OpenStreetMap.
 
@@ -146,7 +149,7 @@ Detail baseline tersedia di [`docs/12-security-baseline.md`](docs/12-security-ba
 
 ## Release Notes
 
-Release notes untuk `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.6.0` menambahkan Device Binding & Multi-Device Policy untuk absensi.
+Release notes untuk `v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.7.0` menambahkan Notification Gateway Foundation dengan RabbitMQ async flow dan delivery log.
 
 ## Screenshots
 
@@ -156,6 +159,7 @@ Screenshot berikut diambil dari aplikasi web yang berjalan lokal.
 ![Hadivo dashboard](docs/images/web-dashboard.png)
 ![Hadivo attendance](docs/images/web-attendance.png)
 ![Hadivo attempts audit](docs/images/web-attempts.png)
+![Hadivo notifications](docs/images/web-notifications.png)
 ![Hadivo settings](docs/images/web-settings.png)
 ![Hadivo locations](docs/images/web-locations.png)
 ![Hadivo subscription](docs/images/web-subscription.png)
@@ -181,7 +185,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Clock-in & clock-out dengan validasi geofence (Haversine) dan demo face verification
 - `attendance_records` hanya menyimpan absensi sah; `attendance_attempts` mencatat percobaan gagal
 - Event publish ke RabbitMQ **after commit** menggunakan `@TransactionalEventListener`
-- Notifikasi disimpan di tabel `notifications`; untuk student, fan-out ke parent
+- Notification gateway foundation dengan queue async, mock/log-only email/push provider, delivery log, dan in-app notification storage
 - Reporting harian & bulanan (JSON) serta export CSV laporan attendance
 - Audit log untuk operasi absensi
 - Postman collection siap pakai
@@ -196,7 +200,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Web Super Admin Console di `/super-admin`, `/super-admin/tenants`, dan `/super-admin/tenants/[tenantId]`.
 - Daftar tenant dengan filter search, type, dan subscription status.
 - Detail tenant read-only dengan current subscription dan failed attempts terbaru.
-- Tidak ada edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email gateway, atau device binding.
+- Tidak ada edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email production, atau device management dari fitur Super Admin v0.5.0.
 
 ## Fitur v0.6.0
 
@@ -209,6 +213,17 @@ Swagger and Postman screenshots can be added after manual capture.
 - Mobile app mengirim random device UUID yang disimpan di secure storage, beserta device name dan platform sederhana.
 - Audit log untuk `DEVICE_REGISTERED`, `DEVICE_MISMATCH`, dan `DEVICE_RESET`.
 
+## Fitur v0.7.0
+
+- Notification gateway abstraction untuk event type, channel, template, gateway provider, publisher, consumer, service, dan delivery status.
+- Queue RabbitMQ `hadivo.notification.events` untuk memproses notification request secara async setelah transaksi attendance commit.
+- Tabel `notification_delivery_logs` untuk mencatat event, channel, recipient, destination, title, status, provider, error, dan waktu delivery.
+- Provider mock/log-only untuk `EMAIL` dan `PUSH`; channel `IN_APP` tetap menulis ke tabel `notifications`.
+- Event yang didukung: `CLOCK_IN_SUCCESS`, `CLOCK_OUT_SUCCESS`, `ATTENDANCE_OUT_OF_RADIUS`, `DEVICE_MISMATCH`, dan `ATTENDANCE_FAILED_ATTEMPT`.
+- Endpoint read-only `GET /api/v1/tenants/{tenantId}/notification-deliveries` untuk admin tenant dan SUPER_ADMIN sesuai guard tenant.
+- Web dashboard `/notifications` untuk melihat delivery log dengan filter status, channel, dan event.
+- Audit log untuk `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, dan `NOTIFICATION_FAILED`.
+
 ## Known limitation (Fase 1)
 
 - Super Admin Console v0.5.0 masih read-only.
@@ -220,7 +235,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Reinstall mobile app bisa menghasilkan device ID baru dan membutuhkan reset admin.
 - Production bisa memperkuat device policy dengan attestation, liveness, MDM, atau posture checks.
 - Face verification masih demo — hanya cek panjang base64. Interface `FaceVerifier` sudah siap diganti.
-- Tidak ada gateway notifikasi nyata (FCM/email/SMS). Hanya tabel `notifications`.
+- Notification gateway v0.7.0 masih mock/log-only. Belum ada FCM, Resend, SMTP, SMS, API key provider, retry scheduler, atau mobile push token registration.
 - Subscription dibuat manual, belum terintegrasi dengan payment gateway.
 - Tidak ada WebSocket atau realtime push.
 - Tidak ada export PDF/Excel untuk laporan attendance.

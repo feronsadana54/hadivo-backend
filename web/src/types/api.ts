@@ -24,6 +24,14 @@ export type TenantMode = "SCHOOL" | "COMPANY";
 export type TenantStatus = "ACTIVE" | "INACTIVE";
 export type SubscriptionPlan = "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
 export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
+export type NotificationEventType =
+  | "CLOCK_IN_SUCCESS"
+  | "CLOCK_OUT_SUCCESS"
+  | "ATTENDANCE_OUT_OF_RADIUS"
+  | "DEVICE_MISMATCH"
+  | "ATTENDANCE_FAILED_ATTEMPT";
+export type NotificationChannel = "IN_APP" | "EMAIL" | "PUSH";
+export type NotificationDeliveryStatus = "PENDING" | "SENT" | "FAILED" | "SKIPPED";
 
 export type PageResponse<T> = {
   items: T[];
@@ -111,6 +119,30 @@ export type AttendanceAttempt = {
   longitude?: number | null;
   deviceId?: string | null;
   createdAt: string;
+};
+
+export type NotificationDeliveryLog = {
+  id: string;
+  eventType: NotificationEventType;
+  channel: NotificationChannel;
+  recipientUserId?: string | null;
+  destination?: string | null;
+  title: string;
+  status: NotificationDeliveryStatus;
+  provider?: string | null;
+  createdAt: string;
+  sentAt?: string | null;
+  errorMessage?: string | null;
+};
+
+export type NotificationDeliveryFilters = {
+  eventType?: NotificationEventType;
+  channel?: NotificationChannel;
+  status?: NotificationDeliveryStatus;
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
 };
 
 export type AttendanceSettings = {

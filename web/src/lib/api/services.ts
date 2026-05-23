@@ -7,6 +7,8 @@ import type {
   Location,
   Membership,
   MonthlyReport,
+  NotificationDeliveryFilters,
+  NotificationDeliveryLog,
   PageResponse,
   SuperAdminOverview,
   SuperAdminTenantDetail,
@@ -43,6 +45,11 @@ export const api = {
   async getAttempts(tenantId: string, from: string, to: string, userId?: string) {
     return unwrap<AttendanceAttempt[]>(
       await apiClient.get(endpoints.attempts(tenantId), { params: { from, to, userId } }),
+    );
+  },
+  async getNotificationDeliveries(tenantId: string, filters: NotificationDeliveryFilters) {
+    return unwrap<PageResponse<NotificationDeliveryLog>>(
+      await apiClient.get(endpoints.notificationDeliveries(tenantId), { params: filters }),
     );
   },
   async getSettings(tenantId: string) {

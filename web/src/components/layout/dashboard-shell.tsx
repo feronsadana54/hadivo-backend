@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
+  Bell,
   Building2,
   Clock3,
   LogOut,
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/attendance", label: "Absensi", icon: Clock3 },
   { href: "/attendance-attempts", label: "Percobaan", icon: ShieldAlert },
+  { href: "/notifications", label: "Notifikasi", icon: Bell },
   { href: "/members", label: "Anggota", icon: Users },
   { href: "/settings", label: "Pengaturan", icon: Settings },
   { href: "/locations", label: "Lokasi", icon: MapPin },

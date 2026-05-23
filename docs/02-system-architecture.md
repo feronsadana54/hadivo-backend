@@ -11,20 +11,20 @@
                        v                        v                        v
                 +-------------+         +----------------+        +---------------+
                 | PostgreSQL  |         | RabbitMQ       |        | (future)      |
-                | (Flyway)    |         | attendance.*   |        | FCM / Email   |
+                | (Flyway)    |         | notification   |        | FCM / Email   |
                 +-------------+         +-------+--------+        +---------------+
                                                 |
                                                 v
                                         +---------------+
                                         | Notification  |
-                                        | listener      |
+                                        | gateway       |
                                         +---------------+
                                                 |
                                                 v
-                                        +---------------+
-                                        | notifications |
-                                        | (Postgres)    |
-                                        +---------------+
+                               +-------------------------+
+                               | notifications +         |
+                               | delivery logs           |
+                               +-------------------------+
 ```
 
 ## Modular monolith
@@ -42,4 +42,4 @@ Lihat [`03-backend-module-breakdown.md`](03-backend-module-breakdown.md) untuk d
 
 `AttendanceService` mempublish Spring application event di dalam transaksi. `AttendanceRabbitPublisher` menangkap event itu dengan `@TransactionalEventListener(phase = AFTER_COMMIT)` dan baru mengirim ke RabbitMQ kalau transaksi DB berhasil commit. Pendekatan ini menjamin tidak ada notifikasi yang dipancarkan ketika transaksi DB rollback.
 
-`NotificationListener` di sisi konsumer membaca pesan dari queue `attendance.notifications`, lalu menulis baris di tabel `notifications` untuk user pelaku dan (untuk STUDENT) parent terkait.
+`NotificationConsumer` membaca queue `hadivo.notification.events`, resolve recipient dan template, lalu menulis `notification_delivery_logs`. Channel `IN_APP` menulis ke tabel `notifications`, sedangkan `EMAIL` dan `PUSH` masih memakai mock/log-only gateway sampai provider production ditambahkan.

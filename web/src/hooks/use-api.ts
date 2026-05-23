@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/services";
 import { defaultTenantId } from "@/lib/config/env";
-import type { AttendanceSettings, Location, SuperAdminTenantFilters } from "@/types/api";
+import type { AttendanceSettings, Location, NotificationDeliveryFilters, SuperAdminTenantFilters } from "@/types/api";
 
 export function useTenant() {
   return useQuery({
@@ -55,6 +55,13 @@ export function useAttempts(from: string, to: string, userId?: string) {
   return useQuery({
     queryKey: ["attempts", defaultTenantId, from, to, userId],
     queryFn: () => api.getAttempts(defaultTenantId, from, to, userId),
+  });
+}
+
+export function useNotificationDeliveries(filters: NotificationDeliveryFilters) {
+  return useQuery({
+    queryKey: ["notification-deliveries", defaultTenantId, filters],
+    queryFn: () => api.getNotificationDeliveries(defaultTenantId, filters),
   });
 }
 

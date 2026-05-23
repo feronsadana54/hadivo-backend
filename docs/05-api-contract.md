@@ -61,6 +61,49 @@ Response gagal:
 - `GET /tenants/{tenantId}/attendance/me?from=&to=`
 - `GET /tenants/{tenantId}/attendance-attempts?userId=&from=&to=`
 
+### Notification deliveries
+
+Endpoint notification delivery bersifat read-only. `TENANT_ADMIN` dapat melihat delivery log tenant-nya. `SUPER_ADMIN` dapat mengakses sesuai policy tenant guard yang berlaku. `EMPLOYEE`, `STUDENT`, dan `PARENT` tidak boleh melihat seluruh delivery log tenant.
+
+- `GET /tenants/{tenantId}/notification-deliveries?eventType=&channel=&status=&from=&to=&page=&size=`
+
+Filter:
+
+- `eventType`: `CLOCK_IN_SUCCESS`, `CLOCK_OUT_SUCCESS`, `ATTENDANCE_OUT_OF_RADIUS`, `DEVICE_MISMATCH`, `ATTENDANCE_FAILED_ATTEMPT`
+- `channel`: `IN_APP`, `EMAIL`, `PUSH`
+- `status`: `PENDING`, `SENT`, `FAILED`, `SKIPPED`
+- `from` dan `to`: ISO-8601 datetime
+
+Response memakai `PageResponse`:
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "2d2b4cb1-3b1a-4b4d-9e25-b50d2b17a8ab",
+        "eventType": "CLOCK_IN_SUCCESS",
+        "channel": "IN_APP",
+        "recipientUserId": "11111111-2222-3333-4444-555555555555",
+        "destination": "11111111-2222-3333-4444-555555555555",
+        "title": "Clock-in berhasil",
+        "status": "SENT",
+        "provider": "in-app",
+        "createdAt": "2026-05-24T10:00:00Z",
+        "sentAt": "2026-05-24T10:00:01Z",
+        "errorMessage": null
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalItems": 1,
+    "totalPages": 1
+  }
+}
+```
+
+Fase v0.7.0 belum menyediakan endpoint write/edit/delete notification delivery, preference center, retry scheduler, FCM token registration, atau provider email/push production.
+
 ### Reporting
 
 - `GET /tenants/{tenantId}/reports/attendance/daily?date=`

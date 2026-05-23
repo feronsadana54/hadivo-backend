@@ -16,7 +16,7 @@ Pilihan yang dipertimbangkan:
 
 ## Decision
 
-Gunakan RabbitMQ + Spring AMQP. `AttendanceService` publish Spring event di dalam transaksi. `@TransactionalEventListener(phase = AFTER_COMMIT)` menangkap event itu dan baru memanggil `RabbitTemplate.convertAndSend`. Consumer `NotificationListener` membaca dari queue `attendance.notifications` dan menulis ke tabel `notifications`.
+Gunakan RabbitMQ + Spring AMQP. `AttendanceService` publish Spring event di dalam transaksi. `@TransactionalEventListener(phase = AFTER_COMMIT)` menangkap event itu dan baru memanggil publisher RabbitMQ. Sejak v0.7.0, consumer utama `NotificationConsumer` membaca queue `hadivo.notification.events`, menjalankan notification gateway, dan menulis `notification_delivery_logs`. Channel `IN_APP` tetap menulis ke tabel `notifications`.
 
 ## Consequences
 

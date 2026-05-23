@@ -70,7 +70,7 @@ SUPER_ADMIN otomatis ditautkan ke tenant ini lewat `DataSeeder`.
 
 ## RabbitMQ UI
 
-<http://localhost:15672> — user/password `hadivo`/`hadivo`. Exchange `attendance.events` dan queue `attendance.notifications` dibuat otomatis oleh aplikasi saat startup.
+<http://localhost:15672> — user/password `hadivo`/`hadivo`. Exchange `attendance.events`, queue legacy `attendance.notifications`, dan queue notification gateway `hadivo.notification.events` dibuat otomatis oleh aplikasi saat startup.
 
 ## Postman
 
