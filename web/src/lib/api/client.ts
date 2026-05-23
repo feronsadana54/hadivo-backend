@@ -63,6 +63,8 @@ function errorMessageByCode(code: string) {
     ALREADY_CLOCKED_OUT: "User sudah melakukan clock-out hari ini.",
     LATE_NOT_ALLOWED: "Clock-in terlambat tidak diizinkan.",
     FACE_MISMATCH: "Verifikasi wajah gagal.",
+    INVALID_DEVICE: "Perangkat tidak valid untuk absensi.",
+    DEVICE_MISMATCH: "Perangkat ini belum terdaftar untuk absensi. Hubungi admin untuk reset perangkat.",
     UNAUTHORIZED: "Sesi Anda sudah berakhir. Silakan login kembali.",
     FORBIDDEN: "Anda tidak memiliki izin untuk membuka data ini.",
     VALIDATION_FAILED: "Periksa kembali data yang diisi.",

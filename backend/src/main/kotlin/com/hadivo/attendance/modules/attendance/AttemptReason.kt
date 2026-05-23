@@ -4,6 +4,7 @@ enum class AttemptReason {
     OUT_OF_RADIUS,
     FACE_MISMATCH,
     INVALID_LOCATION,
+    INVALID_DEVICE,
     DEVICE_MISMATCH,
     DUPLICATE_CLOCK_IN,
     NO_CLOCK_IN,

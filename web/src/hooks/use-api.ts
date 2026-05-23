@@ -19,6 +19,24 @@ export function useMemberships() {
   });
 }
 
+export function useMemberDevices(userId: string, enabled = true) {
+  return useQuery({
+    queryKey: ["member-devices", defaultTenantId, userId],
+    queryFn: () => api.getMemberDevices(defaultTenantId, userId),
+    enabled: Boolean(userId) && enabled,
+  });
+}
+
+export function useResetMemberDevices() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => api.resetMemberDevices(defaultTenantId, userId),
+    onSuccess: (_devices, userId) => {
+      queryClient.invalidateQueries({ queryKey: ["member-devices", defaultTenantId, userId] });
+    },
+  });
+}
+
 export function useDailyReport(date: string) {
   return useQuery({
     queryKey: ["daily-report", defaultTenantId, date],

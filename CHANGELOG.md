@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.6.0 - Device Binding & Multi-Device Policy
+
+### Backend
+
+- Added `user_devices` table for per-tenant trusted attendance devices.
+- Added device binding policy for clock-in and clock-out.
+- Auto-registers the first attendance device for a user in a tenant.
+- Rejects attendance from a different active trusted device with `DEVICE_MISMATCH`.
+- Rejects missing or invalid device IDs with `INVALID_DEVICE`.
+- Added tenant-scoped device list and reset endpoints for admins.
+- Added audit logging for `DEVICE_REGISTERED`, `DEVICE_MISMATCH`, and `DEVICE_RESET`.
+- Added integration tests for first registration, same-device attendance, mismatch rejection, reset behavior, and reset authorization.
+
+### Web Dashboard
+
+- Added member device status to the Members page.
+- Added Reset Device action with confirmation for admin workflows.
+- Added friendly device mismatch and invalid device error copy.
+
+### Mobile App
+
+- Replaced the static demo device ID with a privacy-friendly random device UUID stored in secure storage.
+- Sends `deviceId`, `deviceName`, and `platform` with clock-in and clock-out requests.
+- Added friendly device binding error messages.
+
+### Notes
+
+- Device binding is not a perfect anti-fraud control.
+- Reinstalling the mobile app can generate a new device ID and require admin reset.
+- Production can strengthen this later with platform attestation, liveness, MDM, or stricter device posture checks.
+- No payment gateway, real face recognition, FCM/email gateway, or large Super Admin expansion.
+
 ## v0.5.0 - Super Admin Console + Cross-Tenant Analytics
 
 ### Backend

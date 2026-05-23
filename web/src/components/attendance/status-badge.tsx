@@ -47,6 +47,7 @@ export function attemptReasonLabel(reason: AttemptReason) {
     OUT_OF_RADIUS: "Di luar area absensi",
     FACE_MISMATCH: "Verifikasi wajah gagal",
     INVALID_LOCATION: "Lokasi tidak valid",
+    INVALID_DEVICE: "Perangkat tidak valid",
     DEVICE_MISMATCH: "Perangkat tidak sesuai",
     DUPLICATE_CLOCK_IN: "Sudah clock-in hari ini",
     NO_CLOCK_IN: "Belum melakukan clock-in",

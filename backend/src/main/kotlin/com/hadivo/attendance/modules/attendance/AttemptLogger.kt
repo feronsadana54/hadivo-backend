@@ -31,7 +31,7 @@ class AttemptLogger(
                 reason = reason,
                 latitude = latitude,
                 longitude = longitude,
-                deviceId = deviceId,
+                deviceId = deviceId?.trim()?.take(MAX_DEVICE_ID_LENGTH),
             )
         )
         publisher.publishEvent(
@@ -43,5 +43,9 @@ class AttemptLogger(
                 occurredAt = Instant.now(),
             )
         )
+    }
+
+    private companion object {
+        const val MAX_DEVICE_ID_LENGTH = 120
     }
 }

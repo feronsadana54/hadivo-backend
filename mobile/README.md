@@ -10,6 +10,7 @@ UI mobile dibuat ringkas untuk user non-teknis. Teks tombol, status, empty state
 - Home attendance today untuk melihat status absensi hari ini.
 - Clock-in dengan lokasi.
 - Clock-out dengan lokasi.
+- Device binding menggunakan random device UUID yang disimpan di secure storage.
 - Attendance history 7 hari terakhir.
 - Profile sederhana.
 - Logout.
@@ -22,6 +23,7 @@ UI mobile dibuat ringkas untuk user non-teknis. Teks tombol, status, empty state
 - Riverpod untuk state management
 - Go Router untuk routing
 - Secure Storage untuk penyimpanan token
+- Secure Storage untuk device ID absensi
 - Geolocator untuk mengambil lokasi
 
 ## Prerequisites
@@ -90,6 +92,12 @@ flutter run --dart-define=HADIVO_USE_DEMO_LOCATION=false
 
 Saat GPS asli digunakan, app akan meminta izin lokasi. Jika izin ditolak, app menampilkan pesan yang mudah dipahami dan tidak crash.
 
+## Device Binding
+
+Mobile app membuat random device UUID saat pertama kali dipakai, lalu menyimpannya di secure storage. ID ini dikirim sebagai `deviceId` saat clock-in dan clock-out bersama `deviceName` dan `platform`.
+
+App tidak memakai hardware identifier mentah. Jika app dihapus dan di-install ulang, device ID bisa berubah. Admin tenant dapat reset device user dari Web Dashboard agar perangkat baru bisa didaftarkan pada absensi berikutnya.
+
 ## API Endpoints
 
 Mobile app memakai endpoint berikut:
@@ -150,3 +158,4 @@ flutter test
 - Belum ada offline mode.
 - Belum ada map view.
 - Belum ada parent/manager mobile dashboard.
+- Device binding bukan anti-fraud sempurna; production bisa memperkuat dengan attestation, liveness, MDM, atau posture checks.

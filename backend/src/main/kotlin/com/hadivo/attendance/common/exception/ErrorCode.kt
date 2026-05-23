@@ -12,6 +12,8 @@ enum class ErrorCode(val status: HttpStatus, val defaultMessage: String) {
     SUBSCRIPTION_LIMIT_EXCEEDED(HttpStatus.UNPROCESSABLE_ENTITY, "Batas anggota subscription telah tercapai"),
     OUT_OF_RADIUS(HttpStatus.UNPROCESSABLE_ENTITY, "Lokasi berada di luar radius absensi"),
     FACE_MISMATCH(HttpStatus.UNPROCESSABLE_ENTITY, "Verifikasi wajah gagal"),
+    INVALID_DEVICE(HttpStatus.UNPROCESSABLE_ENTITY, "Perangkat tidak valid untuk absensi"),
+    DEVICE_MISMATCH(HttpStatus.UNPROCESSABLE_ENTITY, "Perangkat ini belum terdaftar untuk absensi"),
     DUPLICATE_CLOCK_IN(HttpStatus.UNPROCESSABLE_ENTITY, "Sudah melakukan clock-in hari ini"),
     NO_CLOCK_IN(HttpStatus.UNPROCESSABLE_ENTITY, "Belum melakukan clock-in"),
     ALREADY_CLOCKED_OUT(HttpStatus.UNPROCESSABLE_ENTITY, "Sudah melakukan clock-out hari ini"),

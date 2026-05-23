@@ -31,6 +31,8 @@ Response gagal:
 - `POST /tenants/{tenantId}/memberships`
 - `GET /tenants/{tenantId}/memberships`
 - `DELETE /tenants/{tenantId}/memberships/{membershipId}`
+- `GET /tenants/{tenantId}/members/{userId}/devices`
+- `POST /tenants/{tenantId}/members/{userId}/devices/reset`
 
 ### Parent–student link
 
@@ -127,6 +129,36 @@ Response Super Admin tidak mengekspos `passwordHash`, access token, refresh toke
 
 Limitasi v0.5.0: Super Admin masih read-only, belum ada endpoint edit/delete tenant, belum ada impersonation, belum ada billing/payment detail, dan analytics masih basic.
 
+### Device Binding
+
+Endpoint device member hanya boleh diakses admin tenant (`TENANT_ADMIN`) atau `SUPER_ADMIN` yang memiliki akses tenant sesuai guard yang berlaku.
+
+- `GET /tenants/{tenantId}/members/{userId}/devices`
+- `POST /tenants/{tenantId}/members/{userId}/devices/reset`
+
+Response device item:
+
+```json
+{
+  "deviceId": "7e8f3c8b-6219-44be-97f1-2c62a604b217",
+  "deviceName": "Hadivo Mobile Android",
+  "platform": "Android",
+  "trusted": true,
+  "active": true,
+  "firstSeenAt": "2026-05-23T10:00:00Z",
+  "lastSeenAt": "2026-05-23T10:00:00Z"
+}
+```
+
+Policy v0.6.0:
+
+- Clock-in/clock-out pertama dari user pada tenant akan otomatis mendaftarkan `deviceId` sebagai trusted device.
+- Clock-in/clock-out berikutnya dari `deviceId` yang sama diizinkan dan memperbarui `lastSeenAt`.
+- Clock-in/clock-out dari device berbeda ditolak dengan `DEVICE_MISMATCH` dan dicatat di `attendance_attempts`.
+- `deviceId` kosong atau tidak valid ditolak dengan `INVALID_DEVICE`.
+- Reset device membuat active trusted device menjadi inactive. Setelah reset, clock-in/clock-out berikutnya dari device baru akan auto-register lagi.
+- Tidak ada endpoint write/edit/delete tenant dari fitur ini.
+
 ## Body clock-in / clock-out
 
 ```json
@@ -134,6 +166,8 @@ Limitasi v0.5.0: Super Admin masih read-only, belum ada endpoint edit/delete ten
   "latitude": -6.2,
   "longitude": 106.816666,
   "deviceId": "device-001",
+  "deviceName": "Hadivo Mobile Android",
+  "platform": "Android",
   "faceImageBase64": "optional"
 }
 ```

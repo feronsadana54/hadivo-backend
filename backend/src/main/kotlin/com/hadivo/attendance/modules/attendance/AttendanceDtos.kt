@@ -2,7 +2,6 @@ package com.hadivo.attendance.modules.attendance
 
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
-import jakarta.validation.constraints.NotBlank
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -10,14 +9,18 @@ import java.util.UUID
 data class ClockInRequest(
     @field:Min(-90) @field:Max(90) val latitude: Double,
     @field:Min(-180) @field:Max(180) val longitude: Double,
-    @field:NotBlank val deviceId: String,
+    val deviceId: String?,
+    val deviceName: String? = null,
+    val platform: String? = null,
     val faceImageBase64: String? = null,
 )
 
 data class ClockOutRequest(
     @field:Min(-90) @field:Max(90) val latitude: Double,
     @field:Min(-180) @field:Max(180) val longitude: Double,
-    @field:NotBlank val deviceId: String,
+    val deviceId: String?,
+    val deviceName: String? = null,
+    val platform: String? = null,
     val faceImageBase64: String? = null,
 )
 

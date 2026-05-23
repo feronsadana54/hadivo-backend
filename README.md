@@ -27,6 +27,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Role-based dashboard untuk admin tenant, manager, teacher, employee, student, dan parent.
 - Web dashboard untuk login, summary, attendance, attempts, members, settings, locations, subscription, dan Super Admin Console.
 - Super Admin Console v0.5.0 untuk memantau tenant lintas platform secara read-only.
+- Device Binding v0.6.0 untuk membatasi absensi user ke satu trusted device per tenant, dengan reset perangkat oleh admin.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
@@ -77,6 +78,8 @@ npm run dev
 Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
 
 Super Admin Console tersedia di `/super-admin`. Fitur ini read-only untuk platform owner, hanya boleh diakses role `SUPER_ADMIN`, dan menampilkan overview lintas tenant, daftar tenant, detail tenant, ringkasan member, absensi hari ini, failed attempts hari ini, serta status subscription. Console ini tidak menyediakan edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email gateway, atau device binding.
+
+Device Binding v0.6.0 mendaftarkan perangkat absensi pertama user sebagai trusted device untuk tenant tersebut. Clock-in/clock-out dari perangkat berbeda akan ditolak dengan pesan agar user menghubungi admin. Admin tenant dapat reset perangkat dari halaman Members agar user bisa mendaftarkan perangkat baru pada absensi berikutnya. Mobile app memakai random device UUID yang disimpan di secure storage, bukan hardware identifier mentah.
 
 Halaman Locations menyediakan map picker berbasis Leaflet + OpenStreetMap. Admin dapat klik peta untuk mengisi latitude/longitude, melihat marker, dan melihat circle radius sebelum menyimpan. Admin juga dapat mencari alamat atau nama tempat memakai Nominatim OpenStreetMap lewat tombol Cari Lokasi atau tombol Enter; fitur ini bukan live autocomplete. Fitur ini tidak membutuhkan Google Maps API key, billing, atau akun pihak ketiga. Untuk traffic production yang besar, gunakan tile/geocoding provider resmi/berbayar atau self-hosted tile/Nominatim yang sesuai dengan policy OpenStreetMap.
 
@@ -143,7 +146,7 @@ Detail baseline tersedia di [`docs/12-security-baseline.md`](docs/12-security-ba
 
 ## Release Notes
 
-Release notes untuk `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.5.0` menambahkan Super Admin Console read-only dan endpoint analytics lintas tenant khusus `SUPER_ADMIN`.
+Release notes untuk `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.6.0` menambahkan Device Binding & Multi-Device Policy untuk absensi.
 
 ## Screenshots
 
@@ -195,6 +198,17 @@ Swagger and Postman screenshots can be added after manual capture.
 - Detail tenant read-only dengan current subscription dan failed attempts terbaru.
 - Tidak ada edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email gateway, atau device binding.
 
+## Fitur v0.6.0
+
+- Tabel `user_devices` untuk trusted attendance device per tenant dan user.
+- Clock-in/clock-out pertama dari user otomatis mendaftarkan device sebagai trusted device.
+- Clock-in/clock-out dari device berbeda ditolak dan dicatat sebagai `DEVICE_MISMATCH`.
+- Device ID kosong/tidak valid ditolak sebagai `INVALID_DEVICE`.
+- Endpoint admin untuk melihat dan reset device member tenant.
+- Halaman Members web menampilkan status device dan tombol Reset Device.
+- Mobile app mengirim random device UUID yang disimpan di secure storage, beserta device name dan platform sederhana.
+- Audit log untuk `DEVICE_REGISTERED`, `DEVICE_MISMATCH`, dan `DEVICE_RESET`.
+
 ## Known limitation (Fase 1)
 
 - Super Admin Console v0.5.0 masih read-only.
@@ -202,12 +216,14 @@ Swagger and Postman screenshots can be added after manual capture.
 - Belum ada impersonation user.
 - Belum ada billing/payment detail di Super Admin; subscription masih manual.
 - Analytics Super Admin masih basic, berupa ringkasan count dan daftar tenant.
+- Device binding bukan anti-fraud sempurna.
+- Reinstall mobile app bisa menghasilkan device ID baru dan membutuhkan reset admin.
+- Production bisa memperkuat device policy dengan attestation, liveness, MDM, atau posture checks.
 - Face verification masih demo — hanya cek panjang base64. Interface `FaceVerifier` sudah siap diganti.
 - Tidak ada gateway notifikasi nyata (FCM/email/SMS). Hanya tabel `notifications`.
 - Subscription dibuat manual, belum terintegrasi dengan payment gateway.
 - Tidak ada WebSocket atau realtime push.
 - Tidak ada export PDF/Excel untuk laporan attendance.
-- Device binding belum strict; `DEVICE_MISMATCH` masih reserved enum.
 - Address search Locations web memakai Nominatim OpenStreetMap untuk demo/portfolio dan request ringan, bukan live autocomplete.
 - Tidak ada integrasi Google Maps.
 - Tidak ada routing atau navigasi peta.
@@ -222,7 +238,6 @@ Swagger and Postman screenshots can be added after manual capture.
 | 2 | Gateway notifikasi (FCM, email) |
 | 2 | Payment gateway untuk subscription |
 | 2 | Export laporan PDF/Excel |
-| 2 | Device binding & multi-device policy |
 | 3 | Mobile app (Flutter) |
 | 3 | Web admin |
 | 3 | Shift / jadwal fleksibel per user |

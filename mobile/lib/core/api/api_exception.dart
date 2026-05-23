@@ -51,6 +51,10 @@ class ApiException implements Exception {
       'ALREADY_CLOCKED_OUT' => 'Anda sudah melakukan clock-out hari ini.',
       'FACE_MISMATCH' => 'Verifikasi wajah gagal.',
       'LATE_NOT_ALLOWED' => 'Clock-in terlambat tidak diizinkan.',
+      'INVALID_DEVICE' =>
+        'Perangkat tidak valid untuk absensi. Buka ulang aplikasi dan coba lagi.',
+      'DEVICE_MISMATCH' =>
+        'Perangkat ini belum terdaftar untuk absensi. Hubungi admin untuk reset perangkat.',
       'UNAUTHORIZED' => 'Sesi Anda sudah berakhir. Silakan login kembali.',
       'NETWORK_ERROR' =>
         'Tidak dapat terhubung ke server. Periksa koneksi atau pastikan backend berjalan.',

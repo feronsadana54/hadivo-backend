@@ -18,6 +18,5 @@ class AppConfig {
 
   static const demoLatitude = -6.2;
   static const demoLongitude = 106.816666;
-  static const deviceId = 'mobile-demo-device';
   static const demoEmployeeEmail = 'employee@hadivo.local';
 }

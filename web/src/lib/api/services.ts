@@ -15,6 +15,7 @@ import type {
   Subscription,
   Tenant,
   TokenPair,
+  UserDevice,
 } from "@/types/api";
 
 export const api = {
@@ -26,6 +27,12 @@ export const api = {
   },
   async getMemberships(tenantId: string) {
     return unwrap<Membership[]>(await apiClient.get(endpoints.memberships(tenantId)));
+  },
+  async getMemberDevices(tenantId: string, userId: string) {
+    return unwrap<UserDevice[]>(await apiClient.get(endpoints.memberDevices(tenantId, userId)));
+  },
+  async resetMemberDevices(tenantId: string, userId: string) {
+    return unwrap<UserDevice[]>(await apiClient.post(endpoints.resetMemberDevices(tenantId, userId)));
   },
   async getDailyReport(tenantId: string, date: string) {
     return unwrap<DailyReport>(await apiClient.get(endpoints.dailyReport(tenantId), { params: { date } }));

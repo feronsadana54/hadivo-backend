@@ -5,6 +5,8 @@ export const endpoints = {
   },
   tenant: (tenantId: string) => `/tenants/${tenantId}`,
   memberships: (tenantId: string) => `/tenants/${tenantId}/memberships`,
+  memberDevices: (tenantId: string, userId: string) => `/tenants/${tenantId}/members/${userId}/devices`,
+  resetMemberDevices: (tenantId: string, userId: string) => `/tenants/${tenantId}/members/${userId}/devices/reset`,
   dailyReport: (tenantId: string) => `/tenants/${tenantId}/reports/attendance/daily`,
   monthlyReport: (tenantId: string) => `/tenants/${tenantId}/reports/attendance/monthly`,
   attendanceReportCsv: (tenantId: string) => `/tenants/${tenantId}/reports/attendance/export.csv`,

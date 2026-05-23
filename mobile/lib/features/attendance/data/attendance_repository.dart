@@ -7,10 +7,14 @@ import '../../../core/config/app_config.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../domain/attendance_record.dart';
 import '../domain/history_range.dart';
+import 'device_info_service.dart';
 import 'location_service.dart';
 
 final attendanceRepositoryProvider = Provider<AttendanceRepository>((ref) {
-  return AttendanceRepository(ref.watch(dioProvider));
+  return AttendanceRepository(
+    ref.watch(dioProvider),
+    ref.watch(deviceInfoServiceProvider),
+  );
 });
 
 final todayAttendanceProvider = FutureProvider.autoDispose<AttendanceRecord?>((
@@ -25,9 +29,10 @@ final attendanceHistoryProvider = FutureProvider.autoDispose
     });
 
 class AttendanceRepository {
-  AttendanceRepository(this._dio);
+  AttendanceRepository(this._dio, this._deviceInfo);
 
   final Dio _dio;
+  final DeviceInfoService _deviceInfo;
 
   Future<AttendanceRecord?> today() async {
     try {
@@ -84,12 +89,15 @@ class AttendanceRepository {
     required AttendanceLocation location,
   }) async {
     try {
+      final device = await _deviceInfo.currentDevice();
       final response = await _dio.post<Map<String, dynamic>>(
         path,
         data: {
           'latitude': location.latitude,
           'longitude': location.longitude,
-          'deviceId': AppConfig.deviceId,
+          'deviceId': device.deviceId,
+          'deviceName': device.deviceName,
+          'platform': device.platform,
           'faceImageBase64': null,
         },
       );

@@ -12,6 +12,7 @@ export type AttemptReason =
   | "OUT_OF_RADIUS"
   | "FACE_MISMATCH"
   | "INVALID_LOCATION"
+  | "INVALID_DEVICE"
   | "DEVICE_MISMATCH"
   | "DUPLICATE_CLOCK_IN"
   | "NO_CLOCK_IN"
@@ -57,6 +58,16 @@ export type Membership = {
   role: Role;
   active: boolean;
   createdAt: string;
+};
+
+export type UserDevice = {
+  deviceId: string;
+  deviceName?: string | null;
+  platform?: string | null;
+  trusted: boolean;
+  active: boolean;
+  firstSeenAt: string;
+  lastSeenAt: string;
 };
 
 export type DailyReportRow = {

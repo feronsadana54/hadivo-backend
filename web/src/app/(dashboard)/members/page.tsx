@@ -1,15 +1,24 @@
 "use client";
 
+import { RotateCcw } from "lucide-react";
+import { useState } from "react";
 import { ActiveBadge, RoleBadge } from "@/components/attendance/status-badge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useMemberships } from "@/hooks/use-api";
+import { useMemberDevices, useMemberships, useResetMemberDevices } from "@/hooks/use-api";
 import { getErrorMessage } from "@/lib/api/client";
-import { displayEmail, displayName, shortId } from "@/lib/utils";
+import { tokenStorage } from "@/lib/auth/token-storage";
+import { displayEmail, displayName, formatDateTime, shortId } from "@/lib/utils";
+import type { Role, UserDevice } from "@/types/api";
 
 export default function MembersPage() {
   const memberships = useMemberships();
+  const currentUserId = readCurrentUserId();
+  const currentRole = memberships.data?.find((membership) => membership.userId === currentUserId)?.role;
+  const canManageDevices = canManageMemberDevices(currentRole);
 
   return (
     <div className="space-y-6">
@@ -30,6 +39,8 @@ export default function MembersPage() {
                 <TableHead>Nama dan email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status akun</TableHead>
+                <TableHead>Perangkat absensi</TableHead>
+                <TableHead>Aksi</TableHead>
                 <TableHead>Member ID</TableHead>
               </TableRow>
             </TableHeader>
@@ -46,6 +57,11 @@ export default function MembersPage() {
                   <TableCell>
                     <ActiveBadge active={membership.active} />
                   </TableCell>
+                  <MemberDeviceCells
+                    userId={membership.userId}
+                    fullName={membership.fullName}
+                    canManageDevices={canManageDevices}
+                  />
                   <TableCell className="text-sm text-muted-foreground">{shortId(membership.membershipId)}</TableCell>
                 </TableRow>
               ))}
@@ -55,4 +71,108 @@ export default function MembersPage() {
       ) : null}
     </div>
   );
+}
+
+function MemberDeviceCells({
+  userId,
+  fullName,
+  canManageDevices,
+}: {
+  userId: string;
+  fullName?: string | null;
+  canManageDevices: boolean;
+}) {
+  const devices = useMemberDevices(userId, canManageDevices);
+  const resetDevices = useResetMemberDevices();
+  const [message, setMessage] = useState<string | null>(null);
+  const activeTrusted = devices.data?.find((device) => device.active && device.trusted);
+
+  async function resetDevice() {
+    const target = displayName(fullName);
+    const confirmed = window.confirm(
+      `Reset perangkat ${target}? Reset perangkat akan mengizinkan user mendaftarkan perangkat baru saat absensi berikutnya.`,
+    );
+    if (!confirmed) return;
+
+    setMessage(null);
+    try {
+      await resetDevices.mutateAsync(userId);
+      setMessage("Perangkat berhasil direset.");
+    } catch (error) {
+      setMessage(getErrorMessage(error));
+    }
+  }
+
+  return (
+    <>
+      <TableCell>
+        {!canManageDevices ? (
+          <span className="text-sm text-muted-foreground">Hanya admin</span>
+        ) : devices.isLoading ? (
+          <span className="text-sm text-muted-foreground">Memuat perangkat...</span>
+        ) : devices.isError ? (
+          <span className="text-sm text-muted-foreground">{getErrorMessage(devices.error)}</span>
+        ) : activeTrusted ? (
+          <DeviceSummary device={activeTrusted} />
+        ) : (
+          <div className="space-y-1">
+            <Badge variant="muted">Belum terdaftar</Badge>
+            <p className="text-xs text-muted-foreground">Perangkat akan terdaftar saat absensi berikutnya.</p>
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
+        {!canManageDevices ? (
+          <span className="text-sm text-muted-foreground">Tidak tersedia</span>
+        ) : (
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resetDevice}
+              disabled={resetDevices.isPending}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Reset Device
+            </Button>
+            {message ? <p className="max-w-48 text-xs text-muted-foreground">{message}</p> : null}
+          </div>
+        )}
+      </TableCell>
+    </>
+  );
+}
+
+function DeviceSummary({ device }: { device: UserDevice }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="success">Trusted</Badge>
+        {device.platform ? <Badge variant="muted">{device.platform}</Badge> : null}
+      </div>
+      <div className="text-xs text-muted-foreground">
+        <p>{device.deviceName ?? "Perangkat absensi"}</p>
+        <p>Terakhir aktif {formatDateTime(device.lastSeenAt)}</p>
+      </div>
+    </div>
+  );
+}
+
+function readCurrentUserId() {
+  const token = tokenStorage.getAccessToken();
+  const payload = token?.split(".")[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const decoded = JSON.parse(window.atob(padded)) as { sub?: string };
+    return decoded.sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function canManageMemberDevices(role?: Role) {
+  return role === "TENANT_ADMIN" || role === "SUPER_ADMIN";
 }

@@ -6,6 +6,8 @@ import com.hadivo.attendance.common.util.TimeUtils
 import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.auth.User
 import com.hadivo.attendance.modules.auth.UserRepository
+import com.hadivo.attendance.modules.device.DeviceBindingCommand
+import com.hadivo.attendance.modules.device.DeviceBindingService
 import com.hadivo.attendance.modules.face.FaceVerifier
 import com.hadivo.attendance.modules.geofence.GeofenceValidator
 import com.hadivo.attendance.modules.location.LocationService
@@ -23,6 +25,7 @@ class AttendanceService(
     private val records: AttendanceRecordRepository,
     private val attempts: AttendanceAttemptRepository,
     private val attemptLogger: AttemptLogger,
+    private val deviceBinding: DeviceBindingService,
     private val settingsService: SettingsService,
     private val locationService: LocationService,
     private val geofence: GeofenceValidator,
@@ -37,6 +40,18 @@ class AttendanceService(
         val settings = settingsService.get(tenantId)
         val today = TimeUtils.todayAt(settings.timezone)
         val now = TimeUtils.nowAt(settings.timezone)
+        val deviceResult = deviceBinding.ensureAllowedForAttendance(
+            tenantId = tenantId,
+            userId = userId,
+            type = AttendanceType.CLOCK_IN,
+            command = DeviceBindingCommand(
+                deviceId = request.deviceId,
+                deviceName = request.deviceName,
+                platform = request.platform,
+            ),
+            latitude = request.latitude,
+            longitude = request.longitude,
+        )
 
         records.findByTenantIdAndUserIdAndDate(tenantId, userId, today)?.let { existing ->
             if (existing.clockInAt != null) {
@@ -71,10 +86,14 @@ class AttendanceService(
                 clockInLocationId = location.id,
                 clockInLatitude = request.latitude,
                 clockInLongitude = request.longitude,
-                clockInDeviceId = request.deviceId,
+                clockInDeviceId = deviceResult.device.deviceId,
                 status = if (isLate) AttendanceStatus.LATE else AttendanceStatus.ON_TIME,
             )
         )
+
+        if (deviceResult.registered) {
+            deviceBinding.auditRegistered(tenantId, userId, deviceResult.device)
+        }
 
         audit.log(
             tenantId = tenantId,
@@ -102,6 +121,18 @@ class AttendanceService(
         val settings = settingsService.get(tenantId)
         val today = TimeUtils.todayAt(settings.timezone)
         val now = TimeUtils.nowAt(settings.timezone)
+        val deviceResult = deviceBinding.ensureAllowedForAttendance(
+            tenantId = tenantId,
+            userId = userId,
+            type = AttendanceType.CLOCK_OUT,
+            command = DeviceBindingCommand(
+                deviceId = request.deviceId,
+                deviceName = request.deviceName,
+                platform = request.platform,
+            ),
+            latitude = request.latitude,
+            longitude = request.longitude,
+        )
 
         val record = records.findByTenantIdAndUserIdAndDate(tenantId, userId, today)
             ?: run {
@@ -128,13 +159,17 @@ class AttendanceService(
         record.clockOutAt = now.toInstant()
         record.clockOutLatitude = request.latitude
         record.clockOutLongitude = request.longitude
-        record.clockOutDeviceId = request.deviceId
+        record.clockOutDeviceId = deviceResult.device.deviceId
         record.clockOutLocationId = matchedLocation?.id
         record.clockOutOutsideRadius = matchedLocation == null
         record.workDurationMinutes = computeDurationMinutes(record.clockInAt, record.clockOutAt)
         record.status = resolveFinalStatus(record, settings, today)
 
         val saved = records.save(record)
+
+        if (deviceResult.registered) {
+            deviceBinding.auditRegistered(tenantId, userId, deviceResult.device)
+        }
 
         audit.log(
             tenantId = tenantId,
