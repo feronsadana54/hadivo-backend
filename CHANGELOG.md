@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.4.0 - Security & Tenant Hardening
+
+### Backend
+
+- Added in-memory login lockout protection.
+- Generic login error response to avoid account enumeration.
+- Added password policy validation.
+- Hardened refresh token tests for rotation and revoke behavior.
+- Added basic security headers.
+- Improved safe error responses for auth/access denied.
+- Expanded audit log coverage for login, logout, refresh, tenant, member, parent link, location, settings, subscription, and CSV export actions.
+- Added security hardening integration tests.
+- No backend schema changes.
+- No frontend UI changes.
+
+### Documentation
+
+- Added security baseline documentation.
+- Documented tenant isolation, role-based access, audit logging, login lockout, password policy, refresh token hashing/rotation/revoke, and security headers.
+- Documented that the login limiter is in-memory and production multi-instance deployments should use Redis or a centralized rate limiter.
+- Kept known limitations explicit: real face recognition, payment gateway, and production notification gateway are not active yet.
+
 ## v0.3.0 - Address Search for Location Picker
 
 ### Web Dashboard

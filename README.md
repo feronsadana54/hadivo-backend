@@ -140,7 +140,7 @@ Detail baseline tersedia di [`docs/12-security-baseline.md`](docs/12-security-ba
 
 ## Release Notes
 
-Release notes untuk `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.3.0` menambahkan address search Nominatim OpenStreetMap di map picker halaman Locations web tanpa perubahan business logic backend.
+Release notes untuk `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.4.0` menambahkan security baseline untuk tenant isolation, login protection, audit coverage, refresh token tests, dan security headers tanpa perubahan schema backend atau UI frontend.
 
 ## Screenshots
 
