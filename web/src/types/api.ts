@@ -19,8 +19,18 @@ export type AttemptReason =
   | "LATE_NOT_ALLOWED";
 export type AttendanceType = "CLOCK_IN" | "CLOCK_OUT";
 export type Role = "SUPER_ADMIN" | "TENANT_ADMIN" | "MANAGER" | "TEACHER" | "EMPLOYEE" | "STUDENT" | "PARENT";
+export type TenantMode = "SCHOOL" | "COMPANY";
+export type TenantStatus = "ACTIVE" | "INACTIVE";
 export type SubscriptionPlan = "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
-export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELED";
+export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
+
+export type PageResponse<T> = {
+  items: T[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+};
 
 export type TokenPair = {
   accessToken: string;
@@ -33,7 +43,7 @@ export type Tenant = {
   id: string;
   name: string;
   slug: string;
-  mode: "SCHOOL" | "COMPANY";
+  mode: TenantMode;
   timezone: string;
   active: boolean;
 };
@@ -122,4 +132,76 @@ export type Subscription = {
   startedAt: string;
   expiresAt?: string | null;
   status: SubscriptionStatus;
+};
+
+export type SuperAdminOverview = {
+  totalTenants: number;
+  activeTenants: number;
+  companyTenants: number;
+  schoolTenants: number;
+  totalMembers: number;
+  attendanceToday: number;
+  failedAttemptsToday: number;
+  activeSubscriptions: number;
+  expiredSubscriptions: number;
+  subscriptionStatusCounts: Partial<Record<SubscriptionStatus, number>>;
+  generatedAt: string;
+};
+
+export type SuperAdminTenantListItem = {
+  tenantId: string;
+  tenantName: string;
+  tenantType: TenantMode;
+  active: boolean;
+  status: TenantStatus;
+  memberCount: number;
+  attendanceToday: number;
+  failedAttemptsToday: number;
+  subscriptionPlan?: SubscriptionPlan | null;
+  subscriptionStatus?: SubscriptionStatus | null;
+  createdAt: string;
+};
+
+export type SuperAdminTenantFilters = {
+  type?: TenantMode;
+  status?: TenantStatus;
+  subscriptionStatus?: SubscriptionStatus;
+  search?: string;
+  page?: number;
+  size?: number;
+};
+
+export type SuperAdminSubscriptionSummary = {
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  maxMembers: number;
+  startedAt: string;
+  expiresAt?: string | null;
+};
+
+export type SuperAdminFailedAttempt = {
+  attemptId: string;
+  userId: string;
+  fullName?: string | null;
+  email?: string | null;
+  type: AttendanceType;
+  reason: AttemptReason;
+  createdAt: string;
+};
+
+export type SuperAdminTenantDetail = {
+  tenantId: string;
+  tenantName: string;
+  tenantSlug: string;
+  tenantType: TenantMode;
+  timezone: string;
+  active: boolean;
+  status: TenantStatus;
+  memberCount: number;
+  activeMemberCount: number;
+  attendanceToday: number;
+  failedAttemptsToday: number;
+  subscriptionCurrent?: SuperAdminSubscriptionSummary | null;
+  recentFailedAttempts: SuperAdminFailedAttempt[];
+  createdAt: string;
 };

@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.5.0 - Super Admin Console + Cross-Tenant Analytics
+
+### Backend
+
+- Added read-only Super Admin endpoints for overview, tenant list, and tenant detail.
+- Added platform overview analytics for tenant, member, attendance, failed attempt, and subscription counts.
+- Added cross-tenant tenant list with search, type, status, subscription status, and page/size filters.
+- Added tenant detail summary with member counts, attendance today, failed attempts today, current subscription, and recent failed attempts.
+- Restricted `/api/v1/super-admin/**` data access to users with active `SUPER_ADMIN` membership.
+- Added SUPER_ADMIN-only access guard and integration tests.
+- Added audit log entries for Super Admin overview, tenant list, and tenant detail reads without sensitive metadata.
+- Added integration tests for SUPER_ADMIN access, non-SUPER_ADMIN 403, tenant list/detail summaries, and sensitive field exclusions.
+- No tenant edit/delete/impersonation yet.
+- No payment gateway, real face recognition, production notification gateway, or device binding.
+
+### Web Dashboard
+
+- Added Super Admin navigation and pages for `/super-admin`, `/super-admin/tenants`, and `/super-admin/tenants/[tenantId]`.
+- Added read-only overview cards, tenant type chart, subscription status chart, tenant table filters, tenant detail profile, and recent failed attempts.
+- Added friendly 403 state for users without Super Admin access.
+- Added Super Admin screenshots for overview, tenant list, and tenant detail.
+
+### Documentation
+
+- Documented Super Admin Console as v0.5.0 and clarified that it is read-only and SUPER_ADMIN-only.
+
 ## v0.4.0 - Security & Tenant Hardening
 
 ### Backend

@@ -13,4 +13,9 @@ export const endpoints = {
   locations: (tenantId: string) => `/tenants/${tenantId}/locations`,
   location: (tenantId: string, locationId: string) => `/tenants/${tenantId}/locations/${locationId}`,
   subscription: (tenantId: string) => `/tenants/${tenantId}/subscriptions/current`,
+  superAdmin: {
+    overview: "/super-admin/overview",
+    tenants: "/super-admin/tenants",
+    tenant: (tenantId: string) => `/super-admin/tenants/${tenantId}`,
+  },
 };

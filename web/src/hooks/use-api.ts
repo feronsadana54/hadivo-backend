@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/services";
 import { defaultTenantId } from "@/lib/config/env";
-import type { AttendanceSettings, Location } from "@/types/api";
+import type { AttendanceSettings, Location, SuperAdminTenantFilters } from "@/types/api";
 
 export function useTenant() {
   return useQuery({
@@ -84,5 +84,27 @@ export function useSubscription() {
   return useQuery({
     queryKey: ["subscription", defaultTenantId],
     queryFn: () => api.getSubscription(defaultTenantId),
+  });
+}
+
+export function useSuperAdminOverview() {
+  return useQuery({
+    queryKey: ["super-admin", "overview"],
+    queryFn: () => api.getSuperAdminOverview(),
+  });
+}
+
+export function useSuperAdminTenants(filters: SuperAdminTenantFilters) {
+  return useQuery({
+    queryKey: ["super-admin", "tenants", filters],
+    queryFn: () => api.getSuperAdminTenants(filters),
+  });
+}
+
+export function useSuperAdminTenantDetail(tenantId: string) {
+  return useQuery({
+    queryKey: ["super-admin", "tenants", tenantId],
+    queryFn: () => api.getSuperAdminTenantDetail(tenantId),
+    enabled: Boolean(tenantId),
   });
 }

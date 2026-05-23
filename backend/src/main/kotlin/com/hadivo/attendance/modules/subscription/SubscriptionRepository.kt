@@ -10,4 +10,6 @@ interface SubscriptionRepository : JpaRepository<Subscription, UUID> {
         tenantId: UUID,
         status: SubscriptionStatus,
     ): Subscription?
+    fun findFirstByTenantIdOrderByStartedAtDesc(tenantId: UUID): Subscription?
+    fun countByStatus(status: SubscriptionStatus): Long
 }

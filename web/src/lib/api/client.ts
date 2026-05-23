@@ -51,6 +51,10 @@ export function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Terjadi kesalahan. Silakan coba lagi.";
 }
 
+export function isForbiddenError(error: unknown) {
+  return axios.isAxiosError<ApiResponse<unknown>>(error) && error.response?.status === 403;
+}
+
 function errorMessageByCode(code: string) {
   const messages: Record<string, string> = {
     OUT_OF_RADIUS: "User berada di luar area absensi.",

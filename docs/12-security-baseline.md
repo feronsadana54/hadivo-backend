@@ -1,12 +1,12 @@
 # Security baseline
 
-Dokumen ini merangkum baseline keamanan Hadivo setelah fase Security & Tenant Hardening v0.4.0.
+Dokumen ini merangkum baseline keamanan Hadivo setelah fase Security & Tenant Hardening v0.4.0 dan Super Admin Console v0.5.0.
 
 ## Tenant isolation
 
 Endpoint tenant-scoped memakai `tenantId` dari path dan harus memvalidasi membership aktif user melalui `MembershipGuard` atau service yang setara. Data tenant tidak boleh diambil hanya berdasarkan input request tanpa cek akses tenant.
 
-Endpoint yang dijaga termasuk tenant profile, memberships, parent links, subscriptions, locations, attendance settings, attendance, attendance attempts, dan reports. SUPER_ADMIN sudah ada sebagai role, tetapi console super admin dan endpoint lintas tenant khusus belum dibuat.
+Endpoint yang dijaga termasuk tenant profile, memberships, parent links, subscriptions, locations, attendance settings, attendance, attendance attempts, dan reports. Endpoint lintas tenant `/api/v1/super-admin/**` hanya untuk role `SUPER_ADMIN` dan tidak bergantung pada membership tenant yang sedang dibuka.
 
 ## Role-based access
 
@@ -16,7 +16,7 @@ Hak akses tetap mengikuti role yang sudah ada:
 - `MANAGER` dan `TEACHER` dapat melihat data tenant sesuai endpoint yang didukung.
 - `EMPLOYEE` dan `STUDENT` fokus ke attendance diri sendiri.
 - `PARENT` hanya untuk relasi anak melalui parent-student links.
-- `SUPER_ADMIN` disiapkan untuk platform-level access, tetapi belum ada console khusus.
+- `SUPER_ADMIN` memiliki akses read-only ke Super Admin Console dan analytics lintas tenant.
 
 ## Login protection
 
@@ -55,7 +55,7 @@ Refresh token disimpan sebagai SHA-256 hash, bukan token mentah. Refresh token m
 
 ## Audit log
 
-Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, subscription update, dan CSV export report.
+Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, subscription update, CSV export report, dan read access Super Admin Console.
 
 Audit log menyimpan data secukupnya:
 

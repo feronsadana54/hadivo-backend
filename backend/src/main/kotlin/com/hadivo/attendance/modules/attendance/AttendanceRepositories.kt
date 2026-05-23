@@ -9,6 +9,7 @@ import java.util.UUID
 @Repository
 interface AttendanceRecordRepository : JpaRepository<AttendanceRecord, UUID> {
     fun findByTenantIdAndUserIdAndDate(tenantId: UUID, userId: UUID, date: LocalDate): AttendanceRecord?
+    fun countByTenantIdAndDate(tenantId: UUID, date: LocalDate): Long
     fun findAllByTenantIdAndUserIdAndDateBetweenOrderByDateDesc(
         tenantId: UUID,
         userId: UUID,
@@ -21,6 +22,11 @@ interface AttendanceRecordRepository : JpaRepository<AttendanceRecord, UUID> {
 
 @Repository
 interface AttendanceAttemptRepository : JpaRepository<AttendanceAttempt, UUID> {
+    fun countByTenantIdAndCreatedAtBetween(
+        tenantId: UUID,
+        from: Instant,
+        to: Instant,
+    ): Long
     fun findAllByTenantIdAndCreatedAtBetweenOrderByCreatedAtDesc(
         tenantId: UUID,
         from: Instant,
@@ -32,4 +38,5 @@ interface AttendanceAttemptRepository : JpaRepository<AttendanceAttempt, UUID> {
         from: Instant,
         to: Instant,
     ): List<AttendanceAttempt>
+    fun findTop10ByTenantIdOrderByCreatedAtDesc(tenantId: UUID): List<AttendanceAttempt>
 }

@@ -19,7 +19,10 @@ async function ensureOutputDir() {
 async function waitForDashboardData(page) {
   await page.waitForLoadState("networkidle");
   await page.waitForFunction(
-    () => !document.body.innerText.includes("Preparing dashboard") && !document.body.innerText.includes("Loading "),
+    () =>
+      !document.body.innerText.includes("Preparing dashboard") &&
+      !document.body.innerText.includes("Loading ") &&
+      !document.body.innerText.includes("Memuat "),
     null,
     { timeout: 30000 },
   );
@@ -59,8 +62,40 @@ async function login(page) {
 async function capturePage(page, route, filename) {
   await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
   await waitForDashboardData(page);
+  await assertNoHorizontalOverflow(page, route);
   await prepareScreenshot(page);
   await page.screenshot({ path: path.join(outputDir, filename), fullPage: true });
+}
+
+async function captureSuperAdminTenants(page) {
+  await page.goto(`${baseUrl}/super-admin/tenants`, { waitUntil: "networkidle" });
+  await waitForDashboardData(page);
+  await page.fill("#tenant-search", "Hadivo Demo");
+  await page.locator("tbody").getByText("Hadivo Demo School").waitFor({ timeout: 30000 });
+  await assertNoHorizontalOverflow(page, "Super Admin tenants");
+  await prepareScreenshot(page);
+  await page.screenshot({ path: path.join(outputDir, "web-super-admin-tenants.png"), fullPage: true });
+}
+
+async function assertSuperAdminResponsive(page) {
+  const routes = [
+    "/super-admin",
+    "/super-admin/tenants",
+    "/super-admin/tenants/11111111-1111-1111-1111-111111111111",
+  ];
+  const viewports = [
+    { name: "mobile", width: 390, height: 844 },
+    { name: "tablet", width: 768, height: 1024 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    for (const route of routes) {
+      await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
+      await waitForDashboardData(page);
+      await assertNoHorizontalOverflow(page, `Super Admin ${route} ${viewport.name}`);
+    }
+  }
 }
 
 async function captureResponsive(page) {
@@ -97,7 +132,15 @@ async function main() {
     await capturePage(page, "/settings", "web-settings.png");
     await capturePage(page, "/locations", "web-locations.png");
     await capturePage(page, "/subscription", "web-subscription.png");
+    await capturePage(page, "/super-admin", "web-super-admin.png");
+    await captureSuperAdminTenants(page);
+    await capturePage(
+      page,
+      "/super-admin/tenants/11111111-1111-1111-1111-111111111111",
+      "web-super-admin-tenant-detail.png",
+    );
     await captureResponsive(page);
+    await assertSuperAdminResponsive(page);
   } finally {
     await browser.close();
   }

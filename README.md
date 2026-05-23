@@ -4,7 +4,7 @@
 [![Web CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/web-ci.yml)
 [![Mobile CI](https://github.com/feronsadana54/hadivo-backend/actions/workflows/mobile-ci.yml/badge.svg)](https://github.com/feronsadana54/hadivo-backend/actions/workflows/mobile-ci.yml)
 
-Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot, Web Dashboard Next.js, dan Flutter Mobile Attendance App MVP untuk kebutuhan portfolio SaaS attendance system.
+Hadivo adalah sistem absensi multi-tenant berbasis lokasi untuk sekolah dan perusahaan. Project ini berisi backend Kotlin Spring Boot, Web Dashboard Next.js, Flutter Mobile Attendance App MVP, dan Super Admin Console read-only untuk kebutuhan portfolio SaaS attendance system.
 
 Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobile app MVP untuk user attendance.
 
@@ -25,7 +25,8 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Geolocation attendance validation dengan Haversine radius check.
 - Attendance attempts audit untuk percobaan gagal seperti `OUT_OF_RADIUS`, `FACE_MISMATCH`, dan `DUPLICATE_CLOCK_IN`.
 - Role-based dashboard untuk admin tenant, manager, teacher, employee, student, dan parent.
-- Web dashboard untuk login, summary, attendance, attempts, members, settings, locations, dan subscription.
+- Web dashboard untuk login, summary, attendance, attempts, members, settings, locations, subscription, dan Super Admin Console.
+- Super Admin Console v0.5.0 untuk memantau tenant lintas platform secara read-only.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
@@ -74,6 +75,8 @@ npm run dev
 ```
 
 Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
+
+Super Admin Console tersedia di `/super-admin`. Fitur ini read-only untuk platform owner, hanya boleh diakses role `SUPER_ADMIN`, dan menampilkan overview lintas tenant, daftar tenant, detail tenant, ringkasan member, absensi hari ini, failed attempts hari ini, serta status subscription. Console ini tidak menyediakan edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email gateway, atau device binding.
 
 Halaman Locations menyediakan map picker berbasis Leaflet + OpenStreetMap. Admin dapat klik peta untuk mengisi latitude/longitude, melihat marker, dan melihat circle radius sebelum menyimpan. Admin juga dapat mencari alamat atau nama tempat memakai Nominatim OpenStreetMap lewat tombol Cari Lokasi atau tombol Enter; fitur ini bukan live autocomplete. Fitur ini tidak membutuhkan Google Maps API key, billing, atau akun pihak ketiga. Untuk traffic production yang besar, gunakan tile/geocoding provider resmi/berbayar atau self-hosted tile/Nominatim yang sesuai dengan policy OpenStreetMap.
 
@@ -140,7 +143,7 @@ Detail baseline tersedia di [`docs/12-security-baseline.md`](docs/12-security-ba
 
 ## Release Notes
 
-Release notes untuk `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.4.0` menambahkan security baseline untuk tenant isolation, login protection, audit coverage, refresh token tests, dan security headers tanpa perubahan schema backend atau UI frontend.
+Release notes untuk `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.5.0` menambahkan Super Admin Console read-only dan endpoint analytics lintas tenant khusus `SUPER_ADMIN`.
 
 ## Screenshots
 
@@ -153,6 +156,9 @@ Screenshot berikut diambil dari aplikasi web yang berjalan lokal.
 ![Hadivo settings](docs/images/web-settings.png)
 ![Hadivo locations](docs/images/web-locations.png)
 ![Hadivo subscription](docs/images/web-subscription.png)
+![Hadivo super admin overview](docs/images/web-super-admin.png)
+![Hadivo super admin tenants](docs/images/web-super-admin-tenants.png)
+![Hadivo super admin tenant detail](docs/images/web-super-admin-tenant-detail.png)
 
 Responsive dashboard:
 
@@ -180,10 +186,23 @@ Swagger and Postman screenshots can be added after manual capture.
 - Web dashboard admin tenant untuk login, summary, attendance, attempts, members, settings, locations, dan subscription
 - Flutter mobile attendance MVP untuk employee/student demo
 
+## Fitur v0.5.0
+
+- Endpoint `GET /api/v1/super-admin/overview`, `GET /api/v1/super-admin/tenants`, dan `GET /api/v1/super-admin/tenants/{tenantId}` khusus role `SUPER_ADMIN`.
+- Overview lintas tenant: total tenant, tenant aktif, company/school, total member, attendance hari ini, failed attempts hari ini, dan subscription aktif/expired.
+- Web Super Admin Console di `/super-admin`, `/super-admin/tenants`, dan `/super-admin/tenants/[tenantId]`.
+- Daftar tenant dengan filter search, type, dan subscription status.
+- Detail tenant read-only dengan current subscription dan failed attempts terbaru.
+- Tidak ada edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email gateway, atau device binding.
+
 ## Known limitation (Fase 1)
 
+- Super Admin Console v0.5.0 masih read-only.
+- Belum ada edit/delete tenant dari Super Admin.
+- Belum ada impersonation user.
+- Belum ada billing/payment detail di Super Admin; subscription masih manual.
+- Analytics Super Admin masih basic, berupa ringkasan count dan daftar tenant.
 - Face verification masih demo — hanya cek panjang base64. Interface `FaceVerifier` sudah siap diganti.
-- SUPER_ADMIN sudah ada di enum/seed, tapi endpoint lintas tenant belum diimplementasi.
 - Tidak ada gateway notifikasi nyata (FCM/email/SMS). Hanya tabel `notifications`.
 - Subscription dibuat manual, belum terintegrasi dengan payment gateway.
 - Tidak ada WebSocket atau realtime push.
@@ -199,7 +218,6 @@ Swagger and Postman screenshots can be added after manual capture.
 
 | Fase | Lingkup |
 | --- | --- |
-| 2 | SUPER_ADMIN console + cross-tenant analytics |
 | 2 | Real face recognition (ML / embedding) |
 | 2 | Gateway notifikasi (FCM, email) |
 | 2 | Payment gateway untuk subscription |

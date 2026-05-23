@@ -10,8 +10,10 @@ import java.util.UUID
 interface MembershipRepository : JpaRepository<Membership, UUID> {
     fun findByTenantIdAndUserId(tenantId: UUID, userId: UUID): Membership?
     fun findAllByTenantId(tenantId: UUID): List<Membership>
+    fun countByTenantId(tenantId: UUID): Long
     fun countByTenantIdAndActive(tenantId: UUID, active: Boolean): Long
     fun existsByTenantIdAndUserIdAndActive(tenantId: UUID, userId: UUID, active: Boolean): Boolean
+    fun existsByUserIdAndRoleAndActive(userId: UUID, role: Role, active: Boolean): Boolean
 
     @Query(
         """

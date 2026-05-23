@@ -68,6 +68,65 @@ Response gagal:
 Endpoint export attendance mengembalikan `text/csv` dengan attachment filename
 `hadivo-attendance-report-{from}-to-{to}.csv`. Range MVP maksimal 31 hari.
 
+### Super Admin
+
+Endpoint berikut hanya boleh diakses user dengan role `SUPER_ADMIN`. Fitur ini read-only untuk platform owner dan tidak menyediakan edit/delete tenant atau impersonation.
+
+- `GET /super-admin/overview`
+- `GET /super-admin/tenants?type=COMPANY|SCHOOL&status=ACTIVE|INACTIVE&subscriptionStatus=ACTIVE|EXPIRED|CANCELLED&search=&page=&size=`
+- `GET /super-admin/tenants/{tenantId}`
+
+`/super-admin/overview` mengembalikan ringkasan lintas tenant:
+
+```json
+{
+  "data": {
+    "totalTenants": 1,
+    "activeTenants": 1,
+    "companyTenants": 0,
+    "schoolTenants": 1,
+    "totalMembers": 3,
+    "attendanceToday": 2,
+    "failedAttemptsToday": 1,
+    "activeSubscriptions": 1,
+    "expiredSubscriptions": 0,
+    "generatedAt": "2026-05-23T10:00:00Z"
+  }
+}
+```
+
+`/super-admin/tenants` memakai format pagination `PageResponse`:
+
+```json
+{
+  "data": {
+    "items": [
+      {
+        "tenantId": "11111111-1111-1111-1111-111111111111",
+        "tenantName": "Hadivo Demo School",
+        "tenantType": "SCHOOL",
+        "active": true,
+        "status": "ACTIVE",
+        "memberCount": 3,
+        "attendanceToday": 2,
+        "failedAttemptsToday": 1,
+        "subscriptionPlan": "FREE",
+        "subscriptionStatus": "ACTIVE",
+        "createdAt": "2026-05-23T10:00:00Z"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalItems": 1,
+    "totalPages": 1
+  }
+}
+```
+
+Response Super Admin tidak mengekspos `passwordHash`, access token, refresh token, JWT secret, atau secret lain.
+
+Limitasi v0.5.0: Super Admin masih read-only, belum ada endpoint edit/delete tenant, belum ada impersonation, belum ada billing/payment detail, dan analytics masih basic.
+
 ## Body clock-in / clock-out
 
 ```json

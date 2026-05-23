@@ -10,6 +10,7 @@ import {
   MapPin,
   Settings,
   ShieldAlert,
+  ShieldCheck,
   Users,
   WalletCards,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/settings", label: "Pengaturan", icon: Settings },
   { href: "/locations", label: "Lokasi", icon: MapPin },
   { href: "/subscription", label: "Paket", icon: WalletCards },
+  { href: "/super-admin", label: "Super Admin", icon: ShieldCheck },
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -61,7 +63,7 @@ function DashboardFrame({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="space-y-1 p-3">
           {navItems.map((item) => {
-            const active = pathname === item.href;
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link
@@ -92,7 +94,7 @@ function DashboardFrame({ children }: { children: React.ReactNode }) {
         </header>
         <nav className="sticky top-16 z-10 flex gap-2 overflow-x-auto border-b bg-background px-4 py-3 lg:hidden">
           {navItems.map((item) => {
-            const active = pathname === item.href;
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link

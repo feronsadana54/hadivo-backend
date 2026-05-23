@@ -7,4 +7,6 @@ import java.util.UUID
 @Repository
 interface TenantRepository : JpaRepository<Tenant, UUID> {
     fun existsBySlug(slug: String): Boolean
+    fun countByActive(active: Boolean): Long
+    fun countByMode(mode: TenantMode): Long
 }

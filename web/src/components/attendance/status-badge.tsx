@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import type { AttendanceStatus, AttemptReason, Role, SubscriptionStatus } from "@/types/api";
+import type { AttendanceStatus, AttemptReason, Role, SubscriptionStatus, TenantMode, TenantStatus } from "@/types/api";
 
 export function AttendanceStatusBadge({ status }: { status: AttendanceStatus }) {
   const variant = status === "ON_TIME" || status === "COMPLETED" ? "success" : status === "LATE" ? "warning" : "info";
@@ -22,6 +22,14 @@ export function ActiveBadge({ active }: { active: boolean }) {
 
 export function SubscriptionStatusBadge({ status }: { status: SubscriptionStatus }) {
   return <Badge variant={status === "ACTIVE" ? "success" : "warning"}>{subscriptionStatusLabel(status)}</Badge>;
+}
+
+export function TenantStatusBadge({ status }: { status: TenantStatus }) {
+  return <Badge variant={status === "ACTIVE" ? "success" : "muted"}>{status === "ACTIVE" ? "Aktif" : "Nonaktif"}</Badge>;
+}
+
+export function TenantTypeBadge({ type }: { type: TenantMode }) {
+  return <Badge variant={type === "SCHOOL" ? "info" : "default"}>{type === "SCHOOL" ? "Sekolah" : "Perusahaan"}</Badge>;
 }
 
 export function attendanceStatusLabel(status: AttendanceStatus) {
@@ -65,7 +73,7 @@ export function subscriptionStatusLabel(status: SubscriptionStatus) {
   const labels: Record<SubscriptionStatus, string> = {
     ACTIVE: "Aktif",
     EXPIRED: "Kedaluwarsa",
-    CANCELED: "Dibatalkan",
+    CANCELLED: "Dibatalkan",
   };
   return labels[status];
 }

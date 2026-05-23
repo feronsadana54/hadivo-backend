@@ -7,6 +7,11 @@ import type {
   Location,
   Membership,
   MonthlyReport,
+  PageResponse,
+  SuperAdminOverview,
+  SuperAdminTenantDetail,
+  SuperAdminTenantFilters,
+  SuperAdminTenantListItem,
   Subscription,
   Tenant,
   TokenPair,
@@ -50,6 +55,17 @@ export const api = {
   },
   async getSubscription(tenantId: string) {
     return unwrap<Subscription>(await apiClient.get(endpoints.subscription(tenantId)));
+  },
+  async getSuperAdminOverview() {
+    return unwrap<SuperAdminOverview>(await apiClient.get(endpoints.superAdmin.overview));
+  },
+  async getSuperAdminTenants(filters: SuperAdminTenantFilters) {
+    return unwrap<PageResponse<SuperAdminTenantListItem>>(
+      await apiClient.get(endpoints.superAdmin.tenants, { params: filters }),
+    );
+  },
+  async getSuperAdminTenantDetail(tenantId: string) {
+    return unwrap<SuperAdminTenantDetail>(await apiClient.get(endpoints.superAdmin.tenant(tenantId)));
   },
 };
 
