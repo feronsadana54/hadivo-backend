@@ -66,6 +66,15 @@ hadivo:
         enabled: ${FCM_ENABLED:false}
         project-id: ${FCM_PROJECT_ID:}
         service-account-path: ${FCM_SERVICE_ACCOUNT_PATH:}
+  payment:
+    provider: ${HADIVO_PAYMENT_PROVIDER:mock}
+    midtrans:
+      enabled: ${HADIVO_PAYMENT_MIDTRANS_ENABLED:false}
+      environment: ${HADIVO_PAYMENT_MIDTRANS_ENVIRONMENT:sandbox}
+      server-key: ${MIDTRANS_SERVER_KEY:}
+      client-key: ${MIDTRANS_CLIENT_KEY:}
+      snap-base-url: ${MIDTRANS_SNAP_BASE_URL:https://app.sandbox.midtrans.com}
+      api-base-url: ${MIDTRANS_API_BASE_URL:https://api.sandbox.midtrans.com}
   seed:
     super-admin-email: ${SEED_SUPER_ADMIN_EMAIL:superadmin@hadivo.local}
     super-admin-password: ${SEED_SUPER_ADMIN_PASSWORD:ChangeMe123!}

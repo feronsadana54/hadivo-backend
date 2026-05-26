@@ -24,6 +24,9 @@ export type TenantMode = "SCHOOL" | "COMPANY";
 export type TenantStatus = "ACTIVE" | "INACTIVE";
 export type SubscriptionPlan = "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
 export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
+export type BillingPeriod = "MONTHLY" | "YEARLY";
+export type PaymentProvider = "MOCK" | "MIDTRANS";
+export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "CANCELLED";
 export type NotificationEventType =
   | "CLOCK_IN_SUCCESS"
   | "CLOCK_OUT_SUCCESS"
@@ -175,6 +178,37 @@ export type Subscription = {
   startedAt: string;
   expiresAt?: string | null;
   status: SubscriptionStatus;
+};
+
+export type SubscriptionPackage = {
+  id: string;
+  code: string;
+  name: string;
+  plan: SubscriptionPlan;
+  billingPeriod: BillingPeriod;
+  grossAmount: number;
+  currency: string;
+  durationMonths: number;
+};
+
+export type CreateSubscriptionPaymentRequest = {
+  packageId: string;
+  billingPeriod?: BillingPeriod;
+  customerName?: string;
+  customerEmail?: string;
+};
+
+export type SubscriptionPayment = {
+  paymentId: string;
+  provider: PaymentProvider;
+  providerOrderId: string;
+  status: PaymentStatus;
+  grossAmount: number;
+  currency: string;
+  paymentUrl?: string | null;
+  paidAt?: string | null;
+  expiredAt?: string | null;
+  createdAt: string;
 };
 
 export type SuperAdminOverview = {

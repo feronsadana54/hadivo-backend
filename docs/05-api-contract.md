@@ -45,6 +45,75 @@ Response gagal:
 - `POST /tenants/{tenantId}/subscriptions`
 - `GET /tenants/{tenantId}/subscriptions/current`
 
+### Subscription payments
+
+Endpoint payment subscription tenant-scoped hanya boleh diakses `TENANT_ADMIN` atau `SUPER_ADMIN` sesuai guard tenant. `EMPLOYEE`, `STUDENT`, dan `PARENT` tidak boleh membuat atau melihat payment tenant.
+
+- `GET /tenants/{tenantId}/subscription-packages`
+- `POST /tenants/{tenantId}/subscription-payments`
+- `GET /tenants/{tenantId}/subscription-payments`
+- `GET /tenants/{tenantId}/subscription-payments/{paymentId}`
+
+Request create payment:
+
+```json
+{
+  "packageId": "22222222-2222-2222-2222-222222222201",
+  "billingPeriod": "MONTHLY",
+  "customerName": "Admin Tenant",
+  "customerEmail": "admin@example.com"
+}
+```
+
+Amount selalu berasal dari `subscription_packages` di backend, bukan dari frontend.
+
+Response payment:
+
+```json
+{
+  "data": {
+    "paymentId": "2d2b4cb1-3b1a-4b4d-9e25-b50d2b17a8ab",
+    "provider": "MOCK",
+    "providerOrderId": "HADIVO-20260526-11111111-ABCDEF1234",
+    "status": "PENDING",
+    "grossAmount": 99000.00,
+    "currency": "IDR",
+    "paymentUrl": "http://localhost:8080/mock-payments/HADIVO-20260526-11111111-ABCDEF1234",
+    "paidAt": null,
+    "expiredAt": "2026-05-27T10:00:00Z",
+    "createdAt": "2026-05-26T10:00:00Z"
+  }
+}
+```
+
+Status payment:
+
+- `PENDING`
+- `PAID`
+- `FAILED`
+- `EXPIRED`
+- `CANCELLED`
+
+List/detail payment tidak mengekspos `rawWebhookJson`, server key, client key, signature key, atau secret lain.
+
+Webhook Midtrans:
+
+- `POST /payments/webhooks/midtrans`
+
+Endpoint webhook public dan tidak membutuhkan JWT, tetapi harus lolos verifikasi signature Midtrans: `SHA512(order_id + status_code + gross_amount + server_key)`. Backend juga mencocokkan `order_id` dan `gross_amount` dengan `payment_records`.
+
+Mapping status Midtrans:
+
+- `settlement` → `PAID`
+- `capture` → `PAID` hanya jika `fraud_status` kosong atau `accept`
+- `pending` → `PENDING`
+- `expire` → `EXPIRED`
+- `cancel` → `CANCELLED`
+- `deny` / `failure` → `FAILED`
+- status tidak dikenal → `FAILED`
+
+Webhook bersifat idempotent. Webhook `PAID` berulang tidak membuat subscription dobel, dan webhook terlambat tidak boleh menurunkan status final `PAID`.
+
 ### Location & settings
 
 - `POST /tenants/{tenantId}/locations`

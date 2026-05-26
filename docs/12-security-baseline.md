@@ -6,7 +6,7 @@ Dokumen ini merangkum baseline keamanan Hadivo setelah fase Security & Tenant Ha
 
 Endpoint tenant-scoped memakai `tenantId` dari path dan harus memvalidasi membership aktif user melalui `MembershipGuard` atau service yang setara. Data tenant tidak boleh diambil hanya berdasarkan input request tanpa cek akses tenant.
 
-Endpoint yang dijaga termasuk tenant profile, memberships, member devices, parent links, subscriptions, locations, attendance settings, attendance, attendance attempts, notification deliveries, dan reports. Endpoint lintas tenant `/api/v1/super-admin/**` hanya untuk role `SUPER_ADMIN` dan tidak bergantung pada membership tenant yang sedang dibuka.
+Endpoint yang dijaga termasuk tenant profile, memberships, member devices, parent links, subscriptions, subscription payments, locations, attendance settings, attendance, attendance attempts, notification deliveries, dan reports. Endpoint lintas tenant `/api/v1/super-admin/**` hanya untuk role `SUPER_ADMIN` dan tidak bergantung pada membership tenant yang sedang dibuka.
 
 ## Role-based access
 
@@ -67,11 +67,13 @@ Mobile app memakai random UUID yang disimpan di secure storage sebagai device ID
 
 ## Audit log
 
-Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, device binding, subscription update, CSV/Excel/PDF export report, dan read access Super Admin Console.
+Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, device binding, subscription update, subscription payment flow, CSV/Excel/PDF export report, dan read access Super Admin Console.
 
 Notification gateway mencatat delivery log terpisah di `notification_delivery_logs` dan audit action `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, serta `NOTIFICATION_FAILED`. Metadata audit dan metadata delivery tidak boleh menyimpan token, secret, API key, password, atau credential provider.
 
 Resend API key, Firebase service account JSON, `google-services.json`, `GoogleService-Info.plist`, dan FCM token real tidak boleh di-commit. Delivery log memakai masked destination untuk email dan FCM token.
+
+Midtrans server key dan client key tidak boleh di-commit, tidak boleh di-log, tidak boleh disimpan di database, dan tidak boleh diekspos ke frontend. Payment provider default adalah `mock`, sehingga CI dan local development tidak membutuhkan secret payment.
 
 Audit log menyimpan data secukupnya:
 
@@ -87,6 +89,8 @@ Metadata audit tidak boleh menyimpan password, access token, refresh token, JWT,
 
 Export attendance mencatat audit action `REPORT_CSV_EXPORTED`, `REPORT_EXCEL_EXPORTED`, dan `REPORT_PDF_EXPORTED` dengan metadata periode `from` dan `to` saja.
 
+Payment foundation mencatat audit action `PAYMENT_CREATED`, `PAYMENT_WEBHOOK_RECEIVED`, `PAYMENT_STATUS_UPDATED`, `SUBSCRIPTION_ACTIVATED`, dan `PAYMENT_WEBHOOK_IGNORED`. Webhook Midtrans memverifikasi signature dan amount sebelum status payment dipakai untuk aktivasi subscription. Raw webhook yang disimpan harus sanitized dan tidak diekspos di endpoint list/detail payment.
+
 ## Security headers and errors
 
 Backend menambahkan header dasar:
@@ -100,4 +104,4 @@ Content Security Policy belum dipaksa secara ketat agar Swagger UI tetap dapat d
 
 ## Future sensitive features
 
-Real face recognition, payment gateway, production-grade device attestation, retry scheduler notification, notification preference center, dan token pruning production belum aktif. Saat fitur tersebut ditambahkan, perlu review tambahan untuk privacy, consent, data retention, provider security, secret management, dan audit coverage.
+Real face recognition, refund, recurring billing otomatis kompleks, production-grade device attestation, retry scheduler notification, notification preference center, dan token pruning production belum aktif. Saat fitur tersebut ditambahkan, perlu review tambahan untuk privacy, consent, data retention, provider security, secret management, dan audit coverage.

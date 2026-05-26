@@ -7,6 +7,7 @@ data class AppProperties(
     val jwt: Jwt,
     val messaging: Messaging,
     val notification: Notification,
+    val payment: Payment,
     val seed: Seed,
 ) {
     data class Jwt(
@@ -54,6 +55,20 @@ data class AppProperties(
                 val serviceAccountPath: String,
             )
         }
+    }
+
+    data class Payment(
+        val provider: String,
+        val midtrans: Midtrans,
+    ) {
+        data class Midtrans(
+            val enabled: Boolean,
+            val environment: String,
+            val serverKey: String,
+            val clientKey: String,
+            val snapBaseUrl: String,
+            val apiBaseUrl: String,
+        )
     }
 
     data class Seed(

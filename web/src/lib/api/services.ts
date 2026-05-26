@@ -10,11 +10,14 @@ import type {
   NotificationDeliveryFilters,
   NotificationDeliveryLog,
   PageResponse,
+  CreateSubscriptionPaymentRequest,
   SuperAdminOverview,
   SuperAdminTenantDetail,
   SuperAdminTenantFilters,
   SuperAdminTenantListItem,
   Subscription,
+  SubscriptionPackage,
+  SubscriptionPayment,
   Tenant,
   TokenPair,
   UserDevice,
@@ -69,6 +72,15 @@ export const api = {
   },
   async getSubscription(tenantId: string) {
     return unwrap<Subscription>(await apiClient.get(endpoints.subscription(tenantId)));
+  },
+  async getSubscriptionPackages(tenantId: string) {
+    return unwrap<SubscriptionPackage[]>(await apiClient.get(endpoints.subscriptionPackages(tenantId)));
+  },
+  async getSubscriptionPayments(tenantId: string) {
+    return unwrap<SubscriptionPayment[]>(await apiClient.get(endpoints.subscriptionPayments(tenantId)));
+  },
+  async createSubscriptionPayment(tenantId: string, payload: CreateSubscriptionPaymentRequest) {
+    return unwrap<SubscriptionPayment>(await apiClient.post(endpoints.subscriptionPayments(tenantId), payload));
   },
   async getSuperAdminOverview() {
     return unwrap<SuperAdminOverview>(await apiClient.get(endpoints.superAdmin.overview));

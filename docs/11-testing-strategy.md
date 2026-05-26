@@ -67,6 +67,22 @@ Test export attendance mengecek:
 - range lebih dari 31 hari ditolak;
 - cross-tenant access untuk export ditolak.
 
+## Integration test — payment foundation
+
+Test payment v1.0.0 mengecek:
+
+- `TENANT_ADMIN` dapat membuat mock payment tanpa Midtrans secret;
+- `EMPLOYEE`, `STUDENT`, dan `PARENT` tidak boleh membuat payment tenant;
+- cross-tenant create/list/detail payment ditolak;
+- mock payment mengembalikan status `PENDING` dan `paymentUrl`;
+- webhook Midtrans `PAID` mengaktifkan subscription dari backend;
+- duplicate webhook `PAID` idempotent dan tidak membuat subscription dobel;
+- webhook failed/expired tidak mengaktifkan subscription;
+- webhook terlambat tidak dapat menurunkan status `PAID`;
+- invalid signature dan amount mismatch ditolak;
+- raw webhook JSON tidak diekspos di list/detail response;
+- audit log dibuat untuk create, webhook received, status update, subscription activated, dan ignored webhook.
+
 ## Cara menjalankan
 
 ```bash

@@ -30,6 +30,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Device Binding v0.6.0 untuk membatasi absensi user ke satu trusted device per tenant, dengan reset perangkat oleh admin.
 - Notification Gateway v0.8.0 dengan RabbitMQ async flow, delivery log, in-app delivery, default mock/log-only provider, dan optional Resend/FCM provider.
 - Advanced export v0.9.0 untuk laporan attendance dalam format CSV, Excel, dan PDF dengan batas range MVP 31 hari.
+- Subscription Payment Foundation v1.0.0 dengan payment provider mock default, optional Midtrans Snap, payment record, webhook idempotent, dan aktivasi subscription dari backend.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
@@ -79,13 +80,15 @@ npm run dev
 
 Web dashboard tersedia di <http://localhost:3000>. Login default: `superadmin@hadivo.local` / `ChangeMe123!`.
 
-Super Admin Console tersedia di `/super-admin`. Fitur ini read-only untuk platform owner, hanya boleh diakses role `SUPER_ADMIN`, dan menampilkan overview lintas tenant, daftar tenant, detail tenant, ringkasan member, absensi hari ini, failed attempts hari ini, serta status subscription. Console ini tidak menyediakan edit/delete tenant, impersonation, payment gateway, face recognition asli, FCM/email production, atau device management dari Super Admin.
+Super Admin Console tersedia di `/super-admin`. Fitur ini read-only untuk platform owner, hanya boleh diakses role `SUPER_ADMIN`, dan menampilkan overview lintas tenant, daftar tenant, detail tenant, ringkasan member, absensi hari ini, failed attempts hari ini, serta status subscription. Console ini tidak menyediakan edit/delete tenant, impersonation, face recognition asli, FCM/email production, atau device management dari Super Admin.
 
 Device Binding v0.6.0 mendaftarkan perangkat absensi pertama user sebagai trusted device untuk tenant tersebut. Clock-in/clock-out dari perangkat berbeda akan ditolak dengan pesan agar user menghubungi admin. Admin tenant dapat reset perangkat dari halaman Members agar user bisa mendaftarkan perangkat baru pada absensi berikutnya. Mobile app memakai random device UUID yang disimpan di secure storage, bukan hardware identifier mentah.
 
 Notification Gateway memproses event absensi lewat RabbitMQ queue `hadivo.notification.events`, menyimpan delivery log tenant-scoped, dan memakai provider mock/log-only secara default. v0.8.0 menambahkan provider optional Resend untuk email dan Firebase Cloud Messaging untuk push notification. Jika konfigurasi provider real belum lengkap, sistem tetap berjalan memakai mock/log-only provider. Halaman `/notifications` menampilkan delivery log secara read-only untuk admin.
 
 Halaman Attendance web dapat mengunduh laporan attendance dalam format CSV, Excel, dan PDF. CSV tetap cocok untuk integrasi sederhana, Excel ditujukan untuk analisis dan operasional admin, sedangkan PDF ditujukan untuk laporan formal. Untuk MVP, export attendance dibatasi maksimal 31 hari per request dan belum memakai streaming besar atau penyimpanan file permanen.
+
+Halaman Subscription web dapat membuat payment request dari package catalog backend dan menampilkan riwayat payment tenant. Provider default adalah `mock` agar local dev dan CI tidak membutuhkan API key. Midtrans Snap bersifat optional; subscription hanya aktif setelah backend menerima webhook valid dan idempotent, bukan dari callback frontend.
 
 Untuk mengaktifkan Resend, buat API key di Resend lalu set:
 
@@ -110,7 +113,27 @@ Untuk mobile FCM, setup Firebase manual untuk Android/iOS, letakkan file config 
 flutter run --dart-define=HADIVO_ENABLE_FIREBASE_MESSAGING=true
 ```
 
-Jangan commit `RESEND_API_KEY`, service account JSON, `google-services.json` production, `GoogleService-Info.plist`, FCM token, atau file credential lain. Kegagalan provider notifikasi dicatat di delivery log dan tidak menggagalkan absensi.
+Payment provider default adalah mock. Untuk mencoba Midtrans Snap sandbox, set env berikut secara lokal:
+
+```
+HADIVO_PAYMENT_PROVIDER=midtrans
+HADIVO_PAYMENT_MIDTRANS_ENABLED=true
+HADIVO_PAYMENT_MIDTRANS_ENVIRONMENT=sandbox
+MIDTRANS_SERVER_KEY=...
+MIDTRANS_CLIENT_KEY=...
+MIDTRANS_SNAP_BASE_URL=https://app.sandbox.midtrans.com
+MIDTRANS_API_BASE_URL=https://api.sandbox.midtrans.com
+```
+
+Jika provider diset ke `midtrans` tetapi konfigurasi belum lengkap, backend tetap memakai mock provider agar aplikasi tidak gagal start.
+
+Webhook Midtrans diarahkan ke:
+
+```
+POST /api/v1/payments/webhooks/midtrans
+```
+
+Jangan commit `RESEND_API_KEY`, `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, service account JSON, `google-services.json` production, `GoogleService-Info.plist`, FCM token, atau file credential lain. Kegagalan provider notifikasi dicatat di delivery log dan tidak menggagalkan absensi.
 
 Halaman Locations menyediakan map picker berbasis Leaflet + OpenStreetMap. Admin dapat klik peta untuk mengisi latitude/longitude, melihat marker, dan melihat circle radius sebelum menyimpan. Admin juga dapat mencari alamat atau nama tempat memakai Nominatim OpenStreetMap lewat tombol Cari Lokasi atau tombol Enter; fitur ini bukan live autocomplete. Fitur ini tidak membutuhkan Google Maps API key, billing, atau akun pihak ketiga. Untuk traffic production yang besar, gunakan tile/geocoding provider resmi/berbayar atau self-hosted tile/Nominatim yang sesuai dengan policy OpenStreetMap.
 
@@ -173,13 +196,13 @@ Hadivo memakai tenant isolation berbasis `tenantId` path dan membership guard un
 
 Login protection MVP memakai in-memory failed login counter: 5 kali gagal dalam 15 menit akan mengunci login sementara selama 15 menit. Limitasi: production multi-instance sebaiknya memakai Redis atau rate limiter terpusat.
 
-Audit log mencatat aksi penting seperti login, logout, refresh token, tenant changes, member changes, location changes, attendance settings update, attendance flow, subscription update, dan export laporan CSV/Excel/PDF. Audit metadata tidak boleh menyimpan password, access token, refresh token, JWT, secret, atau data rahasia.
+Audit log mencatat aksi penting seperti login, logout, refresh token, tenant changes, member changes, location changes, attendance settings update, attendance flow, subscription update, subscription payment flow, dan export laporan CSV/Excel/PDF. Audit metadata tidak boleh menyimpan password, access token, refresh token, JWT, secret, atau data rahasia.
 
 Detail baseline tersedia di [`docs/12-security-baseline.md`](docs/12-security-baseline.md).
 
 ## Release Notes
 
-Release notes untuk `v0.9.0`, `v0.8.0`, `v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.9.0` menambahkan export laporan attendance Excel dan PDF di samping CSV.
+Release notes untuk `v1.0.0`, `v0.9.0`, `v0.8.0`, `v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v1.0.0` menambahkan fondasi payment subscription dengan provider mock default dan Midtrans Snap optional.
 
 ## Screenshots
 
@@ -209,7 +232,7 @@ Swagger and Postman screenshots can be added after manual capture.
 
 - Auth JWT (register, login, refresh, logout) + refresh token rotation
 - Tenant, membership, parent-student link
-- Subscription dengan empat plan (FREE 10, PRO 100, BUSINESS 500, ENTERPRISE unlimited)
+- Subscription dengan empat plan (FREE 10, PRO 100, BUSINESS 500, ENTERPRISE unlimited) dan payment foundation
 - Tenant location + radius
 - Tenant attendance settings yang dapat dikustomisasi (jam kerja, late threshold, face requirement, dll)
 - Clock-in & clock-out dengan validasi geofence (Haversine) dan demo face verification
@@ -220,7 +243,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Audit log untuk operasi absensi
 - Postman collection siap pakai
 - Unit test Haversine + integration test clock-in memakai PostgreSQL dari Docker Compose
-- Web dashboard admin tenant untuk login, summary, attendance, attempts, members, settings, locations, dan subscription
+- Web dashboard admin tenant untuk login, summary, attendance, attempts, members, settings, locations, subscription, dan payment history
 - Flutter mobile attendance MVP untuk employee/student demo
 
 ## Fitur v0.5.0
@@ -276,12 +299,29 @@ Swagger and Postman screenshots can be added after manual capture.
 - Audit log baru untuk `REPORT_EXCEL_EXPORTED` dan `REPORT_PDF_EXPORTED`.
 - Halaman Attendance web menambahkan tombol `Unduh Excel` dan `Unduh PDF` di samping `Unduh CSV`.
 
+## Fitur v1.0.0
+
+- Tabel `subscription_packages` dan `payment_records` untuk fondasi payment subscription.
+- Endpoint package catalog tenant: `GET /api/v1/tenants/{tenantId}/subscription-packages`.
+- Endpoint create/list/detail payment tenant:
+  - `POST /api/v1/tenants/{tenantId}/subscription-payments`
+  - `GET /api/v1/tenants/{tenantId}/subscription-payments`
+  - `GET /api/v1/tenants/{tenantId}/subscription-payments/{paymentId}`
+- Public webhook Midtrans: `POST /api/v1/payments/webhooks/midtrans`.
+- Provider payment default `mock`, tidak butuh API key untuk local dev dan CI.
+- Provider Midtrans Snap optional, aktif hanya jika konfigurasi provider dan server key lengkap.
+- Webhook Midtrans memverifikasi signature `SHA512(order_id + status_code + gross_amount + server_key)` dan mencocokkan amount dengan payment record.
+- Status payment: `PENDING`, `PAID`, `FAILED`, `EXPIRED`, dan `CANCELLED`.
+- Aktivasi subscription hanya dari backend setelah webhook valid; frontend tidak bisa mengaktifkan subscription.
+- Audit log untuk `PAYMENT_CREATED`, `PAYMENT_WEBHOOK_RECEIVED`, `PAYMENT_STATUS_UPDATED`, `SUBSCRIPTION_ACTIVATED`, dan `PAYMENT_WEBHOOK_IGNORED`.
+- Halaman Subscription web menampilkan current subscription, package selector, tombol `Buat Pembayaran`, tombol `Buka Halaman Pembayaran`, dan payment history.
+
 ## Known limitation (Fase 1)
 
 - Super Admin Console v0.5.0 masih read-only.
 - Belum ada edit/delete tenant dari Super Admin.
 - Belum ada impersonation user.
-- Belum ada billing/payment detail di Super Admin; subscription masih manual.
+- Billing/payment foundation sudah tersedia untuk tenant subscription, tetapi Super Admin belum memiliki billing analytics kompleks.
 - Analytics Super Admin masih basic, berupa ringkasan count dan daftar tenant.
 - Device binding bukan anti-fraud sempurna.
 - Reinstall mobile app bisa menghasilkan device ID baru dan membutuhkan reset admin.
@@ -289,7 +329,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Face verification masih demo — hanya cek panjang base64. Interface `FaceVerifier` sudah siap diganti.
 - Notification provider real v0.8.0 bersifat optional. Default tetap mock/log-only jika Resend/FCM belum dikonfigurasi.
 - Belum ada SMTP, SMS, retry scheduler, notification preference center, atau production-grade token pruning.
-- Subscription dibuat manual, belum terintegrasi dengan payment gateway.
+- Payment foundation belum mencakup refund, recurring billing otomatis kompleks, proration, invoice PDF, payment email, atau settlement dashboard kompleks.
 - Tidak ada WebSocket atau realtime push.
 - Export laporan attendance masih dibatasi maksimal 31 hari per request dan belum memakai streaming besar, template editor, scheduler, email report, atau storage file permanen.
 - Address search Locations web memakai Nominatim OpenStreetMap untuk demo/portfolio dan request ringan, bukan live autocomplete.
@@ -304,7 +344,6 @@ Swagger and Postman screenshots can be added after manual capture.
 | --- | --- |
 | 2 | Real face recognition (ML / embedding) |
 | 2 | Notification retry scheduler, provider observability, dan notification preferences |
-| 2 | Payment gateway untuk subscription |
 | 3 | Mobile app (Flutter) |
 | 3 | Web admin |
 | 3 | Shift / jadwal fleksibel per user |

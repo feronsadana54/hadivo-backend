@@ -89,6 +89,32 @@ FCM_SERVICE_ACCOUNT_PATH=/absolute/path/to/firebase-service-account.json
 
 Jika salah satu nilai Resend/FCM belum lengkap, aplikasi tetap berjalan dengan mock provider.
 
+## Optional payment provider
+
+Default local development memakai payment provider `mock`, sehingga backend, web, dan CI tidak membutuhkan Midtrans key.
+
+Untuk mencoba Midtrans Snap sandbox, set env berikut secara lokal dan jangan commit nilainya:
+
+```
+HADIVO_PAYMENT_PROVIDER=midtrans
+HADIVO_PAYMENT_MIDTRANS_ENABLED=true
+HADIVO_PAYMENT_MIDTRANS_ENVIRONMENT=sandbox
+MIDTRANS_SERVER_KEY=...
+MIDTRANS_CLIENT_KEY=...
+MIDTRANS_SNAP_BASE_URL=https://app.sandbox.midtrans.com
+MIDTRANS_API_BASE_URL=https://api.sandbox.midtrans.com
+```
+
+Webhook URL untuk Midtrans:
+
+```
+POST http://localhost:8080/api/v1/payments/webhooks/midtrans
+```
+
+Jika provider tetap `mock`, halaman Subscription dapat membuat payment request lokal dan membuka dummy payment URL. Subscription tidak aktif dari frontend; status subscription berubah hanya setelah backend menerima webhook valid atau flow mock/test backend yang aman.
+
+Jika `HADIVO_PAYMENT_PROVIDER=midtrans` tetapi `HADIVO_PAYMENT_MIDTRANS_ENABLED` belum `true` atau `MIDTRANS_SERVER_KEY` kosong, backend tetap memakai mock provider agar aplikasi tidak gagal start.
+
 ## Postman
 
 Import `postman/hadivo-attendance.postman_collection.json`. Variabel `baseUrl`, `tenantId`, `accessToken`, `refreshToken` sudah disiapkan. Endpoint `Login` punya test script yang otomatis set `accessToken` dan `refreshToken`.

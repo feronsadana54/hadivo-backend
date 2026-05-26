@@ -9,6 +9,7 @@ Semua modul ada di paket `com.hadivo.attendance.modules`. Tiap modul minimal ber
 | `membership` | Daftar anggota per tenant, role enforcement (`MembershipGuard`) |
 | `parentlink` | Relasi parent ↔ student per tenant |
 | `subscription` | Plan + batas anggota; cek limit di `MembershipService` |
+| `payment` | Package catalog, payment record, mock/Midtrans gateway, webhook, dan aktivasi subscription |
 | `location` | Lokasi & radius geofence per tenant |
 | `settings` | `tenant_attendance_settings` per tenant |
 | `attendance` | Clock-in/out, attempts, history, event publishing |

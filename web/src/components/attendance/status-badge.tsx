@@ -1,5 +1,13 @@
 import { Badge } from "@/components/ui/badge";
-import type { AttendanceStatus, AttemptReason, Role, SubscriptionStatus, TenantMode, TenantStatus } from "@/types/api";
+import type {
+  AttendanceStatus,
+  AttemptReason,
+  PaymentStatus,
+  Role,
+  SubscriptionStatus,
+  TenantMode,
+  TenantStatus,
+} from "@/types/api";
 
 export function AttendanceStatusBadge({ status }: { status: AttendanceStatus }) {
   const variant = status === "ON_TIME" || status === "COMPLETED" ? "success" : status === "LATE" ? "warning" : "info";
@@ -22,6 +30,18 @@ export function ActiveBadge({ active }: { active: boolean }) {
 
 export function SubscriptionStatusBadge({ status }: { status: SubscriptionStatus }) {
   return <Badge variant={status === "ACTIVE" ? "success" : "warning"}>{subscriptionStatusLabel(status)}</Badge>;
+}
+
+export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  const variant =
+    status === "PAID"
+      ? "success"
+      : status === "PENDING"
+        ? "warning"
+        : status === "FAILED"
+          ? "danger"
+          : "muted";
+  return <Badge variant={variant}>{paymentStatusLabel(status)}</Badge>;
 }
 
 export function TenantStatusBadge({ status }: { status: TenantStatus }) {
@@ -73,6 +93,17 @@ export function roleLabel(role: Role) {
 export function subscriptionStatusLabel(status: SubscriptionStatus) {
   const labels: Record<SubscriptionStatus, string> = {
     ACTIVE: "Aktif",
+    EXPIRED: "Kedaluwarsa",
+    CANCELLED: "Dibatalkan",
+  };
+  return labels[status];
+}
+
+export function paymentStatusLabel(status: PaymentStatus) {
+  const labels: Record<PaymentStatus, string> = {
+    PENDING: "Menunggu",
+    PAID: "Lunas",
+    FAILED: "Gagal",
     EXPIRED: "Kedaluwarsa",
     CANCELLED: "Dibatalkan",
   };

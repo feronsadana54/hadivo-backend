@@ -3,7 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/services";
 import { defaultTenantId } from "@/lib/config/env";
-import type { AttendanceSettings, Location, NotificationDeliveryFilters, SuperAdminTenantFilters } from "@/types/api";
+import type {
+  AttendanceSettings,
+  CreateSubscriptionPaymentRequest,
+  Location,
+  NotificationDeliveryFilters,
+  SuperAdminTenantFilters,
+} from "@/types/api";
 
 export function useTenant() {
   return useQuery({
@@ -109,6 +115,31 @@ export function useSubscription() {
   return useQuery({
     queryKey: ["subscription", defaultTenantId],
     queryFn: () => api.getSubscription(defaultTenantId),
+  });
+}
+
+export function useSubscriptionPackages() {
+  return useQuery({
+    queryKey: ["subscription-packages", defaultTenantId],
+    queryFn: () => api.getSubscriptionPackages(defaultTenantId),
+  });
+}
+
+export function useSubscriptionPayments() {
+  return useQuery({
+    queryKey: ["subscription-payments", defaultTenantId],
+    queryFn: () => api.getSubscriptionPayments(defaultTenantId),
+  });
+}
+
+export function useCreateSubscriptionPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateSubscriptionPaymentRequest) => api.createSubscriptionPayment(defaultTenantId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscription-payments", defaultTenantId] });
+      queryClient.invalidateQueries({ queryKey: ["subscription", defaultTenantId] });
+    },
   });
 }
 

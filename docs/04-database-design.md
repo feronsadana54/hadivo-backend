@@ -14,6 +14,8 @@ PostgreSQL 16. Semua ID pakai UUID v4. Semua tabel utama punya `created_at` + `u
 | `memberships` | (tenant_id, user_id, role). UNIQUE per (tenant_id, user_id). |
 | `parent_student_links` | Relasi PARENT ↔ STUDENT terpisah dari `memberships`. |
 | `subscriptions` | Plan + `max_members` + `status`. |
+| `subscription_packages` | Catalog package berbayar untuk payment subscription. |
+| `payment_records` | Request pembayaran tenant, provider order id, status, payment URL, dan webhook sanitized. |
 | `tenant_locations` | Lokasi geofence per tenant (lat, lon, radius_meters). |
 | `tenant_attendance_settings` | Setting absensi per tenant (jam kerja, late threshold, face requirement, dll). |
 | `attendance_records` | **Hanya absensi sah**. UNIQUE (tenant_id, user_id, date). Menyimpan koordinat & device_id untuk clock-in dan clock-out. |
@@ -34,6 +36,8 @@ PostgreSQL 16. Semua ID pakai UUID v4. Semua tabel utama punya `created_at` + `u
 - `notifications (recipient_user_id) WHERE read_at IS NULL` partial index.
 - `notification_delivery_logs (tenant_id, created_at DESC)` dan `(tenant_id, event_type, channel, status)`.
 - `notification_device_tokens (tenant_id, user_id)` dan partial active index untuk lookup token push.
+- `payment_records (tenant_id, created_at DESC)`, `(tenant_id, status)`, dan unique `provider_order_id`.
+- `subscription_packages (active, plan, billing_period)` untuk pilihan paket aktif.
 - `audit_logs (tenant_id, created_at DESC)`.
 
 ## Migrasi
@@ -45,3 +49,4 @@ Flyway. File di `backend/src/main/resources/db/migration/`:
 - `V3__add_user_devices.sql` — tabel trusted attendance device untuk Device Binding v0.6.0.
 - `V4__add_notification_delivery_logs.sql` — tabel delivery log untuk Notification Gateway Foundation v0.7.0.
 - `V5__add_notification_device_tokens.sql` — tabel FCM token registration untuk provider push v0.8.0.
+- `V6__add_subscription_payment_foundation.sql` — catalog package subscription dan payment record foundation untuk v1.0.0.

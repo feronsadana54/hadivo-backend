@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.0.0 - Subscription Payment Foundation
+
+### Backend
+
+- Added `subscription_packages` and `payment_records` tables for tenant subscription payment foundation.
+- Added mock payment provider as the default provider for local development and CI.
+- Added optional Midtrans Snap payment gateway using backend-side Snap transaction creation.
+- Added tenant-scoped endpoints for package catalog, payment creation, payment list, and payment detail.
+- Added public Midtrans webhook endpoint with signature verification, amount validation, status mapping, sanitized raw webhook storage, and idempotent status handling.
+- Added subscription activation from backend webhook processing only.
+- Added audit actions `PAYMENT_CREATED`, `PAYMENT_WEBHOOK_RECEIVED`, `PAYMENT_STATUS_UPDATED`, `SUBSCRIPTION_ACTIVATED`, and `PAYMENT_WEBHOOK_IGNORED`.
+- Added backend integration tests for payment creation, role guard, cross-tenant rejection, webhook activation, duplicate webhook idempotency, invalid signature, amount mismatch, late webhook behavior, raw webhook exposure, and audit log coverage.
+
+### Web Dashboard
+
+- Updated Subscription page with package selection from backend, create payment action, payment URL button, and payment history.
+- Added payment status badges for `PENDING`, `PAID`, `FAILED`, `EXPIRED`, and `CANCELLED`.
+- Refreshed Subscription screenshot.
+
+### Notes
+
+- Midtrans Snap is optional and disabled by default.
+- CI and local development use the mock provider and do not require Midtrans keys.
+- Subscription status is not activated from frontend callbacks; activation happens from verified backend webhook handling.
+- Refund, recurring billing automation, proration, invoice PDF, payment email, and settlement dashboard are not included.
+
 ## v0.9.0 - Advanced Export PDF and Excel Reports
 
 ### Backend
