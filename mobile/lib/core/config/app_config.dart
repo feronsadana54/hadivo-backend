@@ -16,6 +16,11 @@ class AppConfig {
     defaultValue: true,
   );
 
+  static const enableFirebaseMessaging = bool.fromEnvironment(
+    'HADIVO_ENABLE_FIREBASE_MESSAGING',
+    defaultValue: false,
+  );
+
   static const demoLatitude = -6.2;
   static const demoLongitude = 106.816666;
   static const demoEmployeeEmail = 'employee@hadivo.local';

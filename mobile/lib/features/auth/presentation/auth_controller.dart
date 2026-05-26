@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/auth/token_storage.dart';
+import '../../../core/notifications/notification_registration_service.dart';
 import '../data/auth_repository.dart';
 import '../domain/auth_state.dart';
 
@@ -13,6 +15,7 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
     final controller = AuthController(
       ref.watch(authRepositoryProvider),
       ref.watch(tokenStorageProvider),
+      ref.watch(notificationRegistrationServiceProvider),
     );
 
     ref.listen<int>(unauthorizedSignalProvider, (previous, next) {
@@ -26,13 +29,14 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
 );
 
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._repository, this._tokenStorage)
+  AuthController(this._repository, this._tokenStorage, this._notifications)
     : super(const AuthState.bootstrapping()) {
     _restoreSession();
   }
 
   final AuthRepository _repository;
   final TokenStorage _tokenStorage;
+  final NotificationRegistrationService _notifications;
 
   Future<void> _restoreSession() async {
     try {
@@ -45,6 +49,7 @@ class AuthController extends StateNotifier<AuthState> {
 
       final email = await _tokenStorage.readEmail() ?? _emailFromToken(token);
       state = AuthState.authenticated(email: email ?? 'user@hadivo.local');
+      unawaited(_registerNotificationToken());
     } catch (_) {
       await _tokenStorage.clear();
       state = const AuthState.unauthenticated();
@@ -65,6 +70,7 @@ class AuthController extends StateNotifier<AuthState> {
         email: tokenEmail,
       );
       state = AuthState.authenticated(email: tokenEmail);
+      unawaited(_registerNotificationToken());
       return true;
     } on ApiException catch (error) {
       final message = error.code == 'UNAUTHORIZED'
@@ -90,6 +96,10 @@ class AuthController extends StateNotifier<AuthState> {
     state = const AuthState.unauthenticated(
       errorMessage: 'Sesi Anda sudah berakhir. Silakan login kembali.',
     );
+  }
+
+  Future<void> _registerNotificationToken() async {
+    await _notifications.registerIfAvailable();
   }
 
   bool _isExpired(String token) {

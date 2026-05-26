@@ -189,7 +189,9 @@ function NotificationDeliveryRow({ delivery }: { delivery: NotificationDeliveryL
       <TableCell>
         <NotificationStatusBadge status={delivery.status} />
       </TableCell>
-      <TableCell>{delivery.provider ?? "-"}</TableCell>
+      <TableCell>
+        <ProviderBadge provider={delivery.provider} />
+      </TableCell>
       <TableCell>
         {delivery.errorMessage ? (
           <div className="max-w-60 text-sm text-red-700">{delivery.errorMessage}</div>
@@ -199,6 +201,13 @@ function NotificationDeliveryRow({ delivery }: { delivery: NotificationDeliveryL
       </TableCell>
     </TableRow>
   );
+}
+
+function ProviderBadge({ provider }: { provider?: string | null }) {
+  if (!provider) return <span className="text-sm text-muted-foreground">-</span>;
+  const normalized = provider.toLowerCase();
+  const variant = normalized === "fcm" || normalized === "resend" ? "success" : normalized.includes("mock") ? "muted" : "info";
+  return <Badge variant={variant}>{provider}</Badge>;
 }
 
 function NotificationStatusBadge({ status }: { status: NotificationDeliveryStatus }) {

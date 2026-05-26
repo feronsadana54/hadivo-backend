@@ -22,6 +22,7 @@ class NotificationService(
     private val memberships: MembershipRepository,
     private val parentLinks: ParentLinkService,
     private val users: UserRepository,
+    private val deviceTokens: NotificationDeviceTokenRepository,
     private val templates: NotificationTemplateRegistry,
     private val gateways: List<NotificationGateway>,
     private val audit: AuditLogger,
@@ -83,9 +84,20 @@ class NotificationService(
         }
 
         val usersById = users.findAllById(recipientIds).associateBy { it.id }
+        val pushTokensByUser = if (request.tenantId != null && recipientIds.isNotEmpty()) {
+            deviceTokens.findAllByTenantIdAndUserIdInAndActiveTrue(request.tenantId, recipientIds)
+                .groupBy { it.userId }
+                .mapValues { (_, tokens) -> tokens.map { it.fcmToken } }
+        } else {
+            emptyMap()
+        }
         return recipientIds.map { userId ->
             val user = usersById[userId]
-            NotificationRecipient(userId = userId, email = user?.email)
+            NotificationRecipient(
+                userId = userId,
+                email = user?.email,
+                pushTokens = pushTokensByUser[userId].orEmpty(),
+            )
         }.ifEmpty {
             listOf(NotificationRecipient(userId = null, email = null))
         }
@@ -97,14 +109,15 @@ class NotificationService(
         template: NotificationTemplate,
         channel: NotificationChannel,
     ) {
-        val destination = destinationFor(channel, recipient)
+        val deliveryDestination = deliveryDestinationFor(channel, recipient)
+        val gatewayDestination = gatewayDestinationFor(channel, recipient)
         val delivery = deliveries.save(
             NotificationDeliveryLog(
                 tenantId = request.tenantId,
                 recipientUserId = recipient.userId,
                 channel = channel,
                 eventType = request.eventType,
-                destination = destination,
+                destination = deliveryDestination,
                 title = template.title,
                 body = template.body,
                 status = NotificationDeliveryStatus.PENDING,
@@ -124,7 +137,7 @@ class NotificationService(
                             errorMessage = "No notification gateway configured",
                         )
                     } else {
-                        gateway.send(request, recipient, template, destination)
+                        gateway.send(request, recipient, template, gatewayDestination)
                     }
                 }
             }
@@ -192,24 +205,47 @@ class NotificationService(
         delivery.provider = result.provider
         delivery.providerMessageId = result.providerMessageId
         delivery.errorMessage = result.errorMessage?.take(MAX_ERROR_LENGTH)
-        if (result.status == NotificationDeliveryStatus.SENT) {
-            delivery.sentAt = Instant.now()
-            audit.log(
-                tenantId = delivery.tenantId,
-                actorUserId = null,
-                action = "NOTIFICATION_SENT",
-                resourceType = "NotificationDeliveryLog",
-                resourceId = delivery.id?.toString(),
-                metadata = mapOf("eventType" to delivery.eventType.name, "channel" to delivery.channel.name),
-            )
+        when (result.status) {
+            NotificationDeliveryStatus.SENT -> {
+                delivery.sentAt = Instant.now()
+                audit.log(
+                    tenantId = delivery.tenantId,
+                    actorUserId = null,
+                    action = "NOTIFICATION_SENT",
+                    resourceType = "NotificationDeliveryLog",
+                    resourceId = delivery.id?.toString(),
+                    metadata = mapOf("eventType" to delivery.eventType.name, "channel" to delivery.channel.name),
+                )
+            }
+
+            NotificationDeliveryStatus.FAILED -> {
+                audit.log(
+                    tenantId = delivery.tenantId,
+                    actorUserId = null,
+                    action = "NOTIFICATION_FAILED",
+                    resourceType = "NotificationDeliveryLog",
+                    resourceId = delivery.id?.toString(),
+                    metadata = mapOf("eventType" to delivery.eventType.name, "channel" to delivery.channel.name),
+                )
+            }
+
+            NotificationDeliveryStatus.PENDING,
+            NotificationDeliveryStatus.SKIPPED -> Unit
         }
     }
 
-    private fun destinationFor(channel: NotificationChannel, recipient: NotificationRecipient): String? =
+    private fun gatewayDestinationFor(channel: NotificationChannel, recipient: NotificationRecipient): String? =
         when (channel) {
             NotificationChannel.IN_APP -> recipient.userId?.toString()
             NotificationChannel.EMAIL -> recipient.email
-            NotificationChannel.PUSH -> recipient.userId?.let { "mock-push:$it" }
+            NotificationChannel.PUSH -> NotificationDestinationMasker.pushTokens(recipient.pushTokens)
+        }
+
+    private fun deliveryDestinationFor(channel: NotificationChannel, recipient: NotificationRecipient): String? =
+        when (channel) {
+            NotificationChannel.IN_APP -> recipient.userId?.toString()
+            NotificationChannel.EMAIL -> NotificationDestinationMasker.email(recipient.email)
+            NotificationChannel.PUSH -> NotificationDestinationMasker.pushTokens(recipient.pushTokens)
         }
 
     private fun safeMetadata(request: NotificationRequest): String? {

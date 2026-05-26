@@ -19,7 +19,7 @@ Per user, satu hari satu record di `attendance_records` (UNIQUE `tenant_id`, `us
 2. App mengirim `{ latitude, longitude, deviceId, faceImageBase64? }`.
 3. Backend memvalidasi geofence, (opsional) wajah, ambang keterlambatan.
 4. Bila gagal, percobaan dicatat di `attendance_attempts`. Bila sukses, record dibuat / diperbarui.
-5. Event dipublish ke RabbitMQ **setelah commit**. Notification gateway memproses request secara async, menulis delivery log, dan mengirim ke in-app plus mock/log-only email/push provider.
+5. Event dipublish ke RabbitMQ **setelah commit**. Notification gateway memproses request secara async, menulis delivery log, dan mengirim ke in-app plus provider email/push yang aktif. Default provider tetap mock/log-only.
 
 Clock-out mirip clock-in tapi memperbarui record yang sama dan menghitung durasi kerja.
 

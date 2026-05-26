@@ -1,5 +1,6 @@
 package com.hadivo.attendance.modules.notification
 
+import jakarta.validation.constraints.NotBlank
 import java.time.Instant
 import java.util.UUID
 
@@ -15,6 +16,7 @@ data class NotificationRequest(
 data class NotificationRecipient(
     val userId: UUID?,
     val email: String?,
+    val pushTokens: List<String> = emptyList(),
 )
 
 data class NotificationTemplate(
@@ -42,4 +44,18 @@ data class NotificationDeliveryLogResponse(
     val createdAt: Instant,
     val sentAt: Instant?,
     val errorMessage: String?,
+)
+
+data class RegisterNotificationTokenRequest(
+    val deviceId: String? = null,
+    @field:NotBlank
+    val fcmToken: String,
+    val platform: String? = null,
+)
+
+data class NotificationDeviceTokenResponse(
+    val id: UUID,
+    val platform: String?,
+    val active: Boolean,
+    val lastSeenAt: Instant,
 )

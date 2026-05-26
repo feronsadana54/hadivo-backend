@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class AppProperties(
     val jwt: Jwt,
     val messaging: Messaging,
+    val notification: Notification,
     val seed: Seed,
 ) {
     data class Jwt(
@@ -27,6 +28,32 @@ data class AppProperties(
             val clockOut: String,
             val attemptFailed: String,
         )
+    }
+
+    data class Notification(
+        val email: Email,
+        val push: Push,
+    ) {
+        data class Email(
+            val provider: String,
+            val resend: Resend,
+        ) {
+            data class Resend(
+                val apiKey: String,
+                val from: String,
+            )
+        }
+
+        data class Push(
+            val provider: String,
+            val fcm: Fcm,
+        ) {
+            data class Fcm(
+                val enabled: Boolean,
+                val projectId: String,
+                val serviceAccountPath: String,
+            )
+        }
     }
 
     data class Seed(

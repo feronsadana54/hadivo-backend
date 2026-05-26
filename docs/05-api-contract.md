@@ -102,7 +102,43 @@ Response memakai `PageResponse`:
 }
 ```
 
-Fase v0.7.0 belum menyediakan endpoint write/edit/delete notification delivery, preference center, retry scheduler, FCM token registration, atau provider email/push production.
+Fase v0.8.0 belum menyediakan endpoint write/edit/delete notification delivery, preference center, retry scheduler, atau token pruning production.
+
+### Notification token registration
+
+Endpoint token registration hanya memakai user dari access token. Request body tidak menerima `userId` target.
+
+- `POST /tenants/{tenantId}/notification-tokens`
+
+Request:
+
+```json
+{
+  "deviceId": "7e8f3c8b-6219-44be-97f1-2c62a604b217",
+  "fcmToken": "fcm-token-from-device",
+  "platform": "Android"
+}
+```
+
+Response tidak mengekspos full FCM token:
+
+```json
+{
+  "data": {
+    "id": "2d2b4cb1-3b1a-4b4d-9e25-b50d2b17a8ab",
+    "platform": "Android",
+    "active": true,
+    "lastSeenAt": "2026-05-24T10:00:00Z"
+  }
+}
+```
+
+Policy:
+
+- user harus authenticated dan menjadi member aktif tenant;
+- token selalu didaftarkan untuk `principal.userId`, bukan user dari request body;
+- non-member mendapat 403;
+- full FCM token tidak tampil di response atau delivery log.
 
 ### Reporting
 

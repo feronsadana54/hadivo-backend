@@ -28,7 +28,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Web dashboard untuk login, summary, attendance, attempts, notifications, members, settings, locations, subscription, dan Super Admin Console.
 - Super Admin Console v0.5.0 untuk memantau tenant lintas platform secara read-only.
 - Device Binding v0.6.0 untuk membatasi absensi user ke satu trusted device per tenant, dengan reset perangkat oleh admin.
-- Notification Gateway Foundation v0.7.0 dengan RabbitMQ async flow, delivery log, in-app delivery, dan mock/log-only email/push provider.
+- Notification Gateway v0.8.0 dengan RabbitMQ async flow, delivery log, in-app delivery, default mock/log-only provider, dan optional Resend/FCM provider.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
@@ -82,7 +82,32 @@ Super Admin Console tersedia di `/super-admin`. Fitur ini read-only untuk platfo
 
 Device Binding v0.6.0 mendaftarkan perangkat absensi pertama user sebagai trusted device untuk tenant tersebut. Clock-in/clock-out dari perangkat berbeda akan ditolak dengan pesan agar user menghubungi admin. Admin tenant dapat reset perangkat dari halaman Members agar user bisa mendaftarkan perangkat baru pada absensi berikutnya. Mobile app memakai random device UUID yang disimpan di secure storage, bukan hardware identifier mentah.
 
-Notification Gateway Foundation v0.7.0 memproses event absensi lewat RabbitMQ queue `hadivo.notification.events`, menyimpan delivery log tenant-scoped, dan memakai provider mock/log-only untuk email dan push. Halaman `/notifications` menampilkan delivery log secara read-only untuk admin. Fase ini belum mengirim FCM, email production, SMS, atau memakai API key provider eksternal.
+Notification Gateway memproses event absensi lewat RabbitMQ queue `hadivo.notification.events`, menyimpan delivery log tenant-scoped, dan memakai provider mock/log-only secara default. v0.8.0 menambahkan provider optional Resend untuk email dan Firebase Cloud Messaging untuk push notification. Jika konfigurasi provider real belum lengkap, sistem tetap berjalan memakai mock/log-only provider. Halaman `/notifications` menampilkan delivery log secara read-only untuk admin.
+
+Untuk mengaktifkan Resend, buat API key di Resend lalu set:
+
+```
+HADIVO_NOTIFICATION_EMAIL_PROVIDER=resend
+RESEND_API_KEY=...
+RESEND_FROM_EMAIL=no-reply@domain-kamu.com
+```
+
+Untuk mengaktifkan Firebase Cloud Messaging backend, siapkan Firebase project dan service account JSON di luar repo, lalu set:
+
+```
+HADIVO_NOTIFICATION_PUSH_PROVIDER=fcm
+FCM_ENABLED=true
+FCM_PROJECT_ID=...
+FCM_SERVICE_ACCOUNT_PATH=/absolute/path/to/firebase-service-account.json
+```
+
+Untuk mobile FCM, setup Firebase manual untuk Android/iOS, letakkan file config di lokasi platform yang sesuai, lalu jalankan app dengan:
+
+```
+flutter run --dart-define=HADIVO_ENABLE_FIREBASE_MESSAGING=true
+```
+
+Jangan commit `RESEND_API_KEY`, service account JSON, `google-services.json` production, `GoogleService-Info.plist`, FCM token, atau file credential lain. Kegagalan provider notifikasi dicatat di delivery log dan tidak menggagalkan absensi.
 
 Halaman Locations menyediakan map picker berbasis Leaflet + OpenStreetMap. Admin dapat klik peta untuk mengisi latitude/longitude, melihat marker, dan melihat circle radius sebelum menyimpan. Admin juga dapat mencari alamat atau nama tempat memakai Nominatim OpenStreetMap lewat tombol Cari Lokasi atau tombol Enter; fitur ini bukan live autocomplete. Fitur ini tidak membutuhkan Google Maps API key, billing, atau akun pihak ketiga. Untuk traffic production yang besar, gunakan tile/geocoding provider resmi/berbayar atau self-hosted tile/Nominatim yang sesuai dengan policy OpenStreetMap.
 
@@ -125,6 +150,8 @@ Mobile app memakai tenant demo `11111111-1111-1111-1111-111111111111`. Mode demo
 
 UI mobile dirancang sederhana untuk kebutuhan employee/student: user cukup login, melihat status hari ini, clock-in, clock-out, membuka riwayat, dan logout.
 
+Panduan penggunaan end-user mobile tersedia di [`docs/13-mobile-user-guide.md`](docs/13-mobile-user-guide.md).
+
 Screenshot mobile belum tersedia di repo karena belum ada capture emulator asli. Folder placeholder sudah disiapkan di `docs/images/mobile/`, dan panduan capture manual tersedia di [`mobile/README.md`](mobile/README.md).
 
 ## Continuous Integration
@@ -149,7 +176,7 @@ Detail baseline tersedia di [`docs/12-security-baseline.md`](docs/12-security-ba
 
 ## Release Notes
 
-Release notes untuk `v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.7.0` menambahkan Notification Gateway Foundation dengan RabbitMQ async flow dan delivery log.
+Release notes untuk `v0.8.0`, `v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.8.0` menambahkan optional Resend dan Firebase Cloud Messaging provider dengan fallback mock/log-only.
 
 ## Screenshots
 
@@ -224,6 +251,17 @@ Swagger and Postman screenshots can be added after manual capture.
 - Web dashboard `/notifications` untuk melihat delivery log dengan filter status, channel, dan event.
 - Audit log untuk `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, dan `NOTIFICATION_FAILED`.
 
+## Fitur v0.8.0
+
+- Optional Resend email provider untuk notification gateway.
+- Optional Firebase Cloud Messaging provider untuk push notification mobile.
+- Provider default tetap mock/log-only jika env provider real belum lengkap.
+- Endpoint `POST /api/v1/tenants/{tenantId}/notification-tokens` untuk register FCM token user yang sedang login.
+- Tabel `notification_device_tokens` untuk menyimpan active FCM token per tenant/user/device.
+- Delivery log memakai masked destination untuk email dan FCM token.
+- Mobile app melakukan Firebase initialization dan token registration hanya jika `HADIVO_ENABLE_FIREBASE_MESSAGING=true`.
+- Web Notifications menampilkan provider badge `mock`, `resend`, atau `fcm`.
+
 ## Known limitation (Fase 1)
 
 - Super Admin Console v0.5.0 masih read-only.
@@ -235,7 +273,8 @@ Swagger and Postman screenshots can be added after manual capture.
 - Reinstall mobile app bisa menghasilkan device ID baru dan membutuhkan reset admin.
 - Production bisa memperkuat device policy dengan attestation, liveness, MDM, atau posture checks.
 - Face verification masih demo — hanya cek panjang base64. Interface `FaceVerifier` sudah siap diganti.
-- Notification gateway v0.7.0 masih mock/log-only. Belum ada FCM, Resend, SMTP, SMS, API key provider, retry scheduler, atau mobile push token registration.
+- Notification provider real v0.8.0 bersifat optional. Default tetap mock/log-only jika Resend/FCM belum dikonfigurasi.
+- Belum ada SMTP, SMS, retry scheduler, notification preference center, atau production-grade token pruning.
 - Subscription dibuat manual, belum terintegrasi dengan payment gateway.
 - Tidak ada WebSocket atau realtime push.
 - Tidak ada export PDF/Excel untuk laporan attendance.
@@ -243,14 +282,14 @@ Swagger and Postman screenshots can be added after manual capture.
 - Tidak ada integrasi Google Maps.
 - Tidak ada routing atau navigasi peta.
 - Tile OpenStreetMap public dan public Nominatim sebaiknya diganti provider resmi/berbayar atau self-hosted tile/Nominatim untuk traffic production yang besar.
-- Mobile app belum memiliki offline mode, push notification, map view, dan face recognition asli.
+- Mobile app belum memiliki offline mode, notification preference kompleks, map view, dan face recognition asli. Push notification production membutuhkan setup Firebase manual.
 
 ## Roadmap
 
 | Fase | Lingkup |
 | --- | --- |
 | 2 | Real face recognition (ML / embedding) |
-| 2 | Gateway notifikasi (FCM, email) |
+| 2 | Notification retry scheduler, provider observability, dan notification preferences |
 | 2 | Payment gateway untuk subscription |
 | 2 | Export laporan PDF/Excel |
 | 3 | Mobile app (Flutter) |

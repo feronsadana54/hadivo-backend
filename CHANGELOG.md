@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.8.0 - Real Notification Providers
+
+### Backend
+
+- Added optional Resend email provider for notification gateway.
+- Added optional Firebase Cloud Messaging push provider for notification gateway.
+- Kept mock/log-only email and push providers as the default fallback.
+- Added `notification_device_tokens` table for FCM token registration.
+- Added tenant-scoped endpoint `POST /api/v1/tenants/{tenantId}/notification-tokens`.
+- Added masked notification destinations in delivery logs for email and FCM tokens.
+- Added backend tests for token registration, non-member access denial, skipped push delivery without tokens, and masked FCM token destinations.
+
+### Mobile App
+
+- Added optional Firebase Messaging dependencies.
+- Added guarded Firebase initialization controlled by `HADIVO_ENABLE_FIREBASE_MESSAGING`.
+- Added push token registration after login/session restore when Firebase is configured.
+- Sends existing privacy-friendly `deviceId` with notification token registration.
+
+### Web Dashboard
+
+- Added provider badges for notification delivery logs.
+
+### Notes
+
+- Real providers are opt-in and disabled by default.
+- Missing Resend or FCM configuration falls back to mock/log-only behavior.
+- Do not commit Resend API keys, Firebase service account files, `google-services.json`, FCM tokens, or credential files.
+- Notification delivery failures remain best effort and do not fail attendance actions.
+
 ## v0.7.0 - Notification Gateway Foundation
 
 ### Backend

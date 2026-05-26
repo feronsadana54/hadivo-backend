@@ -61,6 +61,7 @@ class NotificationGatewayIntegrationTest {
     @Autowired private lateinit var locations: TenantLocationRepository
     @Autowired private lateinit var attempts: AttendanceAttemptRepository
     @Autowired private lateinit var deliveryLogs: NotificationDeliveryLogRepository
+    @Autowired private lateinit var deviceTokens: NotificationDeviceTokenRepository
     @Autowired private lateinit var notificationConsumer: NotificationConsumer
     @Autowired private lateinit var notificationService: NotificationService
 
@@ -155,6 +156,58 @@ class NotificationGatewayIntegrationTest {
     }
 
     @Test
+    fun `member can register notification token for authenticated principal only`() {
+        val ctx = seedTenantWithUser(Role.EMPLOYEE)
+        val ignoredUserId = UUID.randomUUID().toString()
+
+        mvc.perform(
+            post("/api/v1/tenants/${ctx.tenantId}/notification-tokens")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${ctx.token}")
+                .contentType("application/json")
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf(
+                            "userId" to ignoredUserId,
+                            "deviceId" to "device-a",
+                            "fcmToken" to "fcm-token-registration-${UUID.randomUUID()}",
+                            "platform" to "Android",
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.id").exists())
+            .andExpect(jsonPath("$.data.platform").value("Android"))
+            .andExpect(jsonPath("$.data.active").value(true))
+            .andExpect(jsonPath("$.data.fcmToken").doesNotExist())
+
+        val saved = deviceTokens.findAll().first { it.tenantId == ctx.tenantId }
+        assertThat(saved.userId).isEqualTo(ctx.userId)
+    }
+
+    @Test
+    fun `non-member cannot register notification token`() {
+        val target = seedTenantWithUser(Role.EMPLOYEE)
+        val otherTenantUser = seedTenantWithUser(Role.EMPLOYEE)
+
+        mvc.perform(
+            post("/api/v1/tenants/${target.tenantId}/notification-tokens")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${otherTenantUser.token}")
+                .contentType("application/json")
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf(
+                            "deviceId" to "device-a",
+                            "fcmToken" to "fcm-token-denied-${UUID.randomUUID()}",
+                            "platform" to "Android",
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
     fun `rabbit publish failure does not fail attendance flow`() {
         val ctx = seedTenantWithUser(Role.EMPLOYEE)
         doThrow(IllegalStateException("RabbitMQ unavailable"))
@@ -187,6 +240,59 @@ class NotificationGatewayIntegrationTest {
         }
         assertThat(emailLog.status).isEqualTo(NotificationDeliveryStatus.FAILED)
         assertThat(emailLog.errorMessage).contains("Mock email gateway failure")
+    }
+
+    @Test
+    fun `push delivery is skipped when user has no registered fcm token`() {
+        val ctx = seedTenantWithUser(Role.EMPLOYEE)
+
+        notificationService.process(
+            NotificationRequest(
+                eventType = NotificationEventType.CLOCK_IN_SUCCESS,
+                tenantId = ctx.tenantId,
+                actorUserId = ctx.userId,
+                occurredAt = Instant.now(),
+            )
+        )
+
+        val pushLog = deliveryLogs.findAll().first {
+            it.tenantId == ctx.tenantId && it.channel == NotificationChannel.PUSH
+        }
+        assertThat(pushLog.status).isEqualTo(NotificationDeliveryStatus.SKIPPED)
+        assertThat(pushLog.destination).isNull()
+    }
+
+    @Test
+    fun `delivery log masks registered fcm token destination`() {
+        val ctx = seedTenantWithUser(Role.EMPLOYEE)
+        val fcmToken = "fcm-token-secret-value-${UUID.randomUUID()}-${UUID.randomUUID()}"
+        deviceTokens.save(
+            NotificationDeviceToken(
+                tenantId = ctx.tenantId,
+                userId = ctx.userId,
+                deviceId = "device-a",
+                fcmToken = fcmToken,
+                platform = "Android",
+                active = true,
+                lastSeenAt = Instant.now(),
+            )
+        )
+
+        notificationService.process(
+            NotificationRequest(
+                eventType = NotificationEventType.CLOCK_IN_SUCCESS,
+                tenantId = ctx.tenantId,
+                actorUserId = ctx.userId,
+                occurredAt = Instant.now(),
+            )
+        )
+
+        val pushLog = deliveryLogs.findAll().first {
+            it.tenantId == ctx.tenantId && it.channel == NotificationChannel.PUSH
+        }
+        assertThat(pushLog.destination).isNotEqualTo(fcmToken)
+        assertThat(pushLog.destination).doesNotContain(fcmToken)
+        assertThat(pushLog.destination).contains("...")
     }
 
     private fun consumePublishedNotification() {

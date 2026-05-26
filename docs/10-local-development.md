@@ -72,6 +72,23 @@ SUPER_ADMIN otomatis ditautkan ke tenant ini lewat `DataSeeder`.
 
 <http://localhost:15672> — user/password `hadivo`/`hadivo`. Exchange `attendance.events`, queue legacy `attendance.notifications`, dan queue notification gateway `hadivo.notification.events` dibuat otomatis oleh aplikasi saat startup.
 
+## Optional notification providers
+
+Default local development memakai mock/log-only email dan push provider. Untuk mencoba provider real, set env berikut secara lokal dan jangan commit nilainya:
+
+```
+HADIVO_NOTIFICATION_EMAIL_PROVIDER=resend
+RESEND_API_KEY=...
+RESEND_FROM_EMAIL=no-reply@domain-kamu.com
+
+HADIVO_NOTIFICATION_PUSH_PROVIDER=fcm
+FCM_ENABLED=true
+FCM_PROJECT_ID=...
+FCM_SERVICE_ACCOUNT_PATH=/absolute/path/to/firebase-service-account.json
+```
+
+Jika salah satu nilai Resend/FCM belum lengkap, aplikasi tetap berjalan dengan mock provider.
+
 ## Postman
 
 Import `postman/hadivo-attendance.postman_collection.json`. Variabel `baseUrl`, `tenantId`, `accessToken`, `refreshToken` sudah disiapkan. Endpoint `Login` punya test script yang otomatis set `accessToken` dan `refreshToken`.

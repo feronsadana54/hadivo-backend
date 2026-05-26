@@ -14,7 +14,7 @@ Semua modul ada di paket `com.hadivo.attendance.modules`. Tiap modul minimal ber
 | `attendance` | Clock-in/out, attempts, history, event publishing |
 | `geofence` | Validator jarak menggunakan Haversine |
 | `face` | Interface `FaceVerifier` + impl demo |
-| `notification` | Notification gateway foundation: RabbitMQ publisher/consumer, template, mock email/push gateways, in-app notifications, dan delivery log |
+| `notification` | Notification gateway: RabbitMQ publisher/consumer, template, mock/Resend/FCM gateways, token registration, in-app notifications, dan delivery log |
 | `audit` | `AuditLogger` untuk menulis `audit_logs` |
 | `reporting` | Laporan harian & bulanan dari `attendance_records` |
 

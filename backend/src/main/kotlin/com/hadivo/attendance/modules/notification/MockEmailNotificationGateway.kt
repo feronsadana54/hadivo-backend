@@ -1,10 +1,12 @@
 package com.hadivo.attendance.modules.notification
 
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import java.util.UUID
 
 @Component
+@ConditionalOnExpression("'\${hadivo.notification.email.provider:mock}' != 'resend' || '\${hadivo.notification.email.resend.api-key:}' == ''")
 class MockEmailNotificationGateway : NotificationGateway {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -26,7 +28,11 @@ class MockEmailNotificationGateway : NotificationGateway {
                 errorMessage = "Recipient email is not available",
             )
         }
-        log.info("Mock email notification event={} destination={}", request.eventType, destination)
+        log.info(
+            "Mock email notification event={} destination={}",
+            request.eventType,
+            NotificationDestinationMasker.email(destination),
+        )
         return NotificationGatewayResult(
             status = NotificationDeliveryStatus.SENT,
             provider = PROVIDER,

@@ -11,9 +11,12 @@ UI mobile dibuat ringkas untuk user non-teknis. Teks tombol, status, empty state
 - Clock-in dengan lokasi.
 - Clock-out dengan lokasi.
 - Device binding menggunakan random device UUID yang disimpan di secure storage.
+- Optional FCM push token registration jika Firebase dikonfigurasi.
 - Attendance history 7 hari terakhir.
 - Profile sederhana.
 - Logout.
+
+Panduan penggunaan end-user tersedia di [`../docs/13-mobile-user-guide.md`](../docs/13-mobile-user-guide.md).
 
 ## Tech Stack
 
@@ -25,6 +28,7 @@ UI mobile dibuat ringkas untuk user non-teknis. Teks tombol, status, empty state
 - Secure Storage untuk penyimpanan token
 - Secure Storage untuk device ID absensi
 - Geolocator untuk mengambil lokasi
+- Firebase Core dan Firebase Messaging untuk push notification optional
 
 ## Prerequisites
 
@@ -98,12 +102,31 @@ Mobile app membuat random device UUID saat pertama kali dipakai, lalu menyimpann
 
 App tidak memakai hardware identifier mentah. Jika app dihapus dan di-install ulang, device ID bisa berubah. Admin tenant dapat reset device user dari Web Dashboard agar perangkat baru bisa didaftarkan pada absensi berikutnya.
 
+## Optional Push Notification
+
+Push notification memakai Firebase Cloud Messaging dan nonaktif secara default agar CI dan local development tidak membutuhkan Firebase config.
+
+Untuk mengaktifkan secara manual:
+
+1. Buat Firebase project.
+2. Register Android app sesuai application id yang dipakai.
+3. Download `google-services.json` ke `mobile/android/app/`.
+4. Untuk iOS, download `GoogleService-Info.plist` ke `mobile/ios/Runner/`.
+5. Pastikan file config tersebut tidak berisi project production yang tidak boleh dibagikan dan jangan commit file credential real.
+6. Jalankan app dengan:
+   ```
+   flutter run --dart-define=HADIVO_ENABLE_FIREBASE_MESSAGING=true
+   ```
+
+Jika Firebase belum dikonfigurasi atau token gagal didapat, app tetap bisa dipakai untuk login dan absensi. Token registration dikirim ke backend hanya setelah session valid, memakai `deviceId` dari Device Binding.
+
 ## API Endpoints
 
 Mobile app memakai endpoint berikut:
 
 - `POST /api/v1/auth/login`
 - `GET /api/v1/tenants/{tenantId}/attendance/me/today`
+- `POST /api/v1/tenants/{tenantId}/notification-tokens` jika Firebase Messaging aktif
 - `POST /api/v1/tenants/{tenantId}/attendance/clock-in`
 - `POST /api/v1/tenants/{tenantId}/attendance/clock-out`
 - `GET /api/v1/tenants/{tenantId}/attendance/me?from=&to=`
@@ -153,7 +176,7 @@ flutter test
 
 ## Known Limitations
 
-- Belum ada FCM atau push notification.
+- FCM push notification bersifat optional dan membutuhkan konfigurasi manual.
 - Belum ada face recognition asli.
 - Belum ada offline mode.
 - Belum ada map view.

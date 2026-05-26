@@ -69,7 +69,9 @@ Mobile app memakai random UUID yang disimpan di secure storage sebagai device ID
 
 Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, device binding, subscription update, CSV export report, dan read access Super Admin Console.
 
-Notification gateway v0.7.0 mencatat delivery log terpisah di `notification_delivery_logs` dan audit action `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, serta `NOTIFICATION_FAILED`. Metadata audit dan metadata delivery tidak boleh menyimpan token, secret, API key, password, atau credential provider.
+Notification gateway mencatat delivery log terpisah di `notification_delivery_logs` dan audit action `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, serta `NOTIFICATION_FAILED`. Metadata audit dan metadata delivery tidak boleh menyimpan token, secret, API key, password, atau credential provider.
+
+Resend API key, Firebase service account JSON, `google-services.json`, `GoogleService-Info.plist`, dan FCM token real tidak boleh di-commit. Delivery log memakai masked destination untuk email dan FCM token.
 
 Audit log menyimpan data secukupnya:
 
@@ -96,4 +98,4 @@ Content Security Policy belum dipaksa secara ketat agar Swagger UI tetap dapat d
 
 ## Future sensitive features
 
-Real face recognition, payment gateway, production-grade device attestation, dan notification provider production belum aktif. Saat fitur tersebut ditambahkan, perlu review tambahan untuk privacy, consent, data retention, provider security, secret management, dan audit coverage.
+Real face recognition, payment gateway, production-grade device attestation, retry scheduler notification, notification preference center, dan token pruning production belum aktif. Saat fitur tersebut ditambahkan, perlu review tambahan untuk privacy, consent, data retention, provider security, secret management, dan audit coverage.

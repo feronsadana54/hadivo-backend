@@ -54,6 +54,18 @@ hadivo:
     notification-queue: attendance.notifications
     notification-events-queue: hadivo.notification.events
     notification-routing-key: notification.event
+  notification:
+    email:
+      provider: ${HADIVO_NOTIFICATION_EMAIL_PROVIDER:mock}
+      resend:
+        api-key: ${RESEND_API_KEY:}
+        from: ${RESEND_FROM_EMAIL:no-reply@hadivo.local}
+    push:
+      provider: ${HADIVO_NOTIFICATION_PUSH_PROVIDER:mock}
+      fcm:
+        enabled: ${FCM_ENABLED:false}
+        project-id: ${FCM_PROJECT_ID:}
+        service-account-path: ${FCM_SERVICE_ACCOUNT_PATH:}
   seed:
     super-admin-email: ${SEED_SUPER_ADMIN_EMAIL:superadmin@hadivo.local}
     super-admin-password: ${SEED_SUPER_ADMIN_PASSWORD:ChangeMe123!}

@@ -37,6 +37,10 @@ Test notification gateway v0.7.0 mengecek:
 - `EMPLOYEE` dan `STUDENT` ditolak 403 untuk delivery log tenant;
 - kegagalan publish RabbitMQ tidak menggagalkan attendance flow;
 - kegagalan mock gateway dicatat sebagai delivery `FAILED`.
+- token registration v0.8.0 hanya memakai authenticated principal;
+- non-member ditolak saat register notification token;
+- push delivery menjadi `SKIPPED` jika user belum punya FCM token;
+- delivery log tidak menyimpan full FCM token.
 
 RabbitTemplate tetap di-mock agar test tidak membutuhkan broker aktif untuk memverifikasi publish dan best-effort behavior.
 

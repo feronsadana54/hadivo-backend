@@ -1,10 +1,12 @@
 package com.hadivo.attendance.modules.notification
 
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import java.util.UUID
 
 @Component
+@ConditionalOnExpression("'\${hadivo.notification.push.provider:mock}' != 'fcm' || '\${hadivo.notification.push.fcm.enabled:false}' != 'true' || '\${hadivo.notification.push.fcm.project-id:}' == '' || '\${hadivo.notification.push.fcm.service-account-path:}' == ''")
 class MockPushNotificationGateway : NotificationGateway {
     private val log = LoggerFactory.getLogger(javaClass)
 
