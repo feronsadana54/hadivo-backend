@@ -23,6 +23,7 @@ import java.util.UUID
 @RequestMapping("/api/v1/tenants/{tenantId}/reports/attendance")
 class ReportingController(
     private val service: ReportingService,
+    private val exports: AttendanceReportExportService,
     private val guard: MembershipGuard,
     private val audit: AuditLogger,
 ) {
@@ -68,5 +69,54 @@ class ReportingController(
             .contentType(MediaType.valueOf("text/csv"))
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
             .body(csv)
+    }
+
+    @GetMapping(
+        "/export.xlsx",
+        produces = ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+    )
+    fun exportExcel(
+        @PathVariable tenantId: UUID,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
+        @CurrentUser principal: AuthPrincipal,
+    ): ResponseEntity<ByteArray> {
+        guard.requireRole(principal, tenantId, Role.TENANT_ADMIN, Role.SUPER_ADMIN, Role.MANAGER, Role.TEACHER)
+        val filename = "hadivo-attendance-report-$from-to-$to.xlsx"
+        val workbook = exports.exportExcel(tenantId, from, to)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "REPORT_EXCEL_EXPORTED",
+            resourceType = "AttendanceReport",
+            metadata = mapOf("from" to from.toString(), "to" to to.toString()),
+        )
+        return ResponseEntity.ok()
+            .contentType(MediaType.valueOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
+            .body(workbook)
+    }
+
+    @GetMapping("/export.pdf", produces = [MediaType.APPLICATION_PDF_VALUE])
+    fun exportPdf(
+        @PathVariable tenantId: UUID,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
+        @CurrentUser principal: AuthPrincipal,
+    ): ResponseEntity<ByteArray> {
+        guard.requireRole(principal, tenantId, Role.TENANT_ADMIN, Role.SUPER_ADMIN, Role.MANAGER, Role.TEACHER)
+        val filename = "hadivo-attendance-report-$from-to-$to.pdf"
+        val pdf = exports.exportPdf(tenantId, from, to)
+        audit.log(
+            tenantId = tenantId,
+            actorUserId = principal.userId,
+            action = "REPORT_PDF_EXPORTED",
+            resourceType = "AttendanceReport",
+            metadata = mapOf("from" to from.toString(), "to" to to.toString()),
+        )
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
+            .body(pdf)
     }
 }

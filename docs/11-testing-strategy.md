@@ -56,6 +56,17 @@ Test security hardening mengecek baseline v0.4.0:
 - security headers dasar ada di response backend;
 - update attendance settings dan CSV export tercatat di audit log.
 
+## Integration test — `AttendanceCsvExportIntegrationTest`
+
+Test export attendance mengecek:
+
+- CSV export mengembalikan attachment dengan header dan data tenant yang benar;
+- XLSX export mengembalikan content type Excel, content disposition, body workbook tidak kosong, dan audit `REPORT_EXCEL_EXPORTED`;
+- PDF export tetap sukses saat data kosong, mengembalikan content type PDF, content disposition, body tidak kosong, dan audit `REPORT_PDF_EXPORTED`;
+- date range invalid ditolak dengan `VALIDATION_FAILED`;
+- range lebih dari 31 hari ditolak;
+- cross-tenant access untuk export ditolak.
+
 ## Cara menjalankan
 
 ```bash

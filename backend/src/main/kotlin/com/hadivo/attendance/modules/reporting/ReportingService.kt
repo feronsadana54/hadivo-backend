@@ -62,6 +62,30 @@ class ReportingService(
     }
 
     fun exportCsv(tenantId: UUID, from: LocalDate, to: LocalDate): String {
+        val rows = exportRows(tenantId, from, to)
+
+        return buildString {
+            appendCsvLine(AttendanceReportExportColumns.headers)
+
+            rows.forEach { row ->
+                appendCsvLine(
+                    listOf(
+                        row.date.toString(),
+                        row.userId.toString(),
+                        row.fullName,
+                        row.email,
+                        row.status.name,
+                        row.clockInTime,
+                        row.clockOutTime,
+                        row.workDurationMinutes?.toString().orEmpty(),
+                        row.clockOutOutsideRadius.toString(),
+                    )
+                )
+            }
+        }
+    }
+
+    fun exportRows(tenantId: UUID, from: LocalDate, to: LocalDate): List<AttendanceReportExportRow> {
         validateExportRange(from, to)
 
         val rows = records.findAllByTenantIdAndDateBetween(tenantId, from, to)
@@ -69,40 +93,22 @@ class ReportingService(
             .mapNotNull { user -> user.id?.let { it to user } }
             .toMap()
 
-        return buildString {
-            appendCsvLine(
-                listOf(
-                    "Date",
-                    "User ID",
-                    "Full Name",
-                    "Email",
-                    "Status",
-                    "Clock In Time",
-                    "Clock Out Time",
-                    "Work Duration Minutes",
-                    "Clock Out Outside Radius",
+        return rows
+            .sortedWith(compareBy({ it.date }, { usersById[it.userId]?.fullName ?: "" }, { it.userId.toString() }))
+            .map { record ->
+                val user = usersById[record.userId]
+                AttendanceReportExportRow(
+                    date = record.date,
+                    userId = record.userId,
+                    fullName = user?.fullName.orEmpty(),
+                    email = user?.email.orEmpty(),
+                    status = record.status,
+                    clockInTime = formatInstant(record.clockInAt),
+                    clockOutTime = formatInstant(record.clockOutAt),
+                    workDurationMinutes = record.workDurationMinutes,
+                    clockOutOutsideRadius = record.clockOutOutsideRadius,
                 )
-            )
-
-            rows
-                .sortedWith(compareBy({ it.date }, { usersById[it.userId]?.fullName ?: "" }, { it.userId.toString() }))
-                .forEach { record ->
-                    val user = usersById[record.userId]
-                    appendCsvLine(
-                        listOf(
-                            record.date.toString(),
-                            record.userId.toString(),
-                            user?.fullName.orEmpty(),
-                            user?.email.orEmpty(),
-                            record.status.name,
-                            formatInstant(record.clockInAt),
-                            formatInstant(record.clockOutAt),
-                            record.workDurationMinutes?.toString().orEmpty(),
-                            record.clockOutOutsideRadius.toString(),
-                        )
-                    )
-                }
-        }
+            }
     }
 
     private fun validateExportRange(from: LocalDate, to: LocalDate) {

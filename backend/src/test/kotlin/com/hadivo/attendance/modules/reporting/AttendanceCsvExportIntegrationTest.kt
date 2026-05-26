@@ -4,6 +4,7 @@ import com.hadivo.attendance.common.security.JwtService
 import com.hadivo.attendance.modules.attendance.AttendanceRecord
 import com.hadivo.attendance.modules.attendance.AttendanceRecordRepository
 import com.hadivo.attendance.modules.attendance.AttendanceStatus
+import com.hadivo.attendance.modules.audit.AuditLogRepository
 import com.hadivo.attendance.modules.auth.User
 import com.hadivo.attendance.modules.auth.UserRepository
 import com.hadivo.attendance.modules.membership.Membership
@@ -18,6 +19,7 @@ import com.hadivo.attendance.modules.subscription.SubscriptionStatus
 import com.hadivo.attendance.modules.tenant.Tenant
 import com.hadivo.attendance.modules.tenant.TenantMode
 import com.hadivo.attendance.modules.tenant.TenantRepository
+import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.Test
@@ -55,6 +57,7 @@ class AttendanceCsvExportIntegrationTest {
     @Autowired private lateinit var subscriptions: SubscriptionRepository
     @Autowired private lateinit var settings: TenantAttendanceSettingsRepository
     @Autowired private lateinit var records: AttendanceRecordRepository
+    @Autowired private lateinit var auditLogs: AuditLogRepository
 
     @MockBean private lateinit var rabbit: RabbitTemplate
 
@@ -115,11 +118,101 @@ class AttendanceCsvExportIntegrationTest {
     }
 
     @Test
+    fun `export XLSX success returns attachment with non empty workbook and audit log`() {
+        val ctx = seedTenantWithUser(role = Role.TENANT_ADMIN, fullName = "Admin User")
+        val employee = seedUserInTenant(ctx.tenantId, fullName = "Jane Doe", role = Role.EMPLOYEE)
+        val from = LocalDate.of(2026, 1, 5)
+        val to = LocalDate.of(2026, 1, 6)
+
+        records.save(
+            AttendanceRecord(
+                tenantId = ctx.tenantId,
+                userId = employee.userId,
+                date = from,
+                clockInAt = Instant.parse("2026-01-05T01:00:00Z"),
+                clockOutAt = Instant.parse("2026-01-05T09:15:00Z"),
+                status = AttendanceStatus.COMPLETED,
+                workDurationMinutes = 495,
+                clockOutOutsideRadius = true,
+            )
+        )
+
+        val response = mvc.perform(
+            get("/api/v1/tenants/${ctx.tenantId}/reports/attendance/export.xlsx")
+                .param("from", from.toString())
+                .param("to", to.toString())
+                .header("Authorization", "Bearer ${ctx.token}")
+        )
+            .andExpect(status().isOk)
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.valueOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"hadivo-attendance-report-$from-to-$to.xlsx\"",
+                )
+            )
+            .andReturn()
+            .response
+
+        assertThat(response.contentAsByteArray).isNotEmpty()
+        assertThat(String(response.contentAsByteArray, 0, 2, Charsets.US_ASCII)).isEqualTo("PK")
+        assertThat(auditLogs.findAll().filter { it.tenantId == ctx.tenantId }.map { it.action })
+            .contains("REPORT_EXCEL_EXPORTED")
+    }
+
+    @Test
+    fun `export PDF success returns attachment when data is empty and audit log`() {
+        val ctx = seedTenantWithUser(role = Role.TENANT_ADMIN, fullName = "Admin User")
+        val from = LocalDate.of(2026, 1, 5)
+        val to = LocalDate.of(2026, 1, 6)
+
+        val response = mvc.perform(
+            get("/api/v1/tenants/${ctx.tenantId}/reports/attendance/export.pdf")
+                .param("from", from.toString())
+                .param("to", to.toString())
+                .header("Authorization", "Bearer ${ctx.token}")
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PDF))
+            .andExpect(
+                header().string(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"hadivo-attendance-report-$from-to-$to.pdf\"",
+                )
+            )
+            .andReturn()
+            .response
+
+        assertThat(response.contentAsByteArray).isNotEmpty()
+        assertThat(String(response.contentAsByteArray, 0, 4, Charsets.US_ASCII)).isEqualTo("%PDF")
+        assertThat(auditLogs.findAll().filter { it.tenantId == ctx.tenantId }.map { it.action })
+            .contains("REPORT_PDF_EXPORTED")
+    }
+
+    @Test
     fun `export CSV rejects date range when from is after to`() {
         val ctx = seedTenantWithUser(role = Role.TENANT_ADMIN, fullName = "Admin User")
 
         mvc.perform(
             get("/api/v1/tenants/${ctx.tenantId}/reports/attendance/export.csv")
+                .param("from", "2026-01-10")
+                .param("to", "2026-01-01")
+                .header("Authorization", "Bearer ${ctx.token}")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+    }
+
+    @Test
+    fun `export XLSX rejects date range when from is after to`() {
+        val ctx = seedTenantWithUser(role = Role.TENANT_ADMIN, fullName = "Admin User")
+
+        mvc.perform(
+            get("/api/v1/tenants/${ctx.tenantId}/reports/attendance/export.xlsx")
                 .param("from", "2026-01-10")
                 .param("to", "2026-01-01")
                 .header("Authorization", "Bearer ${ctx.token}")
@@ -140,6 +233,35 @@ class AttendanceCsvExportIntegrationTest {
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+    }
+
+    @Test
+    fun `export PDF rejects range longer than thirty one days`() {
+        val ctx = seedTenantWithUser(role = Role.TENANT_ADMIN, fullName = "Admin User")
+
+        mvc.perform(
+            get("/api/v1/tenants/${ctx.tenantId}/reports/attendance/export.pdf")
+                .param("from", "2026-01-01")
+                .param("to", "2026-02-01")
+                .header("Authorization", "Bearer ${ctx.token}")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+    }
+
+    @Test
+    fun `export XLSX rejects cross tenant access`() {
+        val tenantA = seedTenantWithUser(role = Role.TENANT_ADMIN, fullName = "Tenant A Admin")
+        val tenantB = seedTenantWithUser(role = Role.TENANT_ADMIN, fullName = "Tenant B Admin")
+
+        mvc.perform(
+            get("/api/v1/tenants/${tenantB.tenantId}/reports/attendance/export.xlsx")
+                .param("from", "2026-01-01")
+                .param("to", "2026-01-02")
+                .header("Authorization", "Bearer ${tenantA.token}")
+        )
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error.code").value("FORBIDDEN"))
     }
 
     private fun seedTenantWithUser(role: Role, fullName: String): TestContext {

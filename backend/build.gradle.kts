@@ -35,6 +35,9 @@ dependencies {
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
+    implementation("org.apache.poi:poi-ooxml:5.2.5")
+    implementation("com.github.librepdf:openpdf:1.3.39")
+
     implementation("com.google.firebase:firebase-admin:9.4.3")
 
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")

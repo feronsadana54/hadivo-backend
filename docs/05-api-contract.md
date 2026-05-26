@@ -145,9 +145,30 @@ Policy:
 - `GET /tenants/{tenantId}/reports/attendance/daily?date=`
 - `GET /tenants/{tenantId}/reports/attendance/monthly?month=`
 - `GET /tenants/{tenantId}/reports/attendance/export.csv?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /tenants/{tenantId}/reports/attendance/export.xlsx?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- `GET /tenants/{tenantId}/reports/attendance/export.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`
 
-Endpoint export attendance mengembalikan `text/csv` dengan attachment filename
-`hadivo-attendance-report-{from}-to-{to}.csv`. Range MVP maksimal 31 hari.
+Endpoint export attendance memakai filter tenant dari path dan guard role report yang sama dengan endpoint reporting lain. Range MVP maksimal 31 hari.
+
+Format attachment:
+
+- CSV: `Content-Type: text/csv`, filename `hadivo-attendance-report-{from}-to-{to}.csv`.
+- Excel: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, filename `hadivo-attendance-report-{from}-to-{to}.xlsx`.
+- PDF: `Content-Type: application/pdf`, filename `hadivo-attendance-report-{from}-to-{to}.pdf`.
+
+Kolom export attendance:
+
+- `Date`
+- `User ID`
+- `Full Name`
+- `Email`
+- `Status`
+- `Clock In Time`
+- `Clock Out Time`
+- `Work Duration Minutes`
+- `Clock Out Outside Radius`
+
+Excel ditujukan untuk analisis dan operasional admin. PDF ditujukan untuk laporan formal. Export belum memakai streaming besar, scheduler, email report, template editor, atau storage file permanen.
 
 ### Super Admin
 

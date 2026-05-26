@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.9.0 - Advanced Export PDF and Excel Reports
+
+### Backend
+
+- Added Apache POI based Excel export for attendance reports.
+- Added OpenPDF based PDF export for attendance reports.
+- Added tenant-scoped endpoints `GET /api/v1/tenants/{tenantId}/reports/attendance/export.xlsx` and `GET /api/v1/tenants/{tenantId}/reports/attendance/export.pdf`.
+- Reused the CSV export data mapping so CSV, XLSX, and PDF reports stay consistent.
+- Kept the existing export validation: required `from`/`to`, `from <= to`, tenant access guard, and maximum 31-day range.
+- Added audit actions `REPORT_EXCEL_EXPORTED` and `REPORT_PDF_EXPORTED`.
+- Added backend integration coverage for XLSX/PDF success, invalid ranges, cross-tenant rejection, response headers, non-empty bodies, and audit log entries.
+
+### Web Dashboard
+
+- Added `Unduh Excel` and `Unduh PDF` buttons to the Attendance page beside `Unduh CSV`.
+- Downloads use the same date filters and authenticated blob download flow as CSV.
+- Added friendly download failure copy.
+- Refreshed the Attendance screenshot.
+
+### Notes
+
+- Excel is intended for admin operations and analysis.
+- PDF is intended for formal attendance reports.
+- Export remains MVP-scoped to 31 days per request and does not include scheduler, email reports, template editor, permanent file storage, or large streaming export.
+
 ## v0.8.0 - Real Notification Providers
 
 ### Backend

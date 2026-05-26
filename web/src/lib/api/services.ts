@@ -84,12 +84,24 @@ export const api = {
 };
 
 export async function downloadCsvReport(tenantId: string, from: string, to: string) {
+  await downloadAttendanceReport(endpoints.attendanceReportCsv(tenantId), from, to, "csv");
+}
+
+export async function downloadAttendanceExcelReport(tenantId: string, from: string, to: string) {
+  await downloadAttendanceReport(endpoints.attendanceReportExcel(tenantId), from, to, "xlsx");
+}
+
+export async function downloadAttendancePdfReport(tenantId: string, from: string, to: string) {
+  await downloadAttendanceReport(endpoints.attendanceReportPdf(tenantId), from, to, "pdf");
+}
+
+async function downloadAttendanceReport(endpoint: string, from: string, to: string, extension: "csv" | "xlsx" | "pdf") {
   try {
-    const response = await apiClient.get(endpoints.attendanceReportCsv(tenantId), {
+    const response = await apiClient.get(endpoint, {
       params: { from, to },
       responseType: "blob",
     });
-    const fallbackFilename = `hadivo-attendance-report-${from}-to-${to}.csv`;
+    const fallbackFilename = `hadivo-attendance-report-${from}-to-${to}.${extension}`;
     const filename = parseFilename(response.headers["content-disposition"]) ?? fallbackFilename;
     const url = window.URL.createObjectURL(response.data);
     const link = document.createElement("a");
@@ -122,9 +134,9 @@ async function normalizeDownloadError(error: unknown) {
     const text = await responseData.text();
     try {
       const parsed = JSON.parse(text) as { error?: { message?: string; code?: string } };
-      return new Error(parsed.error?.message ?? parsed.error?.code ?? "Failed to export CSV");
+      return new Error(parsed.error?.message ?? parsed.error?.code ?? "Failed to export report");
     } catch {
-      return new Error(text || "Failed to export CSV");
+      return new Error(text || "Failed to export report");
     }
   }
 

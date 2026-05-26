@@ -67,7 +67,7 @@ Mobile app memakai random UUID yang disimpan di secure storage sebagai device ID
 
 ## Audit log
 
-Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, device binding, subscription update, CSV export report, dan read access Super Admin Console.
+Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, device binding, subscription update, CSV/Excel/PDF export report, dan read access Super Admin Console.
 
 Notification gateway mencatat delivery log terpisah di `notification_delivery_logs` dan audit action `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, serta `NOTIFICATION_FAILED`. Metadata audit dan metadata delivery tidak boleh menyimpan token, secret, API key, password, atau credential provider.
 
@@ -84,6 +84,8 @@ Audit log menyimpan data secukupnya:
 - `createdAt`.
 
 Metadata audit tidak boleh menyimpan password, access token, refresh token, JWT, secret, connection string, atau data rahasia lain. Untuk login failed, metadata cukup memakai email yang dimask dan reason umum.
+
+Export attendance mencatat audit action `REPORT_CSV_EXPORTED`, `REPORT_EXCEL_EXPORTED`, dan `REPORT_PDF_EXPORTED` dengan metadata periode `from` dan `to` saja.
 
 ## Security headers and errors
 

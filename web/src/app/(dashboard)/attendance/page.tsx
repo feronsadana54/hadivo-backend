@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { AttendanceStatusBadge, attendanceStatusLabel } from "@/components/attendance/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,19 +11,22 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useDailyReport } from "@/hooks/use-api";
 import { getErrorMessage } from "@/lib/api/client";
-import { downloadCsvReport } from "@/lib/api/services";
+import { downloadAttendanceExcelReport, downloadAttendancePdfReport, downloadCsvReport } from "@/lib/api/services";
 import { defaultTenantId } from "@/lib/config/env";
 import { displayEmail, displayName, formatDateTime, formatMinutes } from "@/lib/utils";
 import type { AttendanceStatus } from "@/types/api";
 
 const statuses: Array<"ALL" | AttendanceStatus> = ["ALL", "ON_TIME", "LATE", "COMPLETED", "EARLY_LEAVE"];
 const currentDate = new Date().toISOString().slice(0, 10);
+type ExportFormat = "csv" | "excel" | "pdf";
+
+const maxExportRangeDays = 31;
 
 export default function AttendancePage() {
   const [fromDate, setFromDate] = useState(currentDate);
   const [toDate, setToDate] = useState(currentDate);
   const [status, setStatus] = useState<"ALL" | AttendanceStatus>("ALL");
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const reportDate = fromDate || currentDate;
   const report = useDailyReport(reportDate);
@@ -33,7 +36,7 @@ export default function AttendancePage() {
     return status === "ALL" ? data : data.filter((row) => row.status === status);
   }, [report.data?.rows, status]);
 
-  async function handleExport() {
+  async function handleExport(format: ExportFormat) {
     setExportError(null);
     if (!fromDate || !toDate) {
       setExportError("Pilih tanggal awal dan tanggal akhir terlebih dahulu.");
@@ -43,14 +46,24 @@ export default function AttendancePage() {
       setExportError("Tanggal awal tidak boleh lebih baru dari tanggal akhir.");
       return;
     }
+    if (getInclusiveDateRangeDays(fromDate, toDate) > maxExportRangeDays) {
+      setExportError("Range laporan maksimal 31 hari.");
+      return;
+    }
 
     try {
-      setIsExporting(true);
-      await downloadCsvReport(defaultTenantId, fromDate, toDate);
-    } catch (error) {
-      setExportError(getErrorMessage(error));
+      setExportingFormat(format);
+      if (format === "excel") {
+        await downloadAttendanceExcelReport(defaultTenantId, fromDate, toDate);
+      } else if (format === "pdf") {
+        await downloadAttendancePdfReport(defaultTenantId, fromDate, toDate);
+      } else {
+        await downloadCsvReport(defaultTenantId, fromDate, toDate);
+      }
+    } catch {
+      setExportError("Laporan belum bisa diunduh. Coba lagi beberapa saat.");
     } finally {
-      setIsExporting(false);
+      setExportingFormat(null);
     }
   }
 
@@ -58,13 +71,13 @@ export default function AttendancePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-normal">Data Absensi</h1>
-        <p className="text-sm text-muted-foreground">Lihat absensi harian dan unduh laporan CSV saat dibutuhkan.</p>
+        <p className="text-sm text-muted-foreground">Lihat absensi harian dan unduh laporan CSV, Excel, atau PDF.</p>
       </div>
       <Card>
         <CardHeader>
           <CardTitle>Filter data</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
+        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 xl:items-end">
           <div className="space-y-2">
             <Label htmlFor="fromDate">Tanggal awal</Label>
             <Input
@@ -93,11 +106,38 @@ export default function AttendancePage() {
               ))}
             </select>
           </div>
-          <Button className="w-full gap-2 xl:w-auto" disabled={isExporting} onClick={handleExport}>
-            <Download className="h-4 w-4" aria-hidden="true" />
-            {isExporting ? "Menyiapkan CSV..." : "Unduh CSV"}
-          </Button>
-          {exportError ? <p className="text-sm text-destructive sm:col-span-2 xl:col-span-4">{exportError}</p> : null}
+          <div className="space-y-2 md:col-span-2 xl:col-span-4">
+            <p className="text-sm font-medium">Unduh laporan</p>
+            <div className="grid gap-2 sm:grid-cols-3 xl:flex xl:flex-wrap">
+              <Button
+                className="w-full gap-2 xl:w-auto"
+                disabled={Boolean(exportingFormat)}
+                onClick={() => handleExport("csv")}
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                {exportingFormat === "csv" ? "Menyiapkan CSV..." : "Unduh CSV"}
+              </Button>
+              <Button
+                className="w-full gap-2 xl:w-auto"
+                disabled={Boolean(exportingFormat)}
+                onClick={() => handleExport("excel")}
+                variant="outline"
+              >
+                <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+                {exportingFormat === "excel" ? "Menyiapkan Excel..." : "Unduh Excel"}
+              </Button>
+              <Button
+                className="w-full gap-2 xl:w-auto"
+                disabled={Boolean(exportingFormat)}
+                onClick={() => handleExport("pdf")}
+                variant="outline"
+              >
+                <FileText className="h-4 w-4" aria-hidden="true" />
+                {exportingFormat === "pdf" ? "Menyiapkan PDF..." : "Unduh PDF"}
+              </Button>
+            </div>
+          </div>
+          {exportError ? <p className="text-sm text-destructive md:col-span-2 xl:col-span-4">{exportError}</p> : null}
         </CardContent>
       </Card>
       {report.isLoading ? <LoadingState label="Memuat data absensi..." /> : null}
@@ -138,4 +178,10 @@ export default function AttendancePage() {
       ) : null}
     </div>
   );
+}
+
+function getInclusiveDateRangeDays(from: string, to: string) {
+  const fromTime = Date.parse(`${from}T00:00:00Z`);
+  const toTime = Date.parse(`${to}T00:00:00Z`);
+  return Math.floor((toTime - fromTime) / 86_400_000) + 1;
 }

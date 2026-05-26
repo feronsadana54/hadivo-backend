@@ -33,3 +33,29 @@ data class MonthlyReport(
     val tenantId: UUID,
     val days: List<MonthlyReportRow>,
 )
+
+data class AttendanceReportExportRow(
+    val date: LocalDate,
+    val userId: UUID,
+    val fullName: String,
+    val email: String,
+    val status: AttendanceStatus,
+    val clockInTime: String,
+    val clockOutTime: String,
+    val workDurationMinutes: Int?,
+    val clockOutOutsideRadius: Boolean,
+)
+
+object AttendanceReportExportColumns {
+    val headers = listOf(
+        "Date",
+        "User ID",
+        "Full Name",
+        "Email",
+        "Status",
+        "Clock In Time",
+        "Clock Out Time",
+        "Work Duration Minutes",
+        "Clock Out Outside Radius",
+    )
+}

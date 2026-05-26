@@ -29,6 +29,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Super Admin Console v0.5.0 untuk memantau tenant lintas platform secara read-only.
 - Device Binding v0.6.0 untuk membatasi absensi user ke satu trusted device per tenant, dengan reset perangkat oleh admin.
 - Notification Gateway v0.8.0 dengan RabbitMQ async flow, delivery log, in-app delivery, default mock/log-only provider, dan optional Resend/FCM provider.
+- Advanced export v0.9.0 untuk laporan attendance dalam format CSV, Excel, dan PDF dengan batas range MVP 31 hari.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
@@ -83,6 +84,8 @@ Super Admin Console tersedia di `/super-admin`. Fitur ini read-only untuk platfo
 Device Binding v0.6.0 mendaftarkan perangkat absensi pertama user sebagai trusted device untuk tenant tersebut. Clock-in/clock-out dari perangkat berbeda akan ditolak dengan pesan agar user menghubungi admin. Admin tenant dapat reset perangkat dari halaman Members agar user bisa mendaftarkan perangkat baru pada absensi berikutnya. Mobile app memakai random device UUID yang disimpan di secure storage, bukan hardware identifier mentah.
 
 Notification Gateway memproses event absensi lewat RabbitMQ queue `hadivo.notification.events`, menyimpan delivery log tenant-scoped, dan memakai provider mock/log-only secara default. v0.8.0 menambahkan provider optional Resend untuk email dan Firebase Cloud Messaging untuk push notification. Jika konfigurasi provider real belum lengkap, sistem tetap berjalan memakai mock/log-only provider. Halaman `/notifications` menampilkan delivery log secara read-only untuk admin.
+
+Halaman Attendance web dapat mengunduh laporan attendance dalam format CSV, Excel, dan PDF. CSV tetap cocok untuk integrasi sederhana, Excel ditujukan untuk analisis dan operasional admin, sedangkan PDF ditujukan untuk laporan formal. Untuk MVP, export attendance dibatasi maksimal 31 hari per request dan belum memakai streaming besar atau penyimpanan file permanen.
 
 Untuk mengaktifkan Resend, buat API key di Resend lalu set:
 
@@ -170,13 +173,13 @@ Hadivo memakai tenant isolation berbasis `tenantId` path dan membership guard un
 
 Login protection MVP memakai in-memory failed login counter: 5 kali gagal dalam 15 menit akan mengunci login sementara selama 15 menit. Limitasi: production multi-instance sebaiknya memakai Redis atau rate limiter terpusat.
 
-Audit log mencatat aksi penting seperti login, logout, refresh token, tenant changes, member changes, location changes, attendance settings update, attendance flow, subscription update, dan CSV export. Audit metadata tidak boleh menyimpan password, access token, refresh token, JWT, secret, atau data rahasia.
+Audit log mencatat aksi penting seperti login, logout, refresh token, tenant changes, member changes, location changes, attendance settings update, attendance flow, subscription update, dan export laporan CSV/Excel/PDF. Audit metadata tidak boleh menyimpan password, access token, refresh token, JWT, secret, atau data rahasia.
 
 Detail baseline tersedia di [`docs/12-security-baseline.md`](docs/12-security-baseline.md).
 
 ## Release Notes
 
-Release notes untuk `v0.8.0`, `v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.8.0` menambahkan optional Resend dan Firebase Cloud Messaging provider dengan fallback mock/log-only.
+Release notes untuk `v0.9.0`, `v0.8.0`, `v0.7.0`, `v0.6.0`, `v0.5.0`, `v0.4.0`, `v0.3.0`, `v0.2.0`, dan `v0.1.0` tersedia di [`CHANGELOG.md`](CHANGELOG.md). `v0.9.0` menambahkan export laporan attendance Excel dan PDF di samping CSV.
 
 ## Screenshots
 
@@ -213,7 +216,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - `attendance_records` hanya menyimpan absensi sah; `attendance_attempts` mencatat percobaan gagal
 - Event publish ke RabbitMQ **after commit** menggunakan `@TransactionalEventListener`
 - Notification gateway foundation dengan queue async, mock/log-only email/push provider, delivery log, dan in-app notification storage
-- Reporting harian & bulanan (JSON) serta export CSV laporan attendance
+- Reporting harian & bulanan (JSON) serta export laporan attendance CSV, Excel, dan PDF
 - Audit log untuk operasi absensi
 - Postman collection siap pakai
 - Unit test Haversine + integration test clock-in memakai PostgreSQL dari Docker Compose
@@ -262,6 +265,17 @@ Swagger and Postman screenshots can be added after manual capture.
 - Mobile app melakukan Firebase initialization dan token registration hanya jika `HADIVO_ENABLE_FIREBASE_MESSAGING=true`.
 - Web Notifications menampilkan provider badge `mock`, `resend`, atau `fcm`.
 
+## Fitur v0.9.0
+
+- Endpoint export attendance Excel: `GET /api/v1/tenants/{tenantId}/reports/attendance/export.xlsx?from=YYYY-MM-DD&to=YYYY-MM-DD`.
+- Endpoint export attendance PDF: `GET /api/v1/tenants/{tenantId}/reports/attendance/export.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD`.
+- Excel memakai Apache POI dengan sheet `Attendance Report`, title, period, header bold, freeze pane header, dan auto-size column.
+- PDF memakai OpenPDF dengan title, period, generatedAt, tabel sederhana, multi-page otomatis, dan pesan kosong `No attendance data for this period.`
+- CSV, Excel, dan PDF memakai data export yang sama agar hasil konsisten.
+- Range export attendance tetap maksimal 31 hari untuk MVP.
+- Audit log baru untuk `REPORT_EXCEL_EXPORTED` dan `REPORT_PDF_EXPORTED`.
+- Halaman Attendance web menambahkan tombol `Unduh Excel` dan `Unduh PDF` di samping `Unduh CSV`.
+
 ## Known limitation (Fase 1)
 
 - Super Admin Console v0.5.0 masih read-only.
@@ -277,7 +291,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Belum ada SMTP, SMS, retry scheduler, notification preference center, atau production-grade token pruning.
 - Subscription dibuat manual, belum terintegrasi dengan payment gateway.
 - Tidak ada WebSocket atau realtime push.
-- Tidak ada export PDF/Excel untuk laporan attendance.
+- Export laporan attendance masih dibatasi maksimal 31 hari per request dan belum memakai streaming besar, template editor, scheduler, email report, atau storage file permanen.
 - Address search Locations web memakai Nominatim OpenStreetMap untuk demo/portfolio dan request ringan, bukan live autocomplete.
 - Tidak ada integrasi Google Maps.
 - Tidak ada routing atau navigasi peta.
@@ -291,7 +305,6 @@ Swagger and Postman screenshots can be added after manual capture.
 | 2 | Real face recognition (ML / embedding) |
 | 2 | Notification retry scheduler, provider observability, dan notification preferences |
 | 2 | Payment gateway untuk subscription |
-| 2 | Export laporan PDF/Excel |
 | 3 | Mobile app (Flutter) |
 | 3 | Web admin |
 | 3 | Shift / jadwal fleksibel per user |
