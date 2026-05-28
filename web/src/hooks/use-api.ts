@@ -5,10 +5,14 @@ import { api } from "@/lib/api/services";
 import { defaultTenantId } from "@/lib/config/env";
 import type {
   AttendanceSettings,
+  CreateMemberShiftAssignmentRequest,
+  CreateShiftTemplateRequest,
   CreateSubscriptionPaymentRequest,
   Location,
   NotificationDeliveryFilters,
   SuperAdminTenantFilters,
+  UpdateMemberShiftAssignmentRequest,
+  UpdateShiftTemplateRequest,
 } from "@/types/api";
 
 export function useTenant() {
@@ -83,6 +87,67 @@ export function useUpdateSettings() {
   return useMutation({
     mutationFn: (payload: Partial<AttendanceSettings>) => api.updateSettings(defaultTenantId, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings", defaultTenantId] }),
+  });
+}
+
+export function useShifts() {
+  return useQuery({
+    queryKey: ["shifts", defaultTenantId],
+    queryFn: () => api.getShifts(defaultTenantId),
+  });
+}
+
+export function useCreateShift() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateShiftTemplateRequest) => api.createShift(defaultTenantId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts", defaultTenantId] }),
+  });
+}
+
+export function useUpdateShift() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ shiftId, payload }: { shiftId: string; payload: UpdateShiftTemplateRequest }) =>
+      api.updateShift(defaultTenantId, shiftId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts", defaultTenantId] }),
+  });
+}
+
+export function useMemberShiftAssignments(userId: string, enabled = true) {
+  return useQuery({
+    queryKey: ["member-shift-assignments", defaultTenantId, userId],
+    queryFn: () => api.getMemberShiftAssignments(defaultTenantId, userId),
+    enabled: Boolean(userId) && enabled,
+  });
+}
+
+export function useCreateMemberShiftAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, payload }: { userId: string; payload: CreateMemberShiftAssignmentRequest }) =>
+      api.createMemberShiftAssignment(defaultTenantId, userId, payload),
+    onSuccess: (_assignment, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["member-shift-assignments", defaultTenantId, variables.userId] });
+    },
+  });
+}
+
+export function useUpdateMemberShiftAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      userId,
+      assignmentId,
+      payload,
+    }: {
+      userId: string;
+      assignmentId: string;
+      payload: UpdateMemberShiftAssignmentRequest;
+    }) => api.updateMemberShiftAssignment(defaultTenantId, userId, assignmentId, payload),
+    onSuccess: (_assignment, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["member-shift-assignments", defaultTenantId, variables.userId] });
+    },
   });
 }
 

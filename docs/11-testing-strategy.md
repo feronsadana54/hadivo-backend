@@ -83,6 +83,20 @@ Test payment v1.0.0 mengecek:
 - raw webhook JSON tidak diekspos di list/detail response;
 - audit log dibuat untuk create, webhook received, status update, subscription activated, dan ignored webhook.
 
+## Integration test — shift & flexible schedule
+
+Test shift v1.1.0 mengecek:
+
+- `TENANT_ADMIN` dapat membuat dan mengubah shift;
+- `EMPLOYEE` dan `STUDENT` tidak boleh membuat shift;
+- cross-tenant update shift ditolak;
+- assignment shift ke member tenant berhasil;
+- assignment aktif yang overlap ditolak;
+- clock-in memakai late threshold dari shift assignment;
+- member tanpa shift fallback ke attendance settings tenant;
+- resolver overnight memetakan clock-out pagi ke tanggal shift sebelumnya;
+- audit log dibuat untuk shift create/update dan assignment create.
+
 ## Cara menjalankan
 
 ```bash

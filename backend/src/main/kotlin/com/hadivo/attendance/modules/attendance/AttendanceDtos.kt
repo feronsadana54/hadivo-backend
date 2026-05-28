@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.UUID
 
 data class ClockInRequest(
@@ -42,6 +43,11 @@ data class AttendanceRecordView(
     val clockOutOutsideRadius: Boolean,
     val status: AttendanceStatus,
     val workDurationMinutes: Int?,
+    val shiftId: UUID?,
+    val shiftName: String?,
+    val scheduledStartTime: LocalTime?,
+    val scheduledEndTime: LocalTime?,
+    val lateThresholdMinutes: Int?,
 )
 
 data class AttendanceAttemptView(

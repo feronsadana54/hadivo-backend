@@ -25,12 +25,13 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Geolocation attendance validation dengan Haversine radius check.
 - Attendance attempts audit untuk percobaan gagal seperti `OUT_OF_RADIUS`, `FACE_MISMATCH`, dan `DUPLICATE_CLOCK_IN`.
 - Role-based dashboard untuk admin tenant, manager, teacher, employee, student, dan parent.
-- Web dashboard untuk login, summary, attendance, attempts, notifications, members, settings, locations, subscription, dan Super Admin Console.
+- Web dashboard untuk login, summary, attendance, attempts, notifications, members, shifts, settings, locations, subscription, dan Super Admin Console.
 - Super Admin Console v0.5.0 untuk memantau tenant lintas platform secara read-only.
 - Device Binding v0.6.0 untuk membatasi absensi user ke satu trusted device per tenant, dengan reset perangkat oleh admin.
 - Notification Gateway v0.8.0 dengan RabbitMQ async flow, delivery log, in-app delivery, default mock/log-only provider, dan optional Resend/FCM provider.
 - Advanced export v0.9.0 untuk laporan attendance dalam format CSV, Excel, dan PDF dengan batas range MVP 31 hari.
 - Subscription Payment Foundation v1.0.0 dengan payment provider mock default, optional Midtrans Snap, payment record, webhook idempotent, dan aktivasi subscription dari backend.
+- Shift & Flexible Schedule v1.1.0 dengan shift template, assignment anggota, fallback ke attendance settings tenant, overnight shift sederhana, dan late calculation berdasarkan shift.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
@@ -141,6 +142,8 @@ Halaman Locations menyediakan map picker berbasis Leaflet + OpenStreetMap. Admin
 
 Detail langkah-langkah ada di [`docs/10-local-development.md`](docs/10-local-development.md).
 
+Panduan shift dan jadwal fleksibel tersedia di [`docs/15-shift-flexible-schedule.md`](docs/15-shift-flexible-schedule.md).
+
 ## Mobile App
 
 Flutter Mobile Attendance App MVP tersedia di folder [`mobile/`](mobile). App ini ditujukan untuk user attendance seperti employee/student, bukan dashboard admin.
@@ -214,6 +217,8 @@ Screenshot berikut diambil dari aplikasi web yang berjalan lokal.
 ![Hadivo dashboard](docs/images/web-dashboard.png)
 ![Hadivo attendance](docs/images/web-attendance.png)
 ![Hadivo attempts audit](docs/images/web-attempts.png)
+![Hadivo members](docs/images/web-members.png)
+![Hadivo shifts](docs/images/web-shifts.png)
 ![Hadivo notifications](docs/images/web-notifications.png)
 ![Hadivo settings](docs/images/web-settings.png)
 ![Hadivo locations](docs/images/web-locations.png)
@@ -245,7 +250,7 @@ Swagger and Postman screenshots can be added after manual capture.
 - Audit log untuk operasi absensi
 - Postman collection siap pakai
 - Unit test Haversine + integration test clock-in memakai PostgreSQL dari Docker Compose
-- Web dashboard admin tenant untuk login, summary, attendance, attempts, members, settings, locations, subscription, dan payment history
+- Web dashboard admin tenant untuk login, summary, attendance, attempts, members, shifts, settings, locations, subscription, dan payment history
 - Flutter mobile attendance MVP untuk employee/student demo
 
 ## Fitur v0.5.0

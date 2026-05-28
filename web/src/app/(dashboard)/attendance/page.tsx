@@ -152,6 +152,7 @@ export default function AttendancePage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Shift</TableHead>
                 <TableHead>Jam masuk</TableHead>
                 <TableHead>Jam keluar</TableHead>
                 <TableHead>Durasi kerja</TableHead>
@@ -167,6 +168,12 @@ export default function AttendancePage() {
                   <TableCell>
                     <AttendanceStatusBadge status={row.status} />
                   </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{row.shiftName ?? "Jadwal tenant"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {timeLabel(row.scheduledStartTime)} - {timeLabel(row.scheduledEndTime)}
+                    </div>
+                  </TableCell>
                   <TableCell>{formatDateTime(row.clockInAt)}</TableCell>
                   <TableCell>{formatDateTime(row.clockOutAt)}</TableCell>
                   <TableCell>{formatMinutes(row.workDurationMinutes)}</TableCell>
@@ -178,6 +185,10 @@ export default function AttendancePage() {
       ) : null}
     </div>
   );
+}
+
+function timeLabel(value?: string | null) {
+  return value ? value.slice(0, 5) : "-";
 }
 
 function getInclusiveDateRangeDays(from: string, to: string) {

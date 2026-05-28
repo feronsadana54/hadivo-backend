@@ -122,6 +122,54 @@ Webhook bersifat idempotent. Webhook `PAID` berulang tidak membuat subscription 
 - `GET /tenants/{tenantId}/attendance-settings`
 - `PATCH /tenants/{tenantId}/attendance-settings`
 
+### Shift & flexible schedule
+
+Shift template tenant-scoped:
+
+- `GET /tenants/{tenantId}/shifts`
+- `POST /tenants/{tenantId}/shifts`
+- `PATCH /tenants/{tenantId}/shifts/{shiftId}`
+
+Request create/update shift:
+
+```json
+{
+  "name": "Shift Malam",
+  "startTime": "22:00",
+  "endTime": "06:00",
+  "lateThresholdMinutes": 15,
+  "allowsOvertime": true,
+  "active": true
+}
+```
+
+`endTime` boleh lebih kecil atau sama dengan `startTime`; kondisi ini berarti shift melewati tengah malam.
+
+Assignment shift anggota:
+
+- `GET /tenants/{tenantId}/members/{userId}/shift-assignments`
+- `POST /tenants/{tenantId}/members/{userId}/shift-assignments`
+- `PATCH /tenants/{tenantId}/members/{userId}/shift-assignments/{assignmentId}`
+
+Request create assignment:
+
+```json
+{
+  "shiftTemplateId": "33333333-3333-3333-3333-333333333333",
+  "effectiveFrom": "2026-06-01",
+  "effectiveTo": null,
+  "active": true
+}
+```
+
+Policy:
+
+- `TENANT_ADMIN` dan `SUPER_ADMIN` dapat membuat/mengubah shift dan assignment.
+- `MANAGER` dapat membaca shift template.
+- `EMPLOYEE`, `STUDENT`, dan `PARENT` tidak dapat mengelola shift.
+- Assignment aktif untuk anggota yang sama tidak boleh overlap.
+- Jika anggota belum punya assignment aktif, attendance fallback ke `tenant_attendance_settings`.
+
 ### Attendance
 
 - `POST /tenants/{tenantId}/attendance/clock-in`

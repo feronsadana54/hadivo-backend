@@ -6,7 +6,7 @@ Dokumen ini merangkum baseline keamanan Hadivo setelah fase Security & Tenant Ha
 
 Endpoint tenant-scoped memakai `tenantId` dari path dan harus memvalidasi membership aktif user melalui `MembershipGuard` atau service yang setara. Data tenant tidak boleh diambil hanya berdasarkan input request tanpa cek akses tenant.
 
-Endpoint yang dijaga termasuk tenant profile, memberships, member devices, parent links, subscriptions, subscription payments, locations, attendance settings, attendance, attendance attempts, notification deliveries, dan reports. Endpoint lintas tenant `/api/v1/super-admin/**` hanya untuk role `SUPER_ADMIN` dan tidak bergantung pada membership tenant yang sedang dibuka.
+Endpoint yang dijaga termasuk tenant profile, memberships, member devices, member shift assignments, shift templates, parent links, subscriptions, subscription payments, locations, attendance settings, attendance, attendance attempts, notification deliveries, dan reports. Endpoint lintas tenant `/api/v1/super-admin/**` hanya untuk role `SUPER_ADMIN` dan tidak bergantung pada membership tenant yang sedang dibuka.
 
 ## Role-based access
 
@@ -67,7 +67,7 @@ Mobile app memakai random UUID yang disimpan di secure storage sebagai device ID
 
 ## Audit log
 
-Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, device binding, subscription update, subscription payment flow, CSV/Excel/PDF export report, dan read access Super Admin Console.
+Audit log dipakai untuk aksi penting seperti login, logout, refresh token, tenant changes, membership changes, parent link changes, location changes, attendance settings update, attendance flow, device binding, shift template dan assignment changes, subscription update, subscription payment flow, CSV/Excel/PDF export report, dan read access Super Admin Console.
 
 Notification gateway mencatat delivery log terpisah di `notification_delivery_logs` dan audit action `NOTIFICATION_PUBLISHED`, `NOTIFICATION_SENT`, serta `NOTIFICATION_FAILED`. Metadata audit dan metadata delivery tidak boleh menyimpan token, secret, API key, password, atau credential provider.
 

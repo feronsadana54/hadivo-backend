@@ -51,6 +51,12 @@ class AttendanceExcelExporter {
                     ?.let { row.createCell(7).setCellValue(it.toDouble()) }
                     ?: row.createCell(7).setCellValue("")
                 row.createCell(8).setCellValue(reportRow.clockOutOutsideRadius.toString())
+                row.createCell(9).setCellValue(reportRow.shiftName)
+                row.createCell(10).setCellValue(reportRow.scheduledStartTime)
+                row.createCell(11).setCellValue(reportRow.scheduledEndTime)
+                reportRow.lateThresholdMinutes
+                    ?.let { row.createCell(12).setCellValue(it.toDouble()) }
+                    ?: row.createCell(12).setCellValue("")
             }
 
             AttendanceReportExportColumns.headers.indices.forEach(sheet::autoSizeColumn)

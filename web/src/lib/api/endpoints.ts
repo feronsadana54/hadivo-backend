@@ -15,6 +15,12 @@ export const endpoints = {
   attempts: (tenantId: string) => `/tenants/${tenantId}/attendance-attempts`,
   notificationDeliveries: (tenantId: string) => `/tenants/${tenantId}/notification-deliveries`,
   settings: (tenantId: string) => `/tenants/${tenantId}/attendance-settings`,
+  shifts: (tenantId: string) => `/tenants/${tenantId}/shifts`,
+  shift: (tenantId: string, shiftId: string) => `/tenants/${tenantId}/shifts/${shiftId}`,
+  memberShiftAssignments: (tenantId: string, userId: string) =>
+    `/tenants/${tenantId}/members/${userId}/shift-assignments`,
+  memberShiftAssignment: (tenantId: string, userId: string, assignmentId: string) =>
+    `/tenants/${tenantId}/members/${userId}/shift-assignments/${assignmentId}`,
   locations: (tenantId: string) => `/tenants/${tenantId}/locations`,
   location: (tenantId: string, locationId: string) => `/tenants/${tenantId}/locations/${locationId}`,
   subscription: (tenantId: string) => `/tenants/${tenantId}/subscriptions/current`,

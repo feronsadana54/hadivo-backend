@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.1.0 - Shift & Flexible Schedule
+
+### Backend
+
+- Added `shift_templates` and `member_shift_assignments` tables.
+- Added shift snapshot columns to `attendance_records` for stable report history.
+- Added tenant-scoped shift template and member shift assignment endpoints.
+- Added shift schedule resolver with fallback to tenant attendance settings.
+- Added simple overnight shift handling for assigned shifts.
+- Updated clock-in late calculation to use assigned shift threshold when available.
+- Added shift info to daily reports and CSV/Excel/PDF exports.
+- Added audit actions `SHIFT_CREATED`, `SHIFT_UPDATED`, `SHIFT_ASSIGNMENT_CREATED`, and `SHIFT_ASSIGNMENT_UPDATED`.
+- Added backend integration coverage for shift access, assignment overlap, fallback schedule, assigned shift late threshold, overnight resolver, and audit log coverage.
+
+### Web Dashboard
+
+- Added `/shifts` page for shift template management and member assignment.
+- Added Shift navigation item.
+- Added current shift information to Members and Attendance tables.
+- Added screenshot capture targets for Members and Shifts.
+
+### Notes
+
+- Members without shift assignment continue using tenant attendance settings.
+- Payroll, leave management, holiday calendars, roster generation, shift swap requests, real biometric verification, and complex overtime approval are not included.
+
 ## v1.0.0 - Subscription Payment Foundation
 
 ### Backend

@@ -3,14 +3,18 @@ import { endpoints } from "@/lib/api/endpoints";
 import type {
   AttendanceAttempt,
   AttendanceSettings,
+  CreateMemberShiftAssignmentRequest,
+  CreateShiftTemplateRequest,
   DailyReport,
   Location,
   Membership,
+  MemberShiftAssignment,
   MonthlyReport,
   NotificationDeliveryFilters,
   NotificationDeliveryLog,
   PageResponse,
   CreateSubscriptionPaymentRequest,
+  ShiftTemplate,
   SuperAdminOverview,
   SuperAdminTenantDetail,
   SuperAdminTenantFilters,
@@ -20,6 +24,8 @@ import type {
   SubscriptionPayment,
   Tenant,
   TokenPair,
+  UpdateMemberShiftAssignmentRequest,
+  UpdateShiftTemplateRequest,
   UserDevice,
 } from "@/types/api";
 
@@ -60,6 +66,31 @@ export const api = {
   },
   async updateSettings(tenantId: string, payload: Partial<AttendanceSettings>) {
     return unwrap<AttendanceSettings>(await apiClient.patch(endpoints.settings(tenantId), payload));
+  },
+  async getShifts(tenantId: string) {
+    return unwrap<ShiftTemplate[]>(await apiClient.get(endpoints.shifts(tenantId)));
+  },
+  async createShift(tenantId: string, payload: CreateShiftTemplateRequest) {
+    return unwrap<ShiftTemplate>(await apiClient.post(endpoints.shifts(tenantId), payload));
+  },
+  async updateShift(tenantId: string, shiftId: string, payload: UpdateShiftTemplateRequest) {
+    return unwrap<ShiftTemplate>(await apiClient.patch(endpoints.shift(tenantId, shiftId), payload));
+  },
+  async getMemberShiftAssignments(tenantId: string, userId: string) {
+    return unwrap<MemberShiftAssignment[]>(await apiClient.get(endpoints.memberShiftAssignments(tenantId, userId)));
+  },
+  async createMemberShiftAssignment(tenantId: string, userId: string, payload: CreateMemberShiftAssignmentRequest) {
+    return unwrap<MemberShiftAssignment>(await apiClient.post(endpoints.memberShiftAssignments(tenantId, userId), payload));
+  },
+  async updateMemberShiftAssignment(
+    tenantId: string,
+    userId: string,
+    assignmentId: string,
+    payload: UpdateMemberShiftAssignmentRequest,
+  ) {
+    return unwrap<MemberShiftAssignment>(
+      await apiClient.patch(endpoints.memberShiftAssignment(tenantId, userId, assignmentId), payload),
+    );
   },
   async getLocations(tenantId: string) {
     return unwrap<Location[]>(await apiClient.get(endpoints.locations(tenantId)));

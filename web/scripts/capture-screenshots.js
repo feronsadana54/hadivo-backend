@@ -80,6 +80,8 @@ async function captureSuperAdminTenants(page) {
 async function assertDashboardRoutesResponsive(page) {
   const routes = [
     "/notifications",
+    "/members",
+    "/shifts",
     "/super-admin",
     "/super-admin/tenants",
     "/super-admin/tenants/11111111-1111-1111-1111-111111111111",
@@ -130,6 +132,8 @@ async function main() {
 
     await capturePage(page, "/attendance", "web-attendance.png");
     await capturePage(page, "/attendance-attempts", "web-attempts.png");
+    await capturePage(page, "/members", "web-members.png");
+    await capturePage(page, "/shifts", "web-shifts.png");
     await capturePage(page, "/settings", "web-settings.png");
     await capturePage(page, "/locations", "web-locations.png");
     await capturePage(page, "/subscription", "web-subscription.png");

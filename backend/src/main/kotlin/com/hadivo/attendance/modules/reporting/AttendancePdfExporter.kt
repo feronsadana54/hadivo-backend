@@ -52,7 +52,7 @@ class AttendancePdfExporter {
     private fun buildTable(rows: List<AttendanceReportExportRow>): PdfPTable =
         PdfPTable(AttendanceReportExportColumns.headers.size).apply {
             widthPercentage = 100f
-            setWidths(floatArrayOf(1.1f, 2.2f, 2.1f, 2.4f, 1.4f, 2.0f, 2.0f, 1.5f, 1.5f))
+            setWidths(floatArrayOf(1.1f, 2.1f, 1.8f, 2.2f, 1.3f, 1.7f, 1.7f, 1.4f, 1.3f, 1.6f, 1.2f, 1.2f, 1.2f))
 
             AttendanceReportExportColumns.headers.forEach { addCell(headerCell(it)) }
 
@@ -66,6 +66,10 @@ class AttendancePdfExporter {
                 addCell(bodyCell(row.clockOutTime))
                 addCell(bodyCell(row.workDurationMinutes?.toString().orEmpty()))
                 addCell(bodyCell(row.clockOutOutsideRadius.toString()))
+                addCell(bodyCell(row.shiftName))
+                addCell(bodyCell(row.scheduledStartTime))
+                addCell(bodyCell(row.scheduledEndTime))
+                addCell(bodyCell(row.lateThresholdMinutes?.toString().orEmpty()))
             }
         }
 

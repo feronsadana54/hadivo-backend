@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useMemberDevices, useMemberships, useResetMemberDevices } from "@/hooks/use-api";
+import { useMemberDevices, useMemberShiftAssignments, useMemberships, useResetMemberDevices } from "@/hooks/use-api";
 import { getErrorMessage } from "@/lib/api/client";
 import { tokenStorage } from "@/lib/auth/token-storage";
 import { displayEmail, displayName, formatDateTime, shortId } from "@/lib/utils";
@@ -39,6 +39,7 @@ export default function MembersPage() {
                 <TableHead>Nama dan email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status akun</TableHead>
+                <TableHead>Shift</TableHead>
                 <TableHead>Perangkat absensi</TableHead>
                 <TableHead>Aksi</TableHead>
                 <TableHead>Member ID</TableHead>
@@ -57,6 +58,7 @@ export default function MembersPage() {
                   <TableCell>
                     <ActiveBadge active={membership.active} />
                   </TableCell>
+                  <MemberShiftCell userId={membership.userId} canViewShift={canManageDevices} />
                   <MemberDeviceCells
                     userId={membership.userId}
                     fullName={membership.fullName}
@@ -70,6 +72,32 @@ export default function MembersPage() {
         </Card>
       ) : null}
     </div>
+  );
+}
+
+function MemberShiftCell({ userId, canViewShift }: { userId: string; canViewShift: boolean }) {
+  const assignments = useMemberShiftAssignments(userId, canViewShift);
+  const current = assignments.data?.find((assignment) => assignment.current && assignment.active);
+
+  return (
+    <TableCell>
+      {!canViewShift ? (
+        <span className="text-sm text-muted-foreground">Hanya admin</span>
+      ) : assignments.isLoading ? (
+        <span className="text-sm text-muted-foreground">Memuat shift...</span>
+      ) : assignments.isError ? (
+        <span className="text-sm text-muted-foreground">{getErrorMessage(assignments.error)}</span>
+      ) : current ? (
+        <div className="space-y-1">
+          <Badge variant="info">{current.shiftName ?? "Shift"}</Badge>
+          <p className="text-xs text-muted-foreground">
+            {timeLabel(current.shiftStartTime)} - {timeLabel(current.shiftEndTime)}
+          </p>
+        </div>
+      ) : (
+        <Badge variant="muted">Jadwal tenant</Badge>
+      )}
+    </TableCell>
   );
 }
 
@@ -175,4 +203,8 @@ function readCurrentUserId() {
 
 function canManageMemberDevices(role?: Role) {
   return role === "TENANT_ADMIN" || role === "SUPER_ADMIN";
+}
+
+function timeLabel(value?: string | null) {
+  return value ? value.slice(0, 5) : "-";
 }

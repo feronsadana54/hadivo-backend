@@ -11,6 +11,7 @@ import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.UUID
 
 @Entity
@@ -64,6 +65,21 @@ class AttendanceRecord(
 
     @Column(name = "work_duration_minutes")
     var workDurationMinutes: Int? = null,
+
+    @Column(name = "shift_template_id")
+    var shiftTemplateId: UUID? = null,
+
+    @Column(name = "shift_name", length = 120)
+    var shiftName: String? = null,
+
+    @Column(name = "scheduled_start_time")
+    var scheduledStartTime: LocalTime? = null,
+
+    @Column(name = "scheduled_end_time")
+    var scheduledEndTime: LocalTime? = null,
+
+    @Column(name = "late_threshold_minutes")
+    var lateThresholdMinutes: Int? = null,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

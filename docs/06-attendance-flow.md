@@ -5,27 +5,28 @@
 1. Auth filter mengisi `AuthPrincipal`. Controller memanggil `MembershipGuard.requireMember`.
 2. `AttendanceService.clockIn`:
    - load `tenant_attendance_settings`,
-   - hitung "hari ini" pada timezone tenant,
+   - resolve jadwal harian user dari assignment shift aktif; jika tidak ada, fallback ke attendance settings tenant,
+   - hitung attendance date pada timezone tenant atau tanggal shift untuk overnight shift,
    - validasi device binding: device pertama auto-register, device berbeda → log `DEVICE_MISMATCH`, 422, device kosong/tidak valid → log `INVALID_DEVICE`, 422,
    - kalau sudah ada `clock_in_at` hari ini → log `DUPLICATE_CLOCK_IN`, 422,
    - cek geofence terhadap semua `tenant_locations` aktif → bila tidak match log `OUT_OF_RADIUS`, 422,
    - kalau `require_face_clock_in` → panggil `FaceVerifier`. Gagal → log `FACE_MISMATCH`, 422,
-   - hitung `LATE` berdasarkan `work_start_time + late_threshold_minutes`,
+   - hitung `LATE` berdasarkan scheduled start time + late threshold dari shift atau fallback settings,
    - kalau LATE tapi `allow_late_clock_in = false` → log `LATE_NOT_ALLOWED`, 422,
-   - simpan `attendance_records` dengan koordinat, deviceId, locationId, status,
+   - simpan `attendance_records` dengan koordinat, deviceId, locationId, status, dan snapshot shift schedule,
    - tulis `audit_logs` dan publish event `ClockInOccurred`.
 
 Event `ClockInOccurred` dikirim ke RabbitMQ **setelah** transaksi commit (lihat `09-notification-flow.md`).
 
 ## Clock-out
 
-1. Load settings.
+1. Load settings dan resolve jadwal harian user.
 2. Validasi device binding:
    - device pertama auto-register bila belum ada active trusted device,
    - device yang sama diperbolehkan dan memperbarui `last_seen_at`,
    - device berbeda → log `DEVICE_MISMATCH`, 422,
    - device kosong/tidak valid → log `INVALID_DEVICE`, 422.
-3. Cari record hari ini:
+3. Cari record berdasarkan attendance date hasil resolver:
    - tidak ada → log `NO_CLOCK_IN`, 422,
    - `clock_out_at` sudah terisi → log `ALREADY_CLOCKED_OUT`, 422.
 4. Cek geofence:
@@ -36,7 +37,7 @@ Event `ClockInOccurred` dikirim ke RabbitMQ **setelah** transaksi commit (lihat 
 6. Update record:
    - `clock_out_at`, `clock_out_latitude`, `clock_out_longitude`, `clock_out_device_id`,
    - `work_duration_minutes`,
-   - status `COMPLETED` atau `EARLY_LEAVE` (kalau jam pulang sebelum `work_end_time`).
+   - status `COMPLETED` atau `EARLY_LEAVE` (kalau jam pulang sebelum scheduled end time).
 7. Audit + publish event `ClockOutOccurred`.
 
 ## Device binding

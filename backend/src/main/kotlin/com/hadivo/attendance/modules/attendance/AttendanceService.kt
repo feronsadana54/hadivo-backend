@@ -12,7 +12,8 @@ import com.hadivo.attendance.modules.face.FaceVerifier
 import com.hadivo.attendance.modules.geofence.GeofenceValidator
 import com.hadivo.attendance.modules.location.LocationService
 import com.hadivo.attendance.modules.settings.SettingsService
-import com.hadivo.attendance.modules.settings.TenantAttendanceSettings
+import com.hadivo.attendance.modules.shift.ResolvedShiftSchedule
+import com.hadivo.attendance.modules.shift.ShiftScheduleResolver
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -27,6 +28,7 @@ class AttendanceService(
     private val attemptLogger: AttemptLogger,
     private val deviceBinding: DeviceBindingService,
     private val settingsService: SettingsService,
+    private val shiftScheduleResolver: ShiftScheduleResolver,
     private val locationService: LocationService,
     private val geofence: GeofenceValidator,
     private val faceVerifier: FaceVerifier,
@@ -38,8 +40,9 @@ class AttendanceService(
     @Transactional
     fun clockIn(tenantId: UUID, userId: UUID, request: ClockInRequest): AttendanceRecord {
         val settings = settingsService.get(tenantId)
-        val today = TimeUtils.todayAt(settings.timezone)
         val now = TimeUtils.nowAt(settings.timezone)
+        val schedule = shiftScheduleResolver.resolve(tenantId, userId, settings, now)
+        val attendanceDate = schedule.attendanceDate
         val deviceResult = deviceBinding.ensureAllowedForAttendance(
             tenantId = tenantId,
             userId = userId,
@@ -53,7 +56,7 @@ class AttendanceService(
             longitude = request.longitude,
         )
 
-        records.findByTenantIdAndUserIdAndDate(tenantId, userId, today)?.let { existing ->
+        records.findByTenantIdAndUserIdAndDate(tenantId, userId, attendanceDate)?.let { existing ->
             if (existing.clockInAt != null) {
                 logAttempt(tenantId, userId, AttendanceType.CLOCK_IN, AttemptReason.DUPLICATE_CLOCK_IN, request.latitude, request.longitude, request.deviceId)
                 throw DomainException(ErrorCode.DUPLICATE_CLOCK_IN)
@@ -71,7 +74,7 @@ class AttendanceService(
             throw DomainException(ErrorCode.FACE_MISMATCH)
         }
 
-        val isLate = TimeUtils.isAfterWithGrace(now.toLocalTime(), settings.workStartTime, settings.lateThresholdMinutes)
+        val isLate = schedule.isLate(now)
         if (isLate && !settings.allowLateClockIn) {
             logAttempt(tenantId, userId, AttendanceType.CLOCK_IN, AttemptReason.LATE_NOT_ALLOWED, request.latitude, request.longitude, request.deviceId)
             throw DomainException(ErrorCode.LATE_NOT_ALLOWED)
@@ -81,13 +84,18 @@ class AttendanceService(
             AttendanceRecord(
                 tenantId = tenantId,
                 userId = userId,
-                date = today,
+                date = attendanceDate,
                 clockInAt = now.toInstant(),
                 clockInLocationId = location.id,
                 clockInLatitude = request.latitude,
                 clockInLongitude = request.longitude,
                 clockInDeviceId = deviceResult.device.deviceId,
                 status = if (isLate) AttendanceStatus.LATE else AttendanceStatus.ON_TIME,
+                shiftTemplateId = schedule.shiftId,
+                shiftName = schedule.shiftName,
+                scheduledStartTime = schedule.startTime,
+                scheduledEndTime = schedule.endTime,
+                lateThresholdMinutes = schedule.lateThresholdMinutes,
             )
         )
 
@@ -101,7 +109,12 @@ class AttendanceService(
             action = "ATTENDANCE_CLOCK_IN",
             resourceType = "AttendanceRecord",
             resourceId = record.id.toString(),
-            metadata = mapOf("status" to record.status.name, "locationId" to location.id?.toString()),
+            metadata = mapOf(
+                "status" to record.status.name,
+                "locationId" to location.id?.toString(),
+                "shiftId" to schedule.shiftId?.toString(),
+                "shiftName" to schedule.shiftName,
+            ),
         )
 
         publisher.publishEvent(
@@ -119,8 +132,8 @@ class AttendanceService(
     @Transactional
     fun clockOut(tenantId: UUID, userId: UUID, request: ClockOutRequest): AttendanceRecord {
         val settings = settingsService.get(tenantId)
-        val today = TimeUtils.todayAt(settings.timezone)
         val now = TimeUtils.nowAt(settings.timezone)
+        val schedule = shiftScheduleResolver.resolve(tenantId, userId, settings, now)
         val deviceResult = deviceBinding.ensureAllowedForAttendance(
             tenantId = tenantId,
             userId = userId,
@@ -134,7 +147,7 @@ class AttendanceService(
             longitude = request.longitude,
         )
 
-        val record = records.findByTenantIdAndUserIdAndDate(tenantId, userId, today)
+        val record = records.findByTenantIdAndUserIdAndDate(tenantId, userId, schedule.attendanceDate)
             ?: run {
                 logAttempt(tenantId, userId, AttendanceType.CLOCK_OUT, AttemptReason.NO_CLOCK_IN, request.latitude, request.longitude, request.deviceId)
                 throw DomainException(ErrorCode.NO_CLOCK_IN)
@@ -163,7 +176,7 @@ class AttendanceService(
         record.clockOutLocationId = matchedLocation?.id
         record.clockOutOutsideRadius = matchedLocation == null
         record.workDurationMinutes = computeDurationMinutes(record.clockInAt, record.clockOutAt)
-        record.status = resolveFinalStatus(record, settings, today)
+        record.status = resolveFinalStatus(record, schedule)
 
         val saved = records.save(record)
 
@@ -198,8 +211,10 @@ class AttendanceService(
     }
 
     fun todayFor(tenantId: UUID, userId: UUID): AttendanceRecord? {
-        val timezone = settingsService.get(tenantId).timezone
-        return records.findByTenantIdAndUserIdAndDate(tenantId, userId, TimeUtils.todayAt(timezone))
+        val settings = settingsService.get(tenantId)
+        val now = TimeUtils.nowAt(settings.timezone)
+        val schedule = shiftScheduleResolver.resolve(tenantId, userId, settings, now)
+        return records.findByTenantIdAndUserIdAndDate(tenantId, userId, schedule.attendanceDate)
     }
 
     fun history(tenantId: UUID, userId: UUID, from: LocalDate, to: LocalDate): List<AttendanceRecord> =
@@ -229,11 +244,10 @@ class AttendanceService(
 
     private fun resolveFinalStatus(
         record: AttendanceRecord,
-        settings: TenantAttendanceSettings,
-        today: LocalDate,
+        schedule: ResolvedShiftSchedule,
     ): AttendanceStatus {
-        val clockOutZdt = record.clockOutAt?.atZone(TimeUtils.zone(settings.timezone)) ?: return record.status
-        return if (clockOutZdt.toLocalDate() == today && clockOutZdt.toLocalTime().isBefore(settings.workEndTime)) {
+        val clockOutZdt = record.clockOutAt?.atZone(TimeUtils.zone(schedule.timezone)) ?: return record.status
+        return if (schedule.isBeforeScheduledEnd(clockOutZdt)) {
             AttendanceStatus.EARLY_LEAVE
         } else {
             AttendanceStatus.COMPLETED
@@ -264,6 +278,11 @@ fun AttendanceRecord.toView(): AttendanceRecordView = AttendanceRecordView(
     clockOutOutsideRadius = clockOutOutsideRadius,
     status = status,
     workDurationMinutes = workDurationMinutes,
+    shiftId = shiftTemplateId,
+    shiftName = shiftName,
+    scheduledStartTime = scheduledStartTime,
+    scheduledEndTime = scheduledEndTime,
+    lateThresholdMinutes = lateThresholdMinutes,
 )
 
 fun AttendanceAttempt.toView(user: User? = null): AttendanceAttemptView = AttendanceAttemptView(

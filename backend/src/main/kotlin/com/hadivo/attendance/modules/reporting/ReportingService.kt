@@ -41,6 +41,11 @@ class ReportingService(
                     clockOutAt = it.clockOutAt,
                     workDurationMinutes = it.workDurationMinutes,
                     clockOutOutsideRadius = it.clockOutOutsideRadius,
+                    shiftId = it.shiftTemplateId,
+                    shiftName = it.shiftName,
+                    scheduledStartTime = it.scheduledStartTime,
+                    scheduledEndTime = it.scheduledEndTime,
+                    lateThresholdMinutes = it.lateThresholdMinutes,
                 )
             },
         )
@@ -79,6 +84,10 @@ class ReportingService(
                         row.clockOutTime,
                         row.workDurationMinutes?.toString().orEmpty(),
                         row.clockOutOutsideRadius.toString(),
+                        row.shiftName,
+                        row.scheduledStartTime,
+                        row.scheduledEndTime,
+                        row.lateThresholdMinutes?.toString().orEmpty(),
                     )
                 )
             }
@@ -107,6 +116,10 @@ class ReportingService(
                     clockOutTime = formatInstant(record.clockOutAt),
                     workDurationMinutes = record.workDurationMinutes,
                     clockOutOutsideRadius = record.clockOutOutsideRadius,
+                    shiftName = record.shiftName.orEmpty(),
+                    scheduledStartTime = record.scheduledStartTime?.toString().orEmpty(),
+                    scheduledEndTime = record.scheduledEndTime?.toString().orEmpty(),
+                    lateThresholdMinutes = record.lateThresholdMinutes,
                 )
             }
     }

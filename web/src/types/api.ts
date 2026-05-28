@@ -90,6 +90,11 @@ export type DailyReportRow = {
   clockOutAt?: string | null;
   workDurationMinutes?: number | null;
   clockOutOutsideRadius: boolean;
+  shiftId?: string | null;
+  shiftName?: string | null;
+  scheduledStartTime?: string | null;
+  scheduledEndTime?: string | null;
+  lateThresholdMinutes?: number | null;
 };
 
 export type DailyReport = {
@@ -159,6 +164,56 @@ export type AttendanceSettings = {
   lateThresholdMinutes: number;
   timezone: string;
 };
+
+export type ShiftTemplate = {
+  id: string;
+  tenantId: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  lateThresholdMinutes: number;
+  allowsOvertime: boolean;
+  active: boolean;
+  overnight: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateShiftTemplateRequest = {
+  name: string;
+  startTime: string;
+  endTime: string;
+  lateThresholdMinutes: number;
+  allowsOvertime: boolean;
+  active: boolean;
+};
+
+export type UpdateShiftTemplateRequest = Partial<CreateShiftTemplateRequest>;
+
+export type MemberShiftAssignment = {
+  id: string;
+  tenantId: string;
+  userId: string;
+  shiftTemplateId: string;
+  shiftName?: string | null;
+  shiftStartTime?: string | null;
+  shiftEndTime?: string | null;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  active: boolean;
+  current: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateMemberShiftAssignmentRequest = {
+  shiftTemplateId: string;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  active: boolean;
+};
+
+export type UpdateMemberShiftAssignmentRequest = Partial<CreateMemberShiftAssignmentRequest>;
 
 export type Location = {
   id: string;

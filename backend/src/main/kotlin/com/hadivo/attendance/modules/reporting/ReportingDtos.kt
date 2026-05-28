@@ -2,6 +2,7 @@ package com.hadivo.attendance.modules.reporting
 
 import com.hadivo.attendance.modules.attendance.AttendanceStatus
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.UUID
 
 data class DailyReportRow(
@@ -13,6 +14,11 @@ data class DailyReportRow(
     val clockOutAt: java.time.Instant?,
     val workDurationMinutes: Int?,
     val clockOutOutsideRadius: Boolean,
+    val shiftId: UUID?,
+    val shiftName: String?,
+    val scheduledStartTime: LocalTime?,
+    val scheduledEndTime: LocalTime?,
+    val lateThresholdMinutes: Int?,
 )
 
 data class DailyReport(
@@ -44,6 +50,10 @@ data class AttendanceReportExportRow(
     val clockOutTime: String,
     val workDurationMinutes: Int?,
     val clockOutOutsideRadius: Boolean,
+    val shiftName: String,
+    val scheduledStartTime: String,
+    val scheduledEndTime: String,
+    val lateThresholdMinutes: Int?,
 )
 
 object AttendanceReportExportColumns {
@@ -57,5 +67,9 @@ object AttendanceReportExportColumns {
         "Clock Out Time",
         "Work Duration Minutes",
         "Clock Out Outside Radius",
+        "Shift",
+        "Scheduled Start",
+        "Scheduled End",
+        "Late Threshold Minutes",
     )
 }
