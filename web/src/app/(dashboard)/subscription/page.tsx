@@ -53,8 +53,8 @@ export default function SubscriptionPage() {
         billingPeriod: selectedPackage.billingPeriod,
       });
       setCreatedPayment(payment);
-    } catch {
-      setPaymentError("Pembayaran belum bisa dibuat. Coba lagi beberapa saat.");
+    } catch (error) {
+      setPaymentError(getErrorMessage(error));
     }
   }
 

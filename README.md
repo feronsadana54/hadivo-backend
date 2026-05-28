@@ -90,6 +90,8 @@ Halaman Attendance web dapat mengunduh laporan attendance dalam format CSV, Exce
 
 Halaman Subscription web dapat membuat payment request dari package catalog backend dan menampilkan riwayat payment tenant. Provider default adalah `mock` agar local dev dan CI tidak membutuhkan API key. Midtrans Snap bersifat optional; subscription hanya aktif setelah backend menerima webhook valid dan idempotent, bukan dari callback frontend.
 
+Panduan manual QA payment tersedia di [`docs/14-payment-qa-guide.md`](docs/14-payment-qa-guide.md).
+
 Untuk mengaktifkan Resend, buat API key di Resend lalu set:
 
 ```

@@ -8,7 +8,14 @@
     { "key": "baseUrl", "value": "http://localhost:8080" },
     { "key": "tenantId", "value": "11111111-1111-1111-1111-111111111111" },
     { "key": "accessToken", "value": "" },
-    { "key": "refreshToken", "value": "" }
+    { "key": "refreshToken", "value": "" },
+    { "key": "packageId", "value": "22222222-2222-2222-2222-222222222201" },
+    { "key": "billingPeriod", "value": "MONTHLY" },
+    { "key": "paymentId", "value": "" },
+    { "key": "providerOrderId", "value": "" },
+    { "key": "grossAmount", "value": "99000.00" },
+    { "key": "signatureKey", "value": "" },
+    { "key": "midtransServerKey", "value": "local-midtrans-test-key" }
   ],
   "item": [
     {
@@ -174,6 +181,198 @@
               "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/subscriptions/current",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "tenants", "{{tenantId}}", "subscriptions", "current"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment QA Flow",
+      "item": [
+        {
+          "name": "List Packages",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.length) {",
+                  "  const selected = json.data.find((item) => item.code === 'PRO_MONTHLY') || json.data[0];",
+                  "  pm.collectionVariables.set('packageId', selected.id);",
+                  "  pm.collectionVariables.set('billingPeriod', selected.billingPeriod);",
+                  "  pm.collectionVariables.set('grossAmount', Number(selected.grossAmount).toFixed(2));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/subscription-packages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "subscription-packages"]
+            }
+          }
+        },
+        {
+          "name": "Create Mock Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data) {",
+                  "  pm.collectionVariables.set('paymentId', json.data.paymentId);",
+                  "  pm.collectionVariables.set('providerOrderId', json.data.providerOrderId);",
+                  "  pm.collectionVariables.set('grossAmount', Number(json.data.grossAmount).toFixed(2));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/subscription-payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "subscription-payments"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packageId\": \"{{packageId}}\",\n  \"billingPeriod\": \"{{billingPeriod}}\",\n  \"customerName\": \"Payment QA\",\n  \"customerEmail\": \"payment.qa@hadivo.local\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Payments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/subscription-payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "subscription-payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/subscription-payments/{{paymentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "subscription-payments", "{{paymentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Midtrans Webhook Sample Paid",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const orderId = pm.collectionVariables.get('providerOrderId');",
+                  "const grossAmount = pm.collectionVariables.get('grossAmount');",
+                  "const serverKey = pm.collectionVariables.get('midtransServerKey');",
+                  "const statusCode = '200';",
+                  "if (!orderId || !grossAmount || !serverKey) { throw new Error('providerOrderId, grossAmount, and midtransServerKey are required'); }",
+                  "const signature = CryptoJS.SHA512(orderId + statusCode + grossAmount + serverKey).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('signatureKey', signature);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/webhooks/midtrans",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "webhooks", "midtrans"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"{{providerOrderId}}\",\n  \"transaction_status\": \"settlement\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{grossAmount}}\",\n  \"transaction_id\": \"postman-paid-{{$timestamp}}\",\n  \"fraud_status\": \"accept\",\n  \"signature_key\": \"{{signatureKey}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Midtrans Webhook Sample Expired",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const orderId = pm.collectionVariables.get('providerOrderId');",
+                  "const grossAmount = pm.collectionVariables.get('grossAmount');",
+                  "const serverKey = pm.collectionVariables.get('midtransServerKey');",
+                  "const statusCode = '407';",
+                  "if (!orderId || !grossAmount || !serverKey) { throw new Error('providerOrderId, grossAmount, and midtransServerKey are required'); }",
+                  "const signature = CryptoJS.SHA512(orderId + statusCode + grossAmount + serverKey).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('signatureKey', signature);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/webhooks/midtrans",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "webhooks", "midtrans"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"{{providerOrderId}}\",\n  \"transaction_status\": \"expire\",\n  \"status_code\": \"407\",\n  \"gross_amount\": \"{{grossAmount}}\",\n  \"transaction_id\": \"postman-expired-{{$timestamp}}\",\n  \"fraud_status\": \"accept\",\n  \"signature_key\": \"{{signatureKey}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Midtrans Webhook Sample Failed",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const orderId = pm.collectionVariables.get('providerOrderId');",
+                  "const grossAmount = pm.collectionVariables.get('grossAmount');",
+                  "const serverKey = pm.collectionVariables.get('midtransServerKey');",
+                  "const statusCode = '202';",
+                  "if (!orderId || !grossAmount || !serverKey) { throw new Error('providerOrderId, grossAmount, and midtransServerKey are required'); }",
+                  "const signature = CryptoJS.SHA512(orderId + statusCode + grossAmount + serverKey).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('signatureKey', signature);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/webhooks/midtrans",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "webhooks", "midtrans"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"{{providerOrderId}}\",\n  \"transaction_status\": \"failure\",\n  \"status_code\": \"202\",\n  \"gross_amount\": \"{{grossAmount}}\",\n  \"transaction_id\": \"postman-failed-{{$timestamp}}\",\n  \"fraud_status\": \"accept\",\n  \"signature_key\": \"{{signatureKey}}\"\n}"
             }
           }
         }

@@ -55,7 +55,7 @@ class PaymentService(
         val packageId = request.packageId
             ?: throw DomainException(ErrorCode.VALIDATION_FAILED, "Package wajib dipilih")
         val subscriptionPackage = packages.findById(packageId).orElseThrow {
-            DomainException.notFound("SubscriptionPackage", packageId)
+            DomainException(ErrorCode.NOT_FOUND, "Paket subscription tidak ditemukan", mapOf("id" to packageId))
         }
         if (!subscriptionPackage.active) {
             throw DomainException(ErrorCode.VALIDATION_FAILED, "Package subscription tidak aktif")
@@ -126,13 +126,13 @@ class PaymentService(
         val webhook = payload.toMidtransPayload()
         if (webhook.orderId.isBlank()) {
             auditWebhookIgnored(null, null, "missing_order_id")
-            throw DomainException(ErrorCode.VALIDATION_FAILED, "Webhook payment tidak valid")
+            throw DomainException(ErrorCode.VALIDATION_FAILED, "Order ID webhook wajib diisi")
         }
 
         val payment = payments.findByProviderOrderIdForUpdate(webhook.orderId)
             ?: run {
                 auditWebhookIgnored(null, webhook.orderId, "unknown_order_id")
-                throw DomainException(ErrorCode.VALIDATION_FAILED, "Webhook payment tidak valid")
+                throw DomainException(ErrorCode.VALIDATION_FAILED, "Order ID payment tidak ditemukan")
             }
 
         audit.log(
@@ -150,11 +150,11 @@ class PaymentService(
 
         if (!isValidMidtransSignature(webhook)) {
             auditWebhookIgnored(payment, webhook.orderId, "invalid_signature")
-            throw DomainException(ErrorCode.VALIDATION_FAILED, "Webhook payment tidak valid")
+            throw DomainException(ErrorCode.VALIDATION_FAILED, "Signature webhook payment tidak valid")
         }
         if (!amountMatches(payment, webhook.grossAmount)) {
             auditWebhookIgnored(payment, webhook.orderId, "amount_mismatch")
-            throw DomainException(ErrorCode.VALIDATION_FAILED, "Webhook payment tidak valid")
+            throw DomainException(ErrorCode.VALIDATION_FAILED, "Nominal webhook payment tidak sesuai")
         }
 
         val sanitizedRaw = sanitizeWebhookPayload(payload)

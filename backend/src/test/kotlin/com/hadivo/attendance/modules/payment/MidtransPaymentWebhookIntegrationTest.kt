@@ -186,10 +186,38 @@ class MidtransPaymentWebhookIntegrationTest {
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.error.message").value("Signature webhook payment tidak valid"))
 
         assertThat(payments.findByProviderOrderId(payment.providerOrderId)!!.status).isEqualTo(PaymentStatus.PENDING)
         assertThat(auditLogs.findAll().filter { it.tenantId == ctx.tenantId }.map { it.action })
             .contains("PAYMENT_WEBHOOK_IGNORED")
+    }
+
+    @Test
+    fun `unknown order id webhook is rejected with human readable error`() {
+        val orderId = "HADIVO-UNKNOWN-${UUID.randomUUID().toString().replace("-", "").take(10)}"
+
+        mvc.perform(
+            post("/api/v1/payments/webhooks/midtrans")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf(
+                            "order_id" to orderId,
+                            "transaction_status" to "settlement",
+                            "status_code" to "200",
+                            "gross_amount" to "99000.00",
+                            "transaction_id" to "midtrans-${UUID.randomUUID()}",
+                            "signature_key" to signature(orderId, "200", "99000.00"),
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.error.message").value("Order ID payment tidak ditemukan"))
+
+        assertThat(auditLogs.findAll().map { it.action }).contains("PAYMENT_WEBHOOK_IGNORED")
     }
 
     @Test
@@ -209,6 +237,7 @@ class MidtransPaymentWebhookIntegrationTest {
         )
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.error.message").value("Nominal webhook payment tidak sesuai"))
 
         assertThat(payments.findByProviderOrderId(payment.providerOrderId)!!.status).isEqualTo(PaymentStatus.PENDING)
     }

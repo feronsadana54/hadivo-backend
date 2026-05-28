@@ -96,6 +96,22 @@ class SubscriptionPaymentIntegrationTest {
             .contains("PAYMENT_CREATED")
     }
 
+    @Test
+    fun `missing package returns human readable error`() {
+        val ctx = seedTenantWithUser(Role.TENANT_ADMIN)
+        val missingPackageId = UUID.randomUUID()
+
+        mvc.perform(
+            post("/api/v1/tenants/${ctx.tenantId}/subscription-payments")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${ctx.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("packageId" to missingPackageId.toString())))
+        )
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("NOT_FOUND"))
+            .andExpect(jsonPath("$.error.message").value("Paket subscription tidak ditemukan"))
+    }
+
     @ParameterizedTest
     @EnumSource(value = Role::class, names = ["EMPLOYEE", "STUDENT", "PARENT"])
     fun `non admin tenant roles cannot create payment`(role: Role) {
