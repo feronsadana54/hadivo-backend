@@ -201,6 +201,9 @@ Expected `data.items[*].status` salah satu dari `SENT`, `SKIPPED`, atau `FAILED`
 
 ## ATTENDANCE_CORRECTION apply (v1.3.0+)
 
+Untuk panduan QA manual khusus correction apply (termasuk verifikasi DB diff, audit row, dan revert planning) lihat [`docs/18-correction-qa-guide.md`](18-correction-qa-guide.md).
+
+
 Mulai v1.3.0, approve `ATTENDANCE_CORRECTION` **menerapkan** koreksi ke `attendance_records`. Verifikasi manual:
 
 1. Buat correction request untuk user X tanggal Y dengan `requestedClockInTime` (dan/atau `requestedClockOutTime`).

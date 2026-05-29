@@ -478,6 +478,109 @@ class CorrectionApplyIntegrationTest {
         assertThat(applies.findByLeaveRequestId(leave.id!!)).isNotNull
     }
 
+    @Test
+    fun `approve correction with only clock-out preserves existing clock-in`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        val date = LocalDate.of(2026, 6, 11)
+        val originalIn = Instant.parse("2026-06-11T01:15:00Z")
+        val record = records.save(
+            AttendanceRecord(
+                tenantId = admin.tenantId,
+                userId = employee.userId,
+                date = date,
+                clockInAt = originalIn,
+                clockInLatitude = -6.2,
+                clockInLongitude = 106.8,
+                clockInDeviceId = "device-original",
+                status = AttendanceStatus.ON_TIME,
+                clockOutOutsideRadius = false,
+            )
+        )
+        val requestedOut = Instant.parse("2026-06-11T10:00:00Z")
+        val leave = leaves.save(
+            LeaveRequest(
+                tenantId = admin.tenantId,
+                requesterUserId = employee.userId,
+                requestType = LeaveRequestType.ATTENDANCE_CORRECTION,
+                startDate = date,
+                endDate = date,
+                requestedClockOutAt = requestedOut,
+                correctionNote = "Lupa clock-out",
+            )
+        )
+
+        mvc.perform(approveBy(admin, leave.id)).andExpect(status().isOk)
+
+        val updated = records.findById(record.id!!).get()
+        assertThat(updated.clockInAt).isEqualTo(originalIn)
+        assertThat(updated.clockOutAt).isEqualTo(requestedOut)
+        assertThat(updated.correctionApplied).isTrue()
+        assertThat(updated.status).isIn(AttendanceStatus.COMPLETED, AttendanceStatus.EARLY_LEAVE)
+        assertThat(updated.workDurationMinutes).isEqualTo(525)
+        // Original device + lat/long preserved
+        assertThat(updated.clockInLatitude).isEqualTo(-6.2)
+        assertThat(updated.clockInLongitude).isEqualTo(106.8)
+        assertThat(updated.clockInDeviceId).isEqualTo("device-original")
+
+        val applyRow = applies.findByLeaveRequestId(leave.id!!)!!
+        assertThat(applyRow.originalClockInAt).isEqualTo(originalIn)
+        assertThat(applyRow.originalClockOutAt).isNull()
+        assertThat(applyRow.appliedClockInAt).isEqualTo(originalIn)
+        assertThat(applyRow.appliedClockOutAt).isEqualTo(requestedOut)
+    }
+
+    @Test
+    fun `apply audit metadata exposes leaveRequestId attendanceRecordId and status fields`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        val date = LocalDate.of(2026, 6, 12)
+        val record = records.save(
+            AttendanceRecord(
+                tenantId = admin.tenantId,
+                userId = employee.userId,
+                date = date,
+                clockInAt = Instant.parse("2026-06-12T02:30:00Z"),
+                status = AttendanceStatus.LATE,
+                clockOutOutsideRadius = false,
+            )
+        )
+        val leave = leaves.save(
+            LeaveRequest(
+                tenantId = admin.tenantId,
+                requesterUserId = employee.userId,
+                requestType = LeaveRequestType.ATTENDANCE_CORRECTION,
+                startDate = date,
+                endDate = date,
+                requestedClockInAt = Instant.parse("2026-06-12T01:00:00Z"),
+            )
+        )
+
+        mvc.perform(approveBy(admin, leave.id)).andExpect(status().isOk)
+
+        val appliedAudit = auditLogs.findAll()
+            .filter { it.tenantId == admin.tenantId && it.action == "ATTENDANCE_CORRECTION_APPLIED" }
+        assertThat(appliedAudit).hasSize(1)
+        val metadata = appliedAudit.first().metadata
+        assertThat(metadata).isNotNull
+        assertThat(metadata!!.keys).contains(
+            "leaveRequestId",
+            "attendanceRecordId",
+            "originalClockInExists",
+            "originalClockOutExists",
+            "appliedClockInProvided",
+            "appliedClockOutProvided",
+            "originalStatus",
+            "appliedStatus",
+            "recordCreatedByCorrection",
+        )
+        assertThat(metadata["leaveRequestId"]).isEqualTo(leave.id.toString())
+        assertThat(metadata["attendanceRecordId"]).isEqualTo(record.id.toString())
+        assertThat(metadata["originalStatus"]).isEqualTo("LATE")
+        assertThat(metadata["appliedStatus"]).isIn("ON_TIME", "LATE")
+        assertThat(metadata["recordCreatedByCorrection"]).isEqualTo(false)
+    }
+
     private fun approveBy(ctx: TestContext, leaveId: UUID?) =
         post("/api/v1/tenants/${ctx.tenantId}/leave-requests/$leaveId/approve")
             .header(HttpHeaders.AUTHORIZATION, "Bearer ${ctx.token}")

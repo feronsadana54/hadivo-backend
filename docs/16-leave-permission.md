@@ -39,7 +39,7 @@ Cross-tenant access ditolak dengan 403.
 
 ### ATTENDANCE_CORRECTION apply (v1.3.0+)
 
-Mulai v1.3.0, approve correction **menerapkan** perubahan ke `attendance_records` dengan audit trail penuh:
+Mulai v1.3.0, approve correction **menerapkan** perubahan ke `attendance_records` dengan audit trail penuh. Untuk panduan QA manual dan diskusi revert planning lihat [`docs/18-correction-qa-guide.md`](18-correction-qa-guide.md).
 
 - Status `APPROVED` berarti koreksi sudah berhasil diterapkan. Bila apply gagal, status tetap `PENDING` dan endpoint mengembalikan `422 UNPROCESSABLE` — tidak akan ada kondisi "APPROVED tapi belum applied".
 - Tabel `attendance_correction_applies` menyimpan: original vs applied clock-in/out, original vs applied status, original vs applied work duration minutes, reviewer, applied_by, applied_at, dan flag `record_created_by_correction`. UNIQUE per `leave_request_id` agar idempotent.

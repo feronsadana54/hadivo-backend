@@ -867,6 +867,140 @@
           }
         }
       ]
+    },
+    {
+      "name": "Correction QA Flow",
+      "item": [
+        {
+          "name": "Create attendance correction request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('correctionLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ATTENDANCE_CORRECTION\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{fromDate}}\",\n  \"requestedClockInTime\": \"{{fromDate}}T01:00:00Z\",\n  \"correctionNote\": \"Lupa clock-in\"\n}"
+            },
+            "description": "Login sebagai requester (mis. EMPLOYEE) terlebih dahulu lewat Auth/Login. Test script menulis id ke correctionLeaveRequestId."
+          }
+        },
+        {
+          "name": "Approve attendance correction request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{correctionLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{correctionLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Disetujui dan koreksi diterapkan\"\n}"
+            },
+            "description": "Login sebagai TENANT_ADMIN atau SUPER_ADMIN dulu. Status APPROVED berarti correction sudah diterapkan ke attendance_records."
+          }
+        },
+        {
+          "name": "Get leave request detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{correctionLeaveRequestId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{correctionLeaveRequestId}}"]
+            }
+          }
+        },
+        {
+          "name": "Daily report with correction",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/reports/attendance/daily?date={{fromDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "daily"],
+              "query": [{ "key": "date", "value": "{{fromDate}}" }]
+            },
+            "description": "Cek data.rows[*].correctionApplied dan correctionRequestId."
+          }
+        },
+        {
+          "name": "Export CSV with correction columns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/reports/attendance/export.csv?from={{fromDate}}&to={{toDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "export.csv"],
+              "query": [
+                { "key": "from", "value": "{{fromDate}}" },
+                { "key": "to", "value": "{{toDate}}" }
+              ]
+            },
+            "description": "Header CSV harus memuat dua kolom terakhir Correction Applied dan Correction Request ID."
+          }
+        },
+        {
+          "name": "Export Excel with correction columns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/reports/attendance/export.xlsx?from={{fromDate}}&to={{toDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "export.xlsx"],
+              "query": [
+                { "key": "from", "value": "{{fromDate}}" },
+                { "key": "to", "value": "{{toDate}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export PDF with correction columns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/reports/attendance/export.pdf?from={{fromDate}}&to={{toDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "export.pdf"],
+              "query": [
+                { "key": "from", "value": "{{fromDate}}" },
+                { "key": "to", "value": "{{toDate}}" }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
