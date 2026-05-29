@@ -60,3 +60,4 @@ logs/
 # Docker volumes
 docker/postgres/data/
 docker/rabbitmq/data/
+.claude/

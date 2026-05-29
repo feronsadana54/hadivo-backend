@@ -52,3 +52,13 @@ Device ID mobile dibuat sebagai random UUID dan disimpan di secure storage. Hadi
 - `LATE` — clock-in di atas ambang keterlambatan.
 - `COMPLETED` — sudah clock-out dan di atas atau sama dengan `work_end_time`.
 - `EARLY_LEAVE` — sudah clock-out tapi sebelum `work_end_time`.
+
+## Leave / permission overlay
+
+Approved `leave_requests` ditampilkan sebagai overlay pada daily report dan export. Di v1.2.0 approved leave **tidak** mengubah atau membuat `attendance_records`. Karena itu:
+
+- Daily report row akan menampilkan `leaveType` dan `leaveStatus` di samping status absensi existing.
+- Bila user hanya punya approved leave dan tidak punya record absensi, daily report tetap memunculkan baris dengan `status = null` dan field leave terisi.
+- Export CSV/Excel/PDF menambah kolom `Leave Type` dan `Leave Status`. Baris leave-only memiliki kolom status absensi kosong.
+
+`ATTENDANCE_CORRECTION` di v1.2.0 disimpan sebagai approved request dan dimunculkan di report sebagai informasi correction approved. Mutasi `clock_in_at`/`clock_out_at` ke `attendance_records` tidak dilakukan karena model belum punya audit trail `correctionRequestId`/`correctedBy`/`correctedAt`. Lihat `docs/16-leave-permission.md` untuk detail limitation dan roadmap.

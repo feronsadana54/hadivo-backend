@@ -83,6 +83,23 @@ Test payment v1.0.0 mengecek:
 - raw webhook JSON tidak diekspos di list/detail response;
 - audit log dibuat untuk create, webhook received, status update, subscription activated, dan ignored webhook.
 
+## Integration test — leave / permission request
+
+Test leave v1.2.0 (`LeaveRequestIntegrationTest`) mengecek:
+
+- `EMPLOYEE` dapat membuat pengajuan untuk dirinya sendiri (`SICK`, `PERMISSION`, `ATTENDANCE_CORRECTION`);
+- akses ke pengajuan milik user lain ditolak 403;
+- `TENANT_ADMIN` dapat melihat semua pengajuan tenant; `EMPLOYEE` hanya pengajuan miliknya;
+- cross-tenant list ditolak 403;
+- `TENANT_ADMIN` dapat approve dan reject pengajuan, audit log + field `reviewerUserId`/`reviewedAt` tercatat;
+- requester dapat cancel saat `PENDING`; cancel pada status non-PENDING ditolak 409;
+- date range invalid (`startDate` > `endDate`) ditolak `VALIDATION_FAILED`;
+- pengajuan non-correction yang overlap dengan `PENDING`/`APPROVED` existing ditolak 409;
+- `ATTENDANCE_CORRECTION` tanpa salah satu jam clock-in/out ditolak;
+- approved leave muncul di daily report (`leaveType`, `leaveStatus`, `leaveTotals`);
+- export CSV mengandung kolom `Leave Type`/`Leave Status` dan baris leave-only;
+- kegagalan RabbitMQ `convertAndSend` tidak menggagalkan approve flow.
+
 ## Integration test — shift & flexible schedule
 
 Test shift v1.1.0 mengecek:

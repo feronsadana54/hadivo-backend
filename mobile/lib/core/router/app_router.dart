@@ -7,6 +7,8 @@ import '../../features/attendance/presentation/home_screen.dart';
 import '../../features/auth/domain/auth_state.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/leave_request/presentation/leave_request_create_screen.dart';
+import '../../features/leave_request/presentation/leave_request_list_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../shared/widgets/app_shell.dart';
 import '../../shared/widgets/splash_screen.dart';
@@ -17,6 +19,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: '/home',
+    navigatorKey: _rootNavigatorKey,
     refreshListenable: routerNotifier,
     redirect: routerNotifier.redirect,
     routes: [
@@ -37,6 +40,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const HistoryScreen(),
           ),
           GoRoute(
+            path: '/requests',
+            builder: (context, state) => const LeaveRequestListScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const LeaveRequestCreateScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
             path: '/profile',
             builder: (context, state) => const ProfileScreen(),
           ),
@@ -45,6 +59,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(this._ref) {

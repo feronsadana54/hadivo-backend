@@ -1,10 +1,15 @@
 package com.hadivo.attendance.modules.reporting
 
+import com.hadivo.attendance.modules.attendance.AttendanceRecord
 import com.hadivo.attendance.modules.attendance.AttendanceRecordRepository
 import com.hadivo.attendance.modules.attendance.AttendanceStatus
+import com.hadivo.attendance.modules.auth.User
 import com.hadivo.attendance.modules.auth.UserRepository
 import com.hadivo.attendance.common.exception.DomainException
 import com.hadivo.attendance.common.exception.ErrorCode
+import com.hadivo.attendance.modules.leave.LeaveRequest
+import com.hadivo.attendance.modules.leave.LeaveRequestRepository
+import com.hadivo.attendance.modules.leave.LeaveRequestType
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.LocalDate
@@ -18,36 +23,36 @@ import java.util.UUID
 class ReportingService(
     private val records: AttendanceRecordRepository,
     private val users: UserRepository,
+    private val leaves: LeaveRequestRepository,
 ) {
 
     fun daily(tenantId: UUID, date: LocalDate): DailyReport {
         val rows = records.findAllByTenantIdAndDate(tenantId, date)
-        val usersById = users.findAllById(rows.map { it.userId }.distinct()).associateBy { it.id }
+        val approvedLeaves = leaves.findApprovedOnDate(tenantId, date)
+        val leavesByUser = approvedLeaves.groupBy { it.requesterUserId }
+            .mapValues { (_, group) -> selectPrimaryLeave(group) }
+
+        val userIds = (rows.map { it.userId } + leavesByUser.keys).distinct()
+        val usersById = users.findAllById(userIds).associateBy { it.id }
+
         val totals = AttendanceStatus.values().associateWith { status ->
             rows.count { it.status == status }
         }.filterValues { it > 0 }
+        val leaveTotals = approvedLeaves.groupingBy { it.requestType }.eachCount()
+
+        val attendanceRows = rows.map { record ->
+            buildDailyRow(record, usersById[record.userId], leavesByUser[record.userId])
+        }
+        val leaveOnlyRows = leavesByUser
+            .filterKeys { userId -> rows.none { it.userId == userId } }
+            .map { (userId, leave) -> buildLeaveOnlyDailyRow(userId, usersById[userId], leave) }
+
         return DailyReport(
             date = date,
             tenantId = tenantId,
             totals = totals,
-            rows = rows.map {
-                val user = usersById[it.userId]
-                DailyReportRow(
-                    userId = it.userId,
-                    fullName = user?.fullName,
-                    email = user?.email,
-                    status = it.status,
-                    clockInAt = it.clockInAt,
-                    clockOutAt = it.clockOutAt,
-                    workDurationMinutes = it.workDurationMinutes,
-                    clockOutOutsideRadius = it.clockOutOutsideRadius,
-                    shiftId = it.shiftTemplateId,
-                    shiftName = it.shiftName,
-                    scheduledStartTime = it.scheduledStartTime,
-                    scheduledEndTime = it.scheduledEndTime,
-                    lateThresholdMinutes = it.lateThresholdMinutes,
-                )
-            },
+            leaveTotals = leaveTotals,
+            rows = attendanceRows + leaveOnlyRows,
         )
     }
 
@@ -79,7 +84,7 @@ class ReportingService(
                         row.userId.toString(),
                         row.fullName,
                         row.email,
-                        row.status.name,
+                        row.status,
                         row.clockInTime,
                         row.clockOutTime,
                         row.workDurationMinutes?.toString().orEmpty(),
@@ -88,6 +93,8 @@ class ReportingService(
                         row.scheduledStartTime,
                         row.scheduledEndTime,
                         row.lateThresholdMinutes?.toString().orEmpty(),
+                        row.leaveType,
+                        row.leaveStatus,
                     )
                 )
             }
@@ -98,30 +105,156 @@ class ReportingService(
         validateExportRange(from, to)
 
         val rows = records.findAllByTenantIdAndDateBetween(tenantId, from, to)
-        val usersById = users.findAllById(rows.map { it.userId }.distinct())
+        val approvedLeaves = leaves.findApprovedOverlapping(tenantId, from, to)
+
+        val leavesByUserDate: Map<UUID, Map<LocalDate, LeaveRequest>> = approvedLeaves
+            .groupBy { it.requesterUserId }
+            .mapValues { (_, list) ->
+                val byDate = mutableMapOf<LocalDate, LeaveRequest>()
+                list.forEach { leave ->
+                    val rangeStart = if (leave.startDate.isBefore(from)) from else leave.startDate
+                    val rangeEnd = if (leave.endDate.isAfter(to)) to else leave.endDate
+                    var d = rangeStart
+                    while (!d.isAfter(rangeEnd)) {
+                        val existing = byDate[d]
+                        if (existing == null || hasHigherPriority(leave, existing)) {
+                            byDate[d] = leave
+                        }
+                        d = d.plusDays(1)
+                    }
+                }
+                byDate
+            }
+
+        val attendanceUserIds = rows.map { it.userId }.toSet()
+        val leaveOnlyUserIds = leavesByUserDate.keys - attendanceUserIds
+        val userIds = (attendanceUserIds + leaveOnlyUserIds).toList()
+        val usersById = users.findAllById(userIds)
             .mapNotNull { user -> user.id?.let { it to user } }
             .toMap()
 
-        return rows
-            .sortedWith(compareBy({ it.date }, { usersById[it.userId]?.fullName ?: "" }, { it.userId.toString() }))
-            .map { record ->
-                val user = usersById[record.userId]
-                AttendanceReportExportRow(
-                    date = record.date,
-                    userId = record.userId,
-                    fullName = user?.fullName.orEmpty(),
-                    email = user?.email.orEmpty(),
-                    status = record.status,
-                    clockInTime = formatInstant(record.clockInAt),
-                    clockOutTime = formatInstant(record.clockOutAt),
-                    workDurationMinutes = record.workDurationMinutes,
-                    clockOutOutsideRadius = record.clockOutOutsideRadius,
-                    shiftName = record.shiftName.orEmpty(),
-                    scheduledStartTime = record.scheduledStartTime?.toString().orEmpty(),
-                    scheduledEndTime = record.scheduledEndTime?.toString().orEmpty(),
-                    lateThresholdMinutes = record.lateThresholdMinutes,
-                )
-            }
+        val attendanceRows = rows.map { record ->
+            val user = usersById[record.userId]
+            val leave = leavesByUserDate[record.userId]?.get(record.date)
+            buildExportRow(record, user, leave)
+        }
+
+        val leaveOnlyRows = leavesByUserDate.flatMap { (userId, byDate) ->
+            byDate.entries
+                .filter { (date, _) -> rows.none { it.userId == userId && it.date == date } }
+                .map { (date, leave) ->
+                    buildLeaveOnlyExportRow(userId, usersById[userId], date, leave)
+                }
+        }
+
+        return (attendanceRows + leaveOnlyRows).sortedWith(
+            compareBy({ it.date }, { it.fullName }, { it.userId.toString() })
+        )
+    }
+
+    private fun buildDailyRow(
+        record: AttendanceRecord,
+        user: User?,
+        leave: LeaveRequest?,
+    ): DailyReportRow = DailyReportRow(
+        userId = record.userId,
+        fullName = user?.fullName,
+        email = user?.email,
+        status = record.status,
+        clockInAt = record.clockInAt,
+        clockOutAt = record.clockOutAt,
+        workDurationMinutes = record.workDurationMinutes,
+        clockOutOutsideRadius = record.clockOutOutsideRadius,
+        shiftId = record.shiftTemplateId,
+        shiftName = record.shiftName,
+        scheduledStartTime = record.scheduledStartTime,
+        scheduledEndTime = record.scheduledEndTime,
+        lateThresholdMinutes = record.lateThresholdMinutes,
+        leaveRequestId = leave?.id,
+        leaveType = leave?.requestType,
+        leaveStatus = leave?.status,
+    )
+
+    private fun buildLeaveOnlyDailyRow(
+        userId: UUID,
+        user: User?,
+        leave: LeaveRequest,
+    ): DailyReportRow = DailyReportRow(
+        userId = userId,
+        fullName = user?.fullName,
+        email = user?.email,
+        status = null,
+        clockInAt = null,
+        clockOutAt = null,
+        workDurationMinutes = null,
+        clockOutOutsideRadius = false,
+        shiftId = null,
+        shiftName = null,
+        scheduledStartTime = null,
+        scheduledEndTime = null,
+        lateThresholdMinutes = null,
+        leaveRequestId = leave.id,
+        leaveType = leave.requestType,
+        leaveStatus = leave.status,
+    )
+
+    private fun buildExportRow(
+        record: AttendanceRecord,
+        user: User?,
+        leave: LeaveRequest?,
+    ): AttendanceReportExportRow = AttendanceReportExportRow(
+        date = record.date,
+        userId = record.userId,
+        fullName = user?.fullName.orEmpty(),
+        email = user?.email.orEmpty(),
+        status = record.status.name,
+        clockInTime = formatInstant(record.clockInAt),
+        clockOutTime = formatInstant(record.clockOutAt),
+        workDurationMinutes = record.workDurationMinutes,
+        clockOutOutsideRadius = record.clockOutOutsideRadius,
+        shiftName = record.shiftName.orEmpty(),
+        scheduledStartTime = record.scheduledStartTime?.toString().orEmpty(),
+        scheduledEndTime = record.scheduledEndTime?.toString().orEmpty(),
+        lateThresholdMinutes = record.lateThresholdMinutes,
+        leaveType = leave?.requestType?.name.orEmpty(),
+        leaveStatus = leave?.status?.name.orEmpty(),
+    )
+
+    private fun buildLeaveOnlyExportRow(
+        userId: UUID,
+        user: User?,
+        date: LocalDate,
+        leave: LeaveRequest,
+    ): AttendanceReportExportRow = AttendanceReportExportRow(
+        date = date,
+        userId = userId,
+        fullName = user?.fullName.orEmpty(),
+        email = user?.email.orEmpty(),
+        status = "",
+        clockInTime = "",
+        clockOutTime = "",
+        workDurationMinutes = null,
+        clockOutOutsideRadius = false,
+        shiftName = "",
+        scheduledStartTime = "",
+        scheduledEndTime = "",
+        lateThresholdMinutes = null,
+        leaveType = leave.requestType.name,
+        leaveStatus = leave.status.name,
+    )
+
+    private fun selectPrimaryLeave(group: List<LeaveRequest>): LeaveRequest =
+        group.minByOrNull { typePriority(it.requestType) } ?: group.first()
+
+    private fun hasHigherPriority(candidate: LeaveRequest, existing: LeaveRequest): Boolean =
+        typePriority(candidate.requestType) < typePriority(existing.requestType)
+
+    private fun typePriority(type: LeaveRequestType): Int = when (type) {
+        LeaveRequestType.SICK -> 0
+        LeaveRequestType.PERMISSION -> 1
+        LeaveRequestType.ANNUAL_LEAVE -> 2
+        LeaveRequestType.BUSINESS_TRIP -> 3
+        LeaveRequestType.ATTENDANCE_CORRECTION -> 4
     }
 
     private fun validateExportRange(from: LocalDate, to: LocalDate) {

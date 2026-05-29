@@ -36,6 +36,30 @@ class NotificationTemplateRegistry {
                 body = "Absensi belum berhasil. Periksa kembali kondisi absensi Anda.",
                 channels = DEFAULT_CHANNELS,
             )
+
+            NotificationEventType.LEAVE_REQUEST_CREATED -> NotificationTemplate(
+                title = "Pengajuan terkirim",
+                body = "Pengajuan Anda telah dikirim dan menunggu persetujuan.",
+                channels = DEFAULT_CHANNELS,
+            )
+
+            NotificationEventType.LEAVE_REQUEST_APPROVED -> NotificationTemplate(
+                title = "Pengajuan disetujui",
+                body = "Pengajuan Anda telah disetujui.",
+                channels = DEFAULT_CHANNELS,
+            )
+
+            NotificationEventType.LEAVE_REQUEST_REJECTED -> NotificationTemplate(
+                title = "Pengajuan ditolak",
+                body = "Pengajuan Anda ditolak. Silakan periksa catatan reviewer.",
+                channels = DEFAULT_CHANNELS,
+            )
+
+            NotificationEventType.LEAVE_REQUEST_CANCELLED -> NotificationTemplate(
+                title = "Pengajuan dibatalkan",
+                body = "Pengajuan Anda telah dibatalkan.",
+                channels = DEFAULT_CHANNELS,
+            )
         }
 
     private companion object {

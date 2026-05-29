@@ -75,8 +75,14 @@ Jangan commit API key, Firebase service account JSON, `google-services.json`, `G
 - `ATTENDANCE_OUT_OF_RADIUS`
 - `DEVICE_MISMATCH`
 - `ATTENDANCE_FAILED_ATTEMPT`
+- `LEAVE_REQUEST_CREATED`
+- `LEAVE_REQUEST_APPROVED`
+- `LEAVE_REQUEST_REJECTED`
+- `LEAVE_REQUEST_CANCELLED`
 
 `AttemptFailed` dengan reason `OUT_OF_RADIUS` dipetakan ke `ATTENDANCE_OUT_OF_RADIUS`. Reason `DEVICE_MISMATCH` dipetakan ke `DEVICE_MISMATCH`. Reason lain dipetakan ke `ATTENDANCE_FAILED_ATTEMPT`.
+
+Event leave dikirim langsung dari `LeaveRequestService.publishSafely(...)` (tidak via `ApplicationEventPublisher`). Bila publisher gagal, exception ditelan dan flow approval/cancel tetap berhasil.
 
 ## Channel
 

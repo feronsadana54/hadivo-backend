@@ -5,11 +5,13 @@ import { api } from "@/lib/api/services";
 import { defaultTenantId } from "@/lib/config/env";
 import type {
   AttendanceSettings,
+  CreateLeaveRequestRequest,
   CreateMemberShiftAssignmentRequest,
   CreateShiftTemplateRequest,
   CreateSubscriptionPaymentRequest,
   Location,
   NotificationDeliveryFilters,
+  ReviewLeaveRequestRequest,
   SuperAdminTenantFilters,
   UpdateMemberShiftAssignmentRequest,
   UpdateShiftTemplateRequest,
@@ -87,6 +89,47 @@ export function useUpdateSettings() {
   return useMutation({
     mutationFn: (payload: Partial<AttendanceSettings>) => api.updateSettings(defaultTenantId, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings", defaultTenantId] }),
+  });
+}
+
+export function useLeaveRequests() {
+  return useQuery({
+    queryKey: ["leave-requests", defaultTenantId],
+    queryFn: () => api.getLeaveRequests(defaultTenantId),
+  });
+}
+
+export function useCreateLeaveRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateLeaveRequestRequest) => api.createLeaveRequest(defaultTenantId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leave-requests", defaultTenantId] }),
+  });
+}
+
+export function useApproveLeaveRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ requestId, payload }: { requestId: string; payload?: ReviewLeaveRequestRequest }) =>
+      api.approveLeaveRequest(defaultTenantId, requestId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leave-requests", defaultTenantId] }),
+  });
+}
+
+export function useRejectLeaveRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ requestId, payload }: { requestId: string; payload?: ReviewLeaveRequestRequest }) =>
+      api.rejectLeaveRequest(defaultTenantId, requestId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leave-requests", defaultTenantId] }),
+  });
+}
+
+export function useCancelLeaveRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (requestId: string) => api.cancelLeaveRequest(defaultTenantId, requestId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leave-requests", defaultTenantId] }),
   });
 }
 

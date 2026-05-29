@@ -15,6 +15,14 @@ export const endpoints = {
   attempts: (tenantId: string) => `/tenants/${tenantId}/attendance-attempts`,
   notificationDeliveries: (tenantId: string) => `/tenants/${tenantId}/notification-deliveries`,
   settings: (tenantId: string) => `/tenants/${tenantId}/attendance-settings`,
+  leaveRequests: (tenantId: string) => `/tenants/${tenantId}/leave-requests`,
+  leaveRequest: (tenantId: string, requestId: string) => `/tenants/${tenantId}/leave-requests/${requestId}`,
+  leaveRequestApprove: (tenantId: string, requestId: string) =>
+    `/tenants/${tenantId}/leave-requests/${requestId}/approve`,
+  leaveRequestReject: (tenantId: string, requestId: string) =>
+    `/tenants/${tenantId}/leave-requests/${requestId}/reject`,
+  leaveRequestCancel: (tenantId: string, requestId: string) =>
+    `/tenants/${tenantId}/leave-requests/${requestId}/cancel`,
   shifts: (tenantId: string) => `/tenants/${tenantId}/shifts`,
   shift: (tenantId: string, shiftId: string) => `/tenants/${tenantId}/shifts/${shiftId}`,
   memberShiftAssignments: (tenantId: string, userId: string) =>

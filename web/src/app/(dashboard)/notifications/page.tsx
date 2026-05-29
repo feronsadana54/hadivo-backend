@@ -223,6 +223,10 @@ function eventTypeLabel(type: NotificationEventType) {
     ATTENDANCE_OUT_OF_RADIUS: "Di luar area absensi",
     DEVICE_MISMATCH: "Perangkat tidak sesuai",
     ATTENDANCE_FAILED_ATTEMPT: "Percobaan absensi gagal",
+    LEAVE_REQUEST_CREATED: "Pengajuan dibuat",
+    LEAVE_REQUEST_APPROVED: "Pengajuan disetujui",
+    LEAVE_REQUEST_REJECTED: "Pengajuan ditolak",
+    LEAVE_REQUEST_CANCELLED: "Pengajuan dibatalkan",
   };
   return labels[type];
 }

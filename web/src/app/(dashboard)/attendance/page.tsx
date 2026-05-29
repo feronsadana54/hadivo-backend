@@ -13,8 +13,17 @@ import { useDailyReport } from "@/hooks/use-api";
 import { getErrorMessage } from "@/lib/api/client";
 import { downloadAttendanceExcelReport, downloadAttendancePdfReport, downloadCsvReport } from "@/lib/api/services";
 import { defaultTenantId } from "@/lib/config/env";
+import { Badge } from "@/components/ui/badge";
 import { displayEmail, displayName, formatDateTime, formatMinutes } from "@/lib/utils";
-import type { AttendanceStatus } from "@/types/api";
+import type { AttendanceStatus, LeaveRequestType } from "@/types/api";
+
+const LEAVE_TYPE_LABEL: Record<LeaveRequestType, string> = {
+  SICK: "Sakit",
+  PERMISSION: "Izin",
+  ANNUAL_LEAVE: "Cuti",
+  BUSINESS_TRIP: "Dinas luar",
+  ATTENDANCE_CORRECTION: "Koreksi absensi",
+};
 
 const statuses: Array<"ALL" | AttendanceStatus> = ["ALL", "ON_TIME", "LATE", "COMPLETED", "EARLY_LEAVE"];
 const currentDate = new Date().toISOString().slice(0, 10);
@@ -166,7 +175,16 @@ export default function AttendancePage() {
                     <div className="text-xs text-muted-foreground">{displayEmail(row.email, row.userId)}</div>
                   </TableCell>
                   <TableCell>
-                    <AttendanceStatusBadge status={row.status} />
+                    <div className="flex flex-col gap-1">
+                      {row.status ? (
+                        <AttendanceStatusBadge status={row.status} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Tanpa absensi</span>
+                      )}
+                      {row.leaveType ? (
+                        <Badge variant="info">{LEAVE_TYPE_LABEL[row.leaveType]}</Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{row.shiftName ?? "Jadwal tenant"}</div>

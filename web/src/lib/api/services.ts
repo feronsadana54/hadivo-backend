@@ -3,9 +3,11 @@ import { endpoints } from "@/lib/api/endpoints";
 import type {
   AttendanceAttempt,
   AttendanceSettings,
+  CreateLeaveRequestRequest,
   CreateMemberShiftAssignmentRequest,
   CreateShiftTemplateRequest,
   DailyReport,
+  LeaveRequest,
   Location,
   Membership,
   MemberShiftAssignment,
@@ -14,6 +16,7 @@ import type {
   NotificationDeliveryLog,
   PageResponse,
   CreateSubscriptionPaymentRequest,
+  ReviewLeaveRequestRequest,
   ShiftTemplate,
   SuperAdminOverview,
   SuperAdminTenantDetail,
@@ -66,6 +69,25 @@ export const api = {
   },
   async updateSettings(tenantId: string, payload: Partial<AttendanceSettings>) {
     return unwrap<AttendanceSettings>(await apiClient.patch(endpoints.settings(tenantId), payload));
+  },
+  async getLeaveRequests(tenantId: string) {
+    return unwrap<LeaveRequest[]>(await apiClient.get(endpoints.leaveRequests(tenantId)));
+  },
+  async createLeaveRequest(tenantId: string, payload: CreateLeaveRequestRequest) {
+    return unwrap<LeaveRequest>(await apiClient.post(endpoints.leaveRequests(tenantId), payload));
+  },
+  async approveLeaveRequest(tenantId: string, requestId: string, payload: ReviewLeaveRequestRequest = {}) {
+    return unwrap<LeaveRequest>(
+      await apiClient.post(endpoints.leaveRequestApprove(tenantId, requestId), payload),
+    );
+  },
+  async rejectLeaveRequest(tenantId: string, requestId: string, payload: ReviewLeaveRequestRequest = {}) {
+    return unwrap<LeaveRequest>(
+      await apiClient.post(endpoints.leaveRequestReject(tenantId, requestId), payload),
+    );
+  },
+  async cancelLeaveRequest(tenantId: string, requestId: string) {
+    return unwrap<LeaveRequest>(await apiClient.post(endpoints.leaveRequestCancel(tenantId, requestId)));
   },
   async getShifts(tenantId: string) {
     return unwrap<ShiftTemplate[]>(await apiClient.get(endpoints.shifts(tenantId)));

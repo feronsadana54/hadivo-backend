@@ -24,6 +24,9 @@ class AppShell extends StatelessWidget {
               context.go('/history');
               break;
             case 2:
+              context.go('/requests');
+              break;
+            case 3:
               context.go('/profile');
               break;
           }
@@ -40,6 +43,11 @@ class AppShell extends StatelessWidget {
             label: 'Riwayat',
           ),
           NavigationDestination(
+            icon: Icon(Icons.assignment_outlined),
+            selectedIcon: Icon(Icons.assignment),
+            label: 'Pengajuan',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Profil',
@@ -51,7 +59,8 @@ class AppShell extends StatelessWidget {
 
   int _selectedIndex(String location) {
     if (location.startsWith('/history')) return 1;
-    if (location.startsWith('/profile')) return 2;
+    if (location.startsWith('/requests')) return 2;
+    if (location.startsWith('/profile')) return 3;
     return 0;
   }
 }

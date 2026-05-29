@@ -32,7 +32,18 @@ export type NotificationEventType =
   | "CLOCK_OUT_SUCCESS"
   | "ATTENDANCE_OUT_OF_RADIUS"
   | "DEVICE_MISMATCH"
-  | "ATTENDANCE_FAILED_ATTEMPT";
+  | "ATTENDANCE_FAILED_ATTEMPT"
+  | "LEAVE_REQUEST_CREATED"
+  | "LEAVE_REQUEST_APPROVED"
+  | "LEAVE_REQUEST_REJECTED"
+  | "LEAVE_REQUEST_CANCELLED";
+export type LeaveRequestType =
+  | "SICK"
+  | "PERMISSION"
+  | "ANNUAL_LEAVE"
+  | "BUSINESS_TRIP"
+  | "ATTENDANCE_CORRECTION";
+export type LeaveRequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 export type NotificationChannel = "IN_APP" | "EMAIL" | "PUSH";
 export type NotificationDeliveryStatus = "PENDING" | "SENT" | "FAILED" | "SKIPPED";
 
@@ -85,7 +96,7 @@ export type DailyReportRow = {
   userId: string;
   fullName?: string | null;
   email?: string | null;
-  status: AttendanceStatus;
+  status: AttendanceStatus | null;
   clockInAt?: string | null;
   clockOutAt?: string | null;
   workDurationMinutes?: number | null;
@@ -95,12 +106,16 @@ export type DailyReportRow = {
   scheduledStartTime?: string | null;
   scheduledEndTime?: string | null;
   lateThresholdMinutes?: number | null;
+  leaveRequestId?: string | null;
+  leaveType?: LeaveRequestType | null;
+  leaveStatus?: LeaveRequestStatus | null;
 };
 
 export type DailyReport = {
   date: string;
   tenantId: string;
   totals: Partial<Record<AttendanceStatus, number>>;
+  leaveTotals: Partial<Record<LeaveRequestType, number>>;
   rows: DailyReportRow[];
 };
 
@@ -319,6 +334,43 @@ export type SuperAdminFailedAttempt = {
   type: AttendanceType;
   reason: AttemptReason;
   createdAt: string;
+};
+
+export type LeaveRequest = {
+  id: string;
+  tenantId: string;
+  requesterUserId: string;
+  requesterFullName?: string | null;
+  requesterEmail?: string | null;
+  requestType: LeaveRequestType;
+  startDate: string;
+  endDate: string;
+  reason?: string | null;
+  status: LeaveRequestStatus;
+  reviewerUserId?: string | null;
+  reviewerFullName?: string | null;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  attachmentUrl?: string | null;
+  requestedClockInTime?: string | null;
+  requestedClockOutTime?: string | null;
+  correctionNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateLeaveRequestRequest = {
+  requestType: LeaveRequestType;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  requestedClockInTime?: string;
+  requestedClockOutTime?: string;
+  correctionNote?: string;
+};
+
+export type ReviewLeaveRequestRequest = {
+  reviewNote?: string;
 };
 
 export type SuperAdminTenantDetail = {

@@ -44,7 +44,7 @@ class AttendanceExcelExporter {
                 row.createCell(1).setCellValue(reportRow.userId.toString())
                 row.createCell(2).setCellValue(reportRow.fullName)
                 row.createCell(3).setCellValue(reportRow.email)
-                row.createCell(4).setCellValue(reportRow.status.name)
+                row.createCell(4).setCellValue(reportRow.status)
                 row.createCell(5).setCellValue(reportRow.clockInTime)
                 row.createCell(6).setCellValue(reportRow.clockOutTime)
                 reportRow.workDurationMinutes
@@ -57,6 +57,8 @@ class AttendanceExcelExporter {
                 reportRow.lateThresholdMinutes
                     ?.let { row.createCell(12).setCellValue(it.toDouble()) }
                     ?: row.createCell(12).setCellValue("")
+                row.createCell(13).setCellValue(reportRow.leaveType)
+                row.createCell(14).setCellValue(reportRow.leaveStatus)
             }
 
             AttendanceReportExportColumns.headers.indices.forEach(sheet::autoSizeColumn)

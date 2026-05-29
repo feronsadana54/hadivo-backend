@@ -1,6 +1,8 @@
 package com.hadivo.attendance.modules.reporting
 
 import com.hadivo.attendance.modules.attendance.AttendanceStatus
+import com.hadivo.attendance.modules.leave.LeaveRequestStatus
+import com.hadivo.attendance.modules.leave.LeaveRequestType
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
@@ -9,7 +11,7 @@ data class DailyReportRow(
     val userId: UUID,
     val fullName: String?,
     val email: String?,
-    val status: AttendanceStatus,
+    val status: AttendanceStatus?,
     val clockInAt: java.time.Instant?,
     val clockOutAt: java.time.Instant?,
     val workDurationMinutes: Int?,
@@ -19,12 +21,16 @@ data class DailyReportRow(
     val scheduledStartTime: LocalTime?,
     val scheduledEndTime: LocalTime?,
     val lateThresholdMinutes: Int?,
+    val leaveRequestId: UUID?,
+    val leaveType: LeaveRequestType?,
+    val leaveStatus: LeaveRequestStatus?,
 )
 
 data class DailyReport(
     val date: LocalDate,
     val tenantId: UUID,
     val totals: Map<AttendanceStatus, Int>,
+    val leaveTotals: Map<LeaveRequestType, Int> = emptyMap(),
     val rows: List<DailyReportRow>,
 )
 
@@ -45,7 +51,7 @@ data class AttendanceReportExportRow(
     val userId: UUID,
     val fullName: String,
     val email: String,
-    val status: AttendanceStatus,
+    val status: String,
     val clockInTime: String,
     val clockOutTime: String,
     val workDurationMinutes: Int?,
@@ -54,6 +60,8 @@ data class AttendanceReportExportRow(
     val scheduledStartTime: String,
     val scheduledEndTime: String,
     val lateThresholdMinutes: Int?,
+    val leaveType: String,
+    val leaveStatus: String,
 )
 
 object AttendanceReportExportColumns {
@@ -71,5 +79,7 @@ object AttendanceReportExportColumns {
         "Scheduled Start",
         "Scheduled End",
         "Late Threshold Minutes",
+        "Leave Type",
+        "Leave Status",
     )
 }

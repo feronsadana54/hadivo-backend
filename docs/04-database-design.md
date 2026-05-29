@@ -22,6 +22,7 @@ PostgreSQL 16. Semua ID pakai UUID v4. Semua tabel utama punya `created_at` + `u
 | `tenant_attendance_settings` | Setting absensi per tenant (jam kerja, late threshold, face requirement, dll). |
 | `attendance_records` | **Hanya absensi sah**. UNIQUE (tenant_id, user_id, date). Menyimpan koordinat & device_id untuk clock-in dan clock-out. |
 | `attendance_attempts` | Percobaan gagal (OUT_OF_RADIUS, FACE_MISMATCH, DUPLICATE_CLOCK_IN, dst). |
+| `leave_requests` | Pengajuan izin/sakit/cuti/dinas/koreksi absensi per tenant + user. Status `PENDING`/`APPROVED`/`REJECTED`/`CANCELLED`. Untuk `ATTENDANCE_CORRECTION` menyimpan `requested_clock_in_at` dan `requested_clock_out_at`. |
 | `user_devices` | Trusted attendance device per tenant dan user. Satu active trusted device per (tenant_id, user_id). |
 | `notifications` | Notifikasi per user (payload jsonb). |
 | `notification_delivery_logs` | Delivery log notification gateway per tenant, channel, event type, status, provider, error, dan waktu kirim. |

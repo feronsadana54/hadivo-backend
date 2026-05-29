@@ -1,5 +1,37 @@
 # Changelog
 
+## v1.2.0 - Leave / Permission Request Foundation
+
+### Backend
+
+- Added `leave_requests` table with request type, status, reviewer, and optional correction timestamps.
+- Added tenant-scoped endpoints: list, create, get, approve, reject, cancel leave requests.
+- Added validation: required reason for non-correction types, overlap check for non-correction pending/approved requests, 31-day range cap, minimum one clock-in/out time for `ATTENDANCE_CORRECTION`.
+- Reviewer roles limited to `TENANT_ADMIN` and `SUPER_ADMIN`; requester roles `EMPLOYEE`, `STUDENT`, `TEACHER`, `MANAGER`, `TENANT_ADMIN`.
+- Added notification event types `LEAVE_REQUEST_CREATED`, `LEAVE_REQUEST_APPROVED`, `LEAVE_REQUEST_REJECTED`, `LEAVE_REQUEST_CANCELLED` with templates and IN_APP/EMAIL/PUSH defaults.
+- Notification publish failure is swallowed and does not break leave flow.
+- Added audit actions `LEAVE_REQUEST_CREATED`, `LEAVE_REQUEST_APPROVED`, `LEAVE_REQUEST_REJECTED`, `LEAVE_REQUEST_CANCELLED`, and `ATTENDANCE_CORRECTION_APPROVED`.
+- Daily report overlays approved leave info per row, including leave-only rows for users with no attendance record.
+- CSV / Excel / PDF exports append `Leave Type` and `Leave Status` columns; leave-only rows emit empty attendance fields.
+- Added `LeaveRequestIntegrationTest` covering self-create, role isolation, list scoping, cross-tenant rejection, approve, reject, cancel, invalid range, overlap, correction validation, report overlay, export columns, and notification failure tolerance.
+
+### Web Dashboard
+
+- Added `/leave-requests` page with status/type/date filters, table, badges (Sakit / Izin / Cuti / Dinas luar / Koreksi absensi), approve/reject/cancel actions, review note field, and empty state "Belum ada pengajuan izin.".
+- Added sidebar entry `Pengajuan` (ClipboardCheck icon).
+- Attendance page row status now shows leave badge when approved leave overlays the row; rows without attendance still appear when only leave exists.
+- Added `web-leave-requests.png` screenshot via `npm run screenshots`.
+
+### Mobile
+
+- Added `Pengajuan` bottom navigation tab with list of own leave requests, pull-to-refresh, status chip, and cancel action for PENDING.
+- Added create leave request form with type dropdown, date pickers, optional clock-in/out pickers for correction, and reason field with non-correction validation.
+
+### Notes
+
+- Attendance correction approval is **not** payroll-grade in v1.2.0: `attendance_records` are not mutated, and approved corrections appear only as overlay on reports/exports. See `docs/16-leave-permission.md` for the limitation rationale.
+- Leave balance, accrual, holiday calendar, attachment upload, payroll integration, parent self-request, manager hierarchy reviewer, real face recognition, and shift swap requests are not included.
+
 ## v1.1.0 - Shift & Flexible Schedule
 
 ### Backend

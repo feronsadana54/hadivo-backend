@@ -178,6 +178,50 @@ Policy:
 - `GET /tenants/{tenantId}/attendance/me?from=&to=`
 - `GET /tenants/{tenantId}/attendance-attempts?userId=&from=&to=`
 
+### Leave / permission request
+
+Tenant-scoped:
+
+- `GET /tenants/{tenantId}/leave-requests`
+- `POST /tenants/{tenantId}/leave-requests`
+- `GET /tenants/{tenantId}/leave-requests/{requestId}`
+- `POST /tenants/{tenantId}/leave-requests/{requestId}/approve`
+- `POST /tenants/{tenantId}/leave-requests/{requestId}/reject`
+- `POST /tenants/{tenantId}/leave-requests/{requestId}/cancel`
+
+Request create:
+
+```json
+{
+  "requestType": "SICK",
+  "startDate": "2026-06-01",
+  "endDate": "2026-06-02",
+  "reason": "Demam",
+  "requestedClockInTime": null,
+  "requestedClockOutTime": null
+}
+```
+
+`requestType`: `SICK`, `PERMISSION`, `ANNUAL_LEAVE`, `BUSINESS_TRIP`, `ATTENDANCE_CORRECTION`.
+`status` di response: `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`.
+
+Policy:
+
+- `EMPLOYEE`, `STUDENT`, `TEACHER`, `MANAGER`, `TENANT_ADMIN` dapat membuat pengajuan untuk dirinya sendiri.
+- `EMPLOYEE`/`STUDENT`/`TEACHER`/`MANAGER` hanya melihat pengajuan miliknya.
+- Hanya `TENANT_ADMIN` dan `SUPER_ADMIN` yang dapat approve/reject. Hierarchy reviewer di luar peran ini belum dibuka.
+- Requester dapat cancel hanya saat `PENDING`.
+- Rentang tanggal maksimal 31 hari.
+- Untuk leave non-correction, request `PENDING`/`APPROVED` milik user yang sama tidak boleh overlap.
+- Untuk `ATTENDANCE_CORRECTION`, minimal salah satu `requestedClockInTime` atau `requestedClockOutTime` wajib diisi.
+- `PARENT` belum mendukung self-request di v1.2.0.
+
+Approve / reject body opsional:
+
+```json
+{ "reviewNote": "Disetujui" }
+```
+
 ### Notification deliveries
 
 Endpoint notification delivery bersifat read-only. `TENANT_ADMIN` dapat melihat delivery log tenant-nya. `SUPER_ADMIN` dapat mengakses sesuai policy tenant guard yang berlaku. `EMPLOYEE`, `STUDENT`, dan `PARENT` tidak boleh melihat seluruh delivery log tenant.
@@ -186,7 +230,7 @@ Endpoint notification delivery bersifat read-only. `TENANT_ADMIN` dapat melihat 
 
 Filter:
 
-- `eventType`: `CLOCK_IN_SUCCESS`, `CLOCK_OUT_SUCCESS`, `ATTENDANCE_OUT_OF_RADIUS`, `DEVICE_MISMATCH`, `ATTENDANCE_FAILED_ATTEMPT`
+- `eventType`: `CLOCK_IN_SUCCESS`, `CLOCK_OUT_SUCCESS`, `ATTENDANCE_OUT_OF_RADIUS`, `DEVICE_MISMATCH`, `ATTENDANCE_FAILED_ATTEMPT`, `LEAVE_REQUEST_CREATED`, `LEAVE_REQUEST_APPROVED`, `LEAVE_REQUEST_REJECTED`, `LEAVE_REQUEST_CANCELLED`
 - `channel`: `IN_APP`, `EMAIL`, `PUSH`
 - `status`: `PENDING`, `SENT`, `FAILED`, `SKIPPED`
 - `from` dan `to`: ISO-8601 datetime
