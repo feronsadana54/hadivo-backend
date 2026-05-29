@@ -15,7 +15,14 @@
     { "key": "providerOrderId", "value": "" },
     { "key": "grossAmount", "value": "99000.00" },
     { "key": "signatureKey", "value": "" },
-    { "key": "midtransServerKey", "value": "local-midtrans-test-key" }
+    { "key": "midtransServerKey", "value": "local-midtrans-test-key" },
+    { "key": "sickLeaveRequestId", "value": "" },
+    { "key": "permissionLeaveRequestId", "value": "" },
+    { "key": "annualLeaveRequestId", "value": "" },
+    { "key": "businessTripLeaveRequestId", "value": "" },
+    { "key": "correctionLeaveRequestId", "value": "" },
+    { "key": "fromDate", "value": "2026-06-01" },
+    { "key": "toDate", "value": "2026-06-02" }
   ],
   "item": [
     {
@@ -547,6 +554,315 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "monthly"],
               "query": [{ "key": "month", "value": "2026-05" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leave QA Flow",
+      "item": [
+        {
+          "name": "List leave requests",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            }
+          }
+        },
+        {
+          "name": "Create sick leave request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('sickLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"SICK\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{toDate}}\",\n  \"reason\": \"Demam dan istirahat di rumah\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create permission leave request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('permissionLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"PERMISSION\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{toDate}}\",\n  \"reason\": \"Mengurus keperluan keluarga\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create annual leave request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('annualLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ANNUAL_LEAVE\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{toDate}}\",\n  \"reason\": \"Liburan keluarga\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create business trip request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('businessTripLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"BUSINESS_TRIP\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{toDate}}\",\n  \"reason\": \"Kunjungan klien luar kota\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create attendance correction request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('correctionLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ATTENDANCE_CORRECTION\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{fromDate}}\",\n  \"requestedClockInTime\": \"{{fromDate}}T01:00:00Z\",\n  \"correctionNote\": \"Lupa clock-in\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get leave request detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{permissionLeaveRequestId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{permissionLeaveRequestId}}"]
+            },
+            "description": "Default memakai permissionLeaveRequestId. Untuk tipe lain, ganti dengan sickLeaveRequestId, annualLeaveRequestId, businessTripLeaveRequestId, atau correctionLeaveRequestId."
+          }
+        },
+        {
+          "name": "Approve leave request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{permissionLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{permissionLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Disetujui\"\n}"
+            },
+            "description": "Jalankan Auth/Login sebagai TENANT_ADMIN atau SUPER_ADMIN dulu. Default memakai permissionLeaveRequestId. Untuk tipe lain, ganti variable di path."
+          }
+        },
+        {
+          "name": "Reject leave request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{permissionLeaveRequestId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{permissionLeaveRequestId}}", "reject"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Bukti pendukung belum lengkap\"\n}"
+            },
+            "description": "Jalankan Auth/Login sebagai TENANT_ADMIN atau SUPER_ADMIN dulu. Default memakai permissionLeaveRequestId."
+          }
+        },
+        {
+          "name": "Cancel leave request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{permissionLeaveRequestId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{permissionLeaveRequestId}}", "cancel"]
+            },
+            "description": "Login sebagai requester yang membuat permissionLeaveRequestId. Status harus masih PENDING."
+          }
+        },
+        {
+          "name": "Daily report with leave overlay",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/reports/attendance/daily?date={{toDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "daily"],
+              "query": [{ "key": "date", "value": "{{toDate}}" }]
+            }
+          }
+        },
+        {
+          "name": "Export CSV with leave columns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/reports/attendance/export.csv?from={{fromDate}}&to={{toDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "export.csv"],
+              "query": [
+                { "key": "from", "value": "{{fromDate}}" },
+                { "key": "to", "value": "{{toDate}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Excel with leave columns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/reports/attendance/export.xlsx?from={{fromDate}}&to={{toDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "export.xlsx"],
+              "query": [
+                { "key": "from", "value": "{{fromDate}}" },
+                { "key": "to", "value": "{{toDate}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export PDF with leave columns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/reports/attendance/export.pdf?from={{fromDate}}&to={{toDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "reports", "attendance", "export.pdf"],
+              "query": [
+                { "key": "from", "value": "{{fromDate}}" },
+                { "key": "to", "value": "{{toDate}}" }
+              ]
             }
           }
         }

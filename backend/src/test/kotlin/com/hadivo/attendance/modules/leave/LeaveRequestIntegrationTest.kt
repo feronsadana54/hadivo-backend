@@ -191,6 +191,49 @@ class LeaveRequestIntegrationTest {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.data.status").value("REJECTED"))
+
+        assertThat(auditLogs.findAll().filter { it.tenantId == admin.tenantId }.map { it.action })
+            .contains("LEAVE_REQUEST_REJECTED")
+    }
+
+    @Test
+    fun `approve on already approved request is rejected`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        val leave = leaves.save(
+            leaveOf(admin.tenantId, employee.userId, LeaveRequestType.PERMISSION).apply {
+                status = LeaveRequestStatus.APPROVED
+            }
+        )
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/leave-requests/${leave.id}/approve")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("reviewNote" to "Coba ulang")))
+        )
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.error.code").value("CONFLICT"))
+    }
+
+    @Test
+    fun `reject on already rejected request is rejected`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        val leave = leaves.save(
+            leaveOf(admin.tenantId, employee.userId, LeaveRequestType.SICK).apply {
+                status = LeaveRequestStatus.REJECTED
+            }
+        )
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/leave-requests/${leave.id}/reject")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("reviewNote" to "Tetap ditolak")))
+        )
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.error.code").value("CONFLICT"))
     }
 
     @Test
@@ -228,6 +271,29 @@ class LeaveRequestIntegrationTest {
         )
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.error.code").value("CONFLICT"))
+    }
+
+    @Test
+    fun `range over 31 days is rejected`() {
+        val ctx = seedTenantWithUser(Role.EMPLOYEE)
+
+        mvc.perform(
+            post("/api/v1/tenants/${ctx.tenantId}/leave-requests")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${ctx.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf(
+                            "requestType" to "ANNUAL_LEAVE",
+                            "startDate" to "2026-04-01",
+                            "endDate" to "2026-05-15",
+                            "reason" to "Cuti panjang",
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
     }
 
     @Test
