@@ -100,6 +100,21 @@ Test leave v1.2.0 (`LeaveRequestIntegrationTest`) mengecek:
 - export CSV mengandung kolom `Leave Type`/`Leave Status` dan baris leave-only;
 - kegagalan RabbitMQ `convertAndSend` tidak menggagalkan approve flow.
 
+## Integration test — attendance correction apply
+
+Test correction apply v1.3.0 (`CorrectionApplyIntegrationTest`) mengecek:
+
+- Approve `ATTENDANCE_CORRECTION` dengan record sudah ada → `clockInAt`/`clockOutAt`/`status`/`workDurationMinutes` di-update, metadata `correction_applied`/`correction_request_id`/`corrected_by`/`corrected_at`/`correction_note` ter-set, lat/long/device tidak berubah.
+- Tabel `attendance_correction_applies` menyimpan original vs applied `clock_in_at`/`clock_out_at`/`status`/`work_duration_minutes`, reviewer, applied_by, dan flag `record_created_by_correction`.
+- Approve correction dua kali idempotent: tidak ada duplikasi row apply; audit `ATTENDANCE_CORRECTION_ALREADY_APPLIED` muncul.
+- Approve correction tanpa record absensi sebelumnya → record baru dibuat dengan lat/long/device/location/face = null.
+- Approve leave non-correction (mis. SICK) tidak memutasi `attendance_records` dan tidak menambah row di `attendance_correction_applies`.
+- `attendance_attempts` table count tidak berubah setelah apply.
+- Daily report mengembalikan `correctionApplied=true` dan `correctionRequestId`.
+- CSV export memuat kolom `Correction Applied` dan `Correction Request ID` dengan nilai sesuai.
+- Audit log memuat `LEAVE_REQUEST_APPROVED`, `ATTENDANCE_CORRECTION_APPROVED`, dan `ATTENDANCE_CORRECTION_APPLIED` untuk approval correction.
+- Kegagalan `RabbitTemplate.convertAndSend` tidak menggagalkan apply correction; status tetap `APPROVED` dan row apply tetap ada.
+
 ## Integration test — shift & flexible schedule
 
 Test shift v1.1.0 mengecek:

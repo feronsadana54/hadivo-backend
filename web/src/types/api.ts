@@ -109,6 +109,9 @@ export type DailyReportRow = {
   leaveRequestId?: string | null;
   leaveType?: LeaveRequestType | null;
   leaveStatus?: LeaveRequestStatus | null;
+  correctionApplied?: boolean;
+  correctionRequestId?: string | null;
+  correctedAt?: string | null;
 };
 
 export type DailyReport = {

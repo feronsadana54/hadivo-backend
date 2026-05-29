@@ -33,6 +33,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Subscription Payment Foundation v1.0.0 dengan payment provider mock default, optional Midtrans Snap, payment record, webhook idempotent, dan aktivasi subscription dari backend.
 - Shift & Flexible Schedule v1.1.0 dengan shift template, assignment anggota, fallback ke attendance settings tenant, overnight shift sederhana, dan late calculation berdasarkan shift.
 - Leave / Permission Request Foundation v1.2.0 untuk pengajuan sakit, izin, cuti sederhana, dinas luar, dan koreksi absensi dengan flow approve/reject/cancel, overlay di daily report + export, audit log, dan event notifikasi.
+- Attendance Correction Apply Engine v1.3.0 menerapkan approved ATTENDANCE_CORRECTION ke `attendance_records` dalam transaksi yang sama dengan approve, dengan audit trail diff penuh di `attendance_correction_applies`, idempotency per leave request, dan jaminan tidak menyentuh lat/long/device/face/attempt history.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.

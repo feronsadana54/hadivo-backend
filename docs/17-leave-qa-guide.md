@@ -199,21 +199,60 @@ Authorization: Bearer {{accessToken}}
 
 Expected `data.items[*].status` salah satu dari `SENT`, `SKIPPED`, atau `FAILED` tergantung kondisi provider/destination. Bila RabbitMQ down, request approve tetap berhasil — periksa log backend `Failed to publish notification ... to RabbitMQ`. Behavior ini di-cover oleh test `notification publisher failure does not break approval`.
 
-## ATTENDANCE_CORRECTION limitation v1.2.x
+## ATTENDANCE_CORRECTION apply (v1.3.0+)
 
-Approve `ATTENDANCE_CORRECTION` di v1.2.x **tidak** mengubah `attendance_records`. Verifikasi manual:
+Mulai v1.3.0, approve `ATTENDANCE_CORRECTION` **menerapkan** koreksi ke `attendance_records`. Verifikasi manual:
 
-1. Buat correction request untuk user X tanggal Y.
-2. Approve dari web/Postman.
-3. Jalankan SQL:
+1. Buat correction request untuk user X tanggal Y dengan `requestedClockInTime` (dan/atau `requestedClockOutTime`).
+2. Approve dari web/Postman sebagai `TENANT_ADMIN` / `SUPER_ADMIN`.
+3. Status request → `APPROVED`. Jika apply gagal, status tetap `PENDING` dan endpoint mengembalikan `422 UNPROCESSABLE` dengan pesan "Tidak dapat menerapkan koreksi absensi…".
+4. Cek perubahan di `attendance_records`:
 
 ```sql
-select id, clock_in_at, clock_out_at, updated_at
+select id, clock_in_at, clock_out_at, status, work_duration_minutes,
+       correction_applied, correction_request_id, corrected_by, corrected_at
 from attendance_records
 where tenant_id = '...' and user_id = '...' and date = 'YYYY-MM-DD';
 ```
 
-`clock_in_at`/`clock_out_at` tidak boleh berubah. Approval hanya muncul sebagai overlay pada daily report dan export. Detail rationale dan roadmap apply engine ada di [`docs/16-leave-permission.md`](16-leave-permission.md).
+`clock_in_at`/`clock_out_at` dan `status` di-update sesuai request, dan kolom correction terisi.
+
+5. Cek audit diff koreksi:
+
+```sql
+select original_clock_in_at, applied_clock_in_at,
+       original_clock_out_at, applied_clock_out_at,
+       original_status, applied_status,
+       original_work_duration_minutes, applied_work_duration_minutes,
+       record_created_by_correction, applied_by, applied_at
+from attendance_correction_applies
+where leave_request_id = '...';
+```
+
+6. Cek audit log:
+
+```sql
+select action, metadata_json from audit_logs
+where action in ('ATTENDANCE_CORRECTION_APPROVED','ATTENDANCE_CORRECTION_APPLIED')
+order by created_at desc limit 5;
+```
+
+7. Buka `/attendance` di web — row hari Y harus menampilkan badge `"Dikoreksi"`. Buka `/leave-requests` — request terkait menampilkan "Koreksi ini sudah diterapkan ke data absensi."
+
+8. Verifikasi data yang TIDAK boleh berubah (existing record): lat/long, device id, location id, face, attempts.
+
+```sql
+select clock_in_latitude, clock_in_longitude, clock_in_device_id, clock_in_location_id
+from attendance_records where id = '...';
+-- nilai harus sama dengan sebelum approve
+
+select count(*) from attendance_attempts where tenant_id = '...';
+-- count tidak boleh bertambah karena apply
+```
+
+9. Untuk skenario record belum ada saat approve: record baru muncul di `attendance_records` dengan `correction_applied=true`, dan lat/long/device/location/face = `NULL`.
+
+Detail rationale dan limitation ada di [`docs/16-leave-permission.md`](16-leave-permission.md).
 
 ## Common troubleshooting
 
@@ -226,13 +265,13 @@ where tenant_id = '...' and user_id = '...' and date = 'YYYY-MM-DD';
 - **Create gagal dengan `CONFLICT` "Sudah ada pengajuan aktif yang beririsan"** — sudah ada `PENDING`/`APPROVED` non-correction overlap. Cancel atau pakai rentang lain.
 - **Notification delivery `SKIPPED`** — wajar bila user tidak punya email atau FCM token aktif. Tidak menggagalkan flow.
 
-## Batasan v1.2.x
+## Batasan v1.3.0
 
 - Belum ada leave balance / accrual / quota.
 - Belum ada attachment upload (kolom `attachment_url` reserved tapi tidak terisi).
 - Belum ada holiday calendar.
-- Belum ada payroll integration.
-- Belum ada correction apply engine — approval correction tidak memutasi `attendance_records`.
+- Belum ada payroll/timesheet engine penuh — apply correction sudah memutasi `attendance_records` dengan audit trail, tapi belum payroll-grade end-to-end.
 - Reviewer dibatasi `TENANT_ADMIN` dan `SUPER_ADMIN`.
 - `PARENT` belum dapat self-request.
 - Mobile belum mendukung approve/reject (gunakan web).
+- Tidak ada endpoint manual untuk apply / rollback correction; rollback memerlukan operasi DB manual dengan jejak `attendance_correction_applies`.

@@ -95,6 +95,8 @@ class ReportingService(
                         row.lateThresholdMinutes?.toString().orEmpty(),
                         row.leaveType,
                         row.leaveStatus,
+                        row.correctionApplied,
+                        row.correctionRequestId,
                     )
                 )
             }
@@ -173,6 +175,9 @@ class ReportingService(
         leaveRequestId = leave?.id,
         leaveType = leave?.requestType,
         leaveStatus = leave?.status,
+        correctionApplied = record.correctionApplied,
+        correctionRequestId = record.correctionRequestId,
+        correctedAt = record.correctedAt,
     )
 
     private fun buildLeaveOnlyDailyRow(
@@ -218,6 +223,8 @@ class ReportingService(
         lateThresholdMinutes = record.lateThresholdMinutes,
         leaveType = leave?.requestType?.name.orEmpty(),
         leaveStatus = leave?.status?.name.orEmpty(),
+        correctionApplied = record.correctionApplied.toString(),
+        correctionRequestId = record.correctionRequestId?.toString().orEmpty(),
     )
 
     private fun buildLeaveOnlyExportRow(
@@ -241,6 +248,8 @@ class ReportingService(
         lateThresholdMinutes = null,
         leaveType = leave.requestType.name,
         leaveStatus = leave.status.name,
+        correctionApplied = "false",
+        correctionRequestId = "",
     )
 
     private fun selectPrimaryLeave(group: List<LeaveRequest>): LeaveRequest =

@@ -91,6 +91,13 @@ Export attendance mencatat audit action `REPORT_CSV_EXPORTED`, `REPORT_EXCEL_EXP
 
 Payment foundation mencatat audit action `PAYMENT_CREATED`, `PAYMENT_WEBHOOK_RECEIVED`, `PAYMENT_STATUS_UPDATED`, `SUBSCRIPTION_ACTIVATED`, dan `PAYMENT_WEBHOOK_IGNORED`. Webhook Midtrans memverifikasi signature dan amount sebelum status payment dipakai untuk aktivasi subscription. Raw webhook yang disimpan harus sanitized dan tidak diekspos di endpoint list/detail payment.
 
+Attendance correction apply (v1.3.0) menjaga jejak audit sensitif sebagai berikut:
+
+- Tabel `attendance_correction_applies` adalah satu-satunya sumber resmi diff koreksi (original vs applied), dengan UNIQUE per `leave_request_id` untuk idempotency.
+- Audit action `ATTENDANCE_CORRECTION_APPROVED` (keputusan), `ATTENDANCE_CORRECTION_APPLIED` (perubahan benar-benar diterapkan), `ATTENDANCE_CORRECTION_ALREADY_APPLIED` (idempotent guard), dan `ATTENDANCE_CORRECTION_APPLY_FAILED` (apply gagal — tetap dicatat lewat `REQUIRES_NEW` walau parent tx rollback).
+- Apply correction tidak boleh memutasi lat/long, device id, location id, face data, atau `attendance_attempts`. Data yang dimasukkan ke record correction-generated harus null untuk field absensi mobile (lat/long/device/location), agar audit tidak terlihat seperti absensi asli.
+- Endpoint manual apply tidak ada — apply hanya dipicu oleh approve di backend, dan reviewer dijaga oleh role guard `TENANT_ADMIN`/`SUPER_ADMIN`.
+
 ## Security headers and errors
 
 Backend menambahkan header dasar:

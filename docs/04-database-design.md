@@ -23,6 +23,8 @@ PostgreSQL 16. Semua ID pakai UUID v4. Semua tabel utama punya `created_at` + `u
 | `attendance_records` | **Hanya absensi sah**. UNIQUE (tenant_id, user_id, date). Menyimpan koordinat & device_id untuk clock-in dan clock-out. |
 | `attendance_attempts` | Percobaan gagal (OUT_OF_RADIUS, FACE_MISMATCH, DUPLICATE_CLOCK_IN, dst). |
 | `leave_requests` | Pengajuan izin/sakit/cuti/dinas/koreksi absensi per tenant + user. Status `PENDING`/`APPROVED`/`REJECTED`/`CANCELLED`. Untuk `ATTENDANCE_CORRECTION` menyimpan `requested_clock_in_at` dan `requested_clock_out_at`. |
+| `attendance_correction_applies` | Audit trail satu-per-request untuk apply ATTENDANCE_CORRECTION. UNIQUE per `leave_request_id` agar idempotent. Menyimpan original vs applied `clock_in_at`/`clock_out_at`/`status`/`work_duration_minutes`, reviewer, applied_by, applied_at, dan flag `record_created_by_correction`. |
+| `attendance_records` (v1.3.0) | Tambahan kolom `correction_applied` (boolean), `correction_request_id`, `corrected_by`, `corrected_at`, `correction_note` untuk membedakan record hasil koreksi dari clock-in mobile asli. Geofence/device/face/attempt history TIDAK diubah saat apply. |
 | `user_devices` | Trusted attendance device per tenant dan user. Satu active trusted device per (tenant_id, user_id). |
 | `notifications` | Notifikasi per user (payload jsonb). |
 | `notification_delivery_logs` | Delivery log notification gateway per tenant, channel, event type, status, provider, error, dan waktu kirim. |

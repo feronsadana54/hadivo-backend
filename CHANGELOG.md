@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.3.0 - Attendance Correction Apply Engine
+
+### Backend
+
+- Added `attendance_correction_applies` table with original vs applied clock-in/out, status, work duration, reviewer, applied_by, applied_at, and `record_created_by_correction` flag. UNIQUE per `leave_request_id` for idempotency.
+- Added correction metadata columns to `attendance_records`: `correction_applied`, `correction_request_id`, `corrected_by`, `corrected_at`, `correction_note`.
+- Added `CorrectionApplyService` that runs in the same transaction as leave approval. APPROVED status now means the correction has been applied. If apply fails, the parent transaction rolls back and the request stays PENDING with a 422 response.
+- Added `AttendanceStatusCalculator` helper that reuses `ShiftScheduleResolver` to recompute status and work duration from corrected clock-in/out.
+- Correction apply preserves original lat/long, device id, location id, face data, and `attendance_attempts` — for existing records only `clock_in_at`/`clock_out_at`/status/work duration and correction metadata are mutated.
+- Correction-generated records (no prior attendance) write null lat/long/device/location/face to clearly distinguish from real mobile clock-ins.
+- Added audit actions `ATTENDANCE_CORRECTION_APPLIED`, `ATTENDANCE_CORRECTION_ALREADY_APPLIED`, and `ATTENDANCE_CORRECTION_APPLY_FAILED` (committed via REQUIRES_NEW even on rollback). `ATTENDANCE_CORRECTION_APPROVED` is retained as the reviewer-decision event.
+- Daily report exposes `correctionApplied`, `correctionRequestId`, and `correctedAt` per row. CSV / Excel / PDF exports add `Correction Applied` and `Correction Request ID` columns at the tail.
+- Added `CorrectionApplyIntegrationTest` covering existing-record update, original snapshot, idempotency, new-record creation, non-correction non-mutation, attempts/geofence preservation, daily report indicator, CSV column, audit events, and notification failure tolerance.
+
+### Web Dashboard
+
+- `/attendance` row Status column shows a `"Dikoreksi"` badge when `correctionApplied=true`.
+- `/leave-requests` row Catatan column displays "Koreksi ini sudah diterapkan ke data absensi." for `ATTENDANCE_CORRECTION` requests in `APPROVED` status.
+- Updated `DailyReportRow` types with the new correction fields.
+- Regenerated `docs/images/web-attendance.png` and `docs/images/web-leave-requests.png`.
+
+### Mobile
+
+- No mobile code changes. Backend response is additive; mobile parser ignores the new fields.
+
+### Notes
+
+- Apply correction is triggered automatically by approve; there is no manual apply endpoint.
+- Rollback of an applied correction requires manual DB operation using the diff in `attendance_correction_applies`.
+- Payroll, leave balance / accrual, holiday calendar, attachment upload, real face recognition, and manager-tier reviewer hierarchy remain out of scope.
+
 ## v1.2.0 - Leave / Permission Request Foundation
 
 ### Backend

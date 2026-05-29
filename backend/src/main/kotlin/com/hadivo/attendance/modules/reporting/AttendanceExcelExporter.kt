@@ -59,6 +59,8 @@ class AttendanceExcelExporter {
                     ?: row.createCell(12).setCellValue("")
                 row.createCell(13).setCellValue(reportRow.leaveType)
                 row.createCell(14).setCellValue(reportRow.leaveStatus)
+                row.createCell(15).setCellValue(reportRow.correctionApplied)
+                row.createCell(16).setCellValue(reportRow.correctionRequestId)
             }
 
             AttendanceReportExportColumns.headers.indices.forEach(sheet::autoSizeColumn)

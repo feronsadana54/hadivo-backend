@@ -54,7 +54,7 @@ class AttendancePdfExporter {
             widthPercentage = 100f
             setWidths(
                 floatArrayOf(
-                    1.1f, 2.1f, 1.8f, 2.2f, 1.3f, 1.7f, 1.7f, 1.4f, 1.3f, 1.6f, 1.2f, 1.2f, 1.2f, 1.3f, 1.2f,
+                    1.1f, 2.1f, 1.8f, 2.2f, 1.3f, 1.7f, 1.7f, 1.4f, 1.3f, 1.6f, 1.2f, 1.2f, 1.2f, 1.3f, 1.2f, 1.3f, 2.1f,
                 )
             )
 
@@ -76,6 +76,8 @@ class AttendancePdfExporter {
                 addCell(bodyCell(row.lateThresholdMinutes?.toString().orEmpty()))
                 addCell(bodyCell(row.leaveType))
                 addCell(bodyCell(row.leaveStatus))
+                addCell(bodyCell(row.correctionApplied))
+                addCell(bodyCell(row.correctionRequestId))
             }
         }
 

@@ -184,6 +184,9 @@ export default function AttendancePage() {
                       {row.leaveType ? (
                         <Badge variant="info">{LEAVE_TYPE_LABEL[row.leaveType]}</Badge>
                       ) : null}
+                      {row.correctionApplied ? (
+                        <Badge variant="warning">Dikoreksi</Badge>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell>

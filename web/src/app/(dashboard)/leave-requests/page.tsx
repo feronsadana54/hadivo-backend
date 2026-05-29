@@ -290,6 +290,11 @@ export default function LeaveRequestsPage() {
                           {row.reviewNote ? (
                             <p className="mt-1 text-xs text-muted-foreground">Catatan: {row.reviewNote}</p>
                           ) : null}
+                          {row.requestType === "ATTENDANCE_CORRECTION" && row.status === "APPROVED" ? (
+                            <p className="mt-1 text-xs text-emerald-700">
+                              Koreksi ini sudah diterapkan ke data absensi.
+                            </p>
+                          ) : null}
                         </TableCell>
                         <TableCell>
                           {row.status === "PENDING" ? (

@@ -24,6 +24,9 @@ data class DailyReportRow(
     val leaveRequestId: UUID?,
     val leaveType: LeaveRequestType?,
     val leaveStatus: LeaveRequestStatus?,
+    val correctionApplied: Boolean = false,
+    val correctionRequestId: UUID? = null,
+    val correctedAt: java.time.Instant? = null,
 )
 
 data class DailyReport(
@@ -62,6 +65,8 @@ data class AttendanceReportExportRow(
     val lateThresholdMinutes: Int?,
     val leaveType: String,
     val leaveStatus: String,
+    val correctionApplied: String,
+    val correctionRequestId: String,
 )
 
 object AttendanceReportExportColumns {
@@ -81,5 +86,7 @@ object AttendanceReportExportColumns {
         "Late Threshold Minutes",
         "Leave Type",
         "Leave Status",
+        "Correction Applied",
+        "Correction Request ID",
     )
 }

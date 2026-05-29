@@ -231,6 +231,8 @@ Endpoint notification delivery bersifat read-only. `TENANT_ADMIN` dapat melihat 
 Filter:
 
 - `eventType`: `CLOCK_IN_SUCCESS`, `CLOCK_OUT_SUCCESS`, `ATTENDANCE_OUT_OF_RADIUS`, `DEVICE_MISMATCH`, `ATTENDANCE_FAILED_ATTEMPT`, `LEAVE_REQUEST_CREATED`, `LEAVE_REQUEST_APPROVED`, `LEAVE_REQUEST_REJECTED`, `LEAVE_REQUEST_CANCELLED`
+
+Catatan v1.3.0: approve untuk `ATTENDANCE_CORRECTION` menerapkan koreksi ke `attendance_records` di transaksi yang sama. Bila apply gagal, leave request tetap `PENDING` dan endpoint mengembalikan `422 UNPROCESSABLE`. Tidak ada endpoint apply manual.
 - `channel`: `IN_APP`, `EMAIL`, `PUSH`
 - `status`: `PENDING`, `SENT`, `FAILED`, `SKIPPED`
 - `from` dan `to`: ISO-8601 datetime

@@ -5,6 +5,7 @@ import com.hadivo.attendance.common.exception.ErrorCode
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.auth.UserRepository
+import com.hadivo.attendance.modules.leave.correction.CorrectionApplyService
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import com.hadivo.attendance.modules.membership.Role
 import com.hadivo.attendance.modules.notification.NotificationEventType
@@ -24,6 +25,7 @@ class LeaveRequestService(
     private val guard: MembershipGuard,
     private val audit: AuditLogger,
     private val publisher: NotificationPublisher,
+    private val correctionApply: CorrectionApplyService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -201,6 +203,14 @@ class LeaveRequestService(
         request.reviewedAt = Instant.now()
         request.reviewNote = payload.reviewNote?.trim()?.takeIf { it.isNotBlank() }
         val saved = repository.save(request)
+
+        // For ATTENDANCE_CORRECTION approvals, the correction must be applied
+        // to attendance_records in the same transaction. If apply throws, the
+        // surrounding @Transactional rolls back the status change above and
+        // the request stays PENDING.
+        if (nextStatus == LeaveRequestStatus.APPROVED && saved.requestType.isAttendanceCorrection()) {
+            correctionApply.apply(saved, principal.userId)
+        }
 
         val action = if (nextStatus == LeaveRequestStatus.APPROVED) "LEAVE_REQUEST_APPROVED"
         else "LEAVE_REQUEST_REJECTED"

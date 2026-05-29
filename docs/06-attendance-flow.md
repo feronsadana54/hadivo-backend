@@ -62,3 +62,19 @@ Approved `leave_requests` ditampilkan sebagai overlay pada daily report dan expo
 - Export CSV/Excel/PDF menambah kolom `Leave Type` dan `Leave Status`. Baris leave-only memiliki kolom status absensi kosong.
 
 `ATTENDANCE_CORRECTION` di v1.2.0 disimpan sebagai approved request dan dimunculkan di report sebagai informasi correction approved. Mutasi `clock_in_at`/`clock_out_at` ke `attendance_records` tidak dilakukan karena model belum punya audit trail `correctionRequestId`/`correctedBy`/`correctedAt`. Lihat `docs/16-leave-permission.md` untuk detail limitation dan roadmap.
+
+## Correction apply engine (v1.3.0)
+
+Approve `ATTENDANCE_CORRECTION` di v1.3.0 menerapkan koreksi ke `attendance_records` di transaksi yang sama dengan approve. Mekanisme:
+
+1. Reviewer hit `/leave-requests/{id}/approve` dan status berubah ke `APPROVED` di memori.
+2. `CorrectionApplyService.apply(request, reviewerUserId)` dipanggil dalam transaksi yang sama.
+3. Service cek apakah `attendance_correction_applies` sudah punya row untuk `leave_request_id` — bila ya, log `ATTENDANCE_CORRECTION_ALREADY_APPLIED` dan kembalikan row existing (idempotent).
+4. Cari `attendance_records` pada `(tenantId, requesterUserId, startDate)`:
+   - **Ada record**: snapshot `clockInAt/clockOutAt/status/workDurationMinutes` lama → simpan ke `attendance_correction_applies` → update `clockInAt`/`clockOutAt` dari `requestedClockInAt`/`requestedClockOutAt` (hanya yang non-null) → recompute `status` + `workDurationMinutes` → set `correction_applied=true`, `correction_request_id`, `corrected_by`, `corrected_at`, `correction_note`. Lat/long/device/location_id/face/attendance_attempts TIDAK disentuh.
+   - **Tidak ada record**: buat record baru dengan `clockInAt`/`clockOutAt` dari request, snapshot shift schedule, dan field correction. Lat/long/device/location_id semua `null` untuk menandai bukan absensi mobile asli. `record_created_by_correction=true` di apply audit row.
+5. Audit `ATTENDANCE_CORRECTION_APPLIED` ditulis dengan metadata: `leaveRequestId`, `attendanceRecordId`, `originalClockInExists`, `originalClockOutExists`, `appliedClockInProvided`, `appliedClockOutProvided`, `originalStatus`, `appliedStatus`, `recordCreatedByCorrection`.
+6. Audit `LEAVE_REQUEST_APPROVED` dan `ATTENDANCE_CORRECTION_APPROVED` tetap ditulis (semantik berbeda: APPROVED = keputusan reviewer; APPLIED = perubahan benar-benar diterapkan ke data absensi).
+7. Bila apply gagal, audit `ATTENDANCE_CORRECTION_APPLY_FAILED` ditulis lewat `REQUIRES_NEW` (commit terlepas), exception dilempar, transaksi parent rollback → leave request tetap `PENDING`.
+
+Status recomputation dilakukan oleh `AttendanceStatusCalculator` berbasis `ShiftScheduleResolver` (mengikuti shift assignment atau fallback `tenant_attendance_settings`). Aturan: clock-in only → `LATE`/`ON_TIME`; clock-in + clock-out → `EARLY_LEAVE`/`COMPLETED`.

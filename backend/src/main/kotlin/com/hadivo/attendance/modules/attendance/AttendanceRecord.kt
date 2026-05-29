@@ -80,6 +80,21 @@ class AttendanceRecord(
 
     @Column(name = "late_threshold_minutes")
     var lateThresholdMinutes: Int? = null,
+
+    @Column(name = "correction_applied", nullable = false)
+    var correctionApplied: Boolean = false,
+
+    @Column(name = "correction_request_id")
+    var correctionRequestId: UUID? = null,
+
+    @Column(name = "corrected_by")
+    var correctedBy: UUID? = null,
+
+    @Column(name = "corrected_at")
+    var correctedAt: Instant? = null,
+
+    @Column(name = "correction_note")
+    var correctionNote: String? = null,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

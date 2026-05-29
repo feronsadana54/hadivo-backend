@@ -37,15 +37,19 @@ Cross-tenant access ditolak dengan 403.
 - Cancel: requester saja, hanya saat `PENDING`.
 - Setiap transisi mencatat audit dan men-publish event notifikasi.
 
-### ATTENDANCE_CORRECTION limitation v1.2.0
+### ATTENDANCE_CORRECTION apply (v1.3.0+)
 
-Approve correction **tidak** memutasi `attendance_records` di v1.2.0:
+Mulai v1.3.0, approve correction **menerapkan** perubahan ke `attendance_records` dengan audit trail penuh:
 
-- Jika record absensi sudah ada pada tanggal yang dimaksud, `clockInAt`/`clockOutAt` tetap.
-- Jika record absensi belum ada, record baru tidak dibuat.
-- Approved correction hanya disimpan sebagai pengajuan ber-status `APPROVED` dan akan ditampilkan pada daily report serta export attendance sebagai informasi correction approved (kolom `Leave Type` = `ATTENDANCE_CORRECTION`).
+- Status `APPROVED` berarti koreksi sudah berhasil diterapkan. Bila apply gagal, status tetap `PENDING` dan endpoint mengembalikan `422 UNPROCESSABLE` — tidak akan ada kondisi "APPROVED tapi belum applied".
+- Tabel `attendance_correction_applies` menyimpan: original vs applied clock-in/out, original vs applied status, original vs applied work duration minutes, reviewer, applied_by, applied_at, dan flag `record_created_by_correction`. UNIQUE per `leave_request_id` agar idempotent.
+- Pada `attendance_records` ditambah kolom `correction_applied`, `correction_request_id`, `corrected_by`, `corrected_at`, `correction_note` agar UI/report dapat menandai row hasil koreksi tanpa JOIN.
+- Bila record absensi sudah ada, hanya `clockInAt`/`clockOutAt`, `status`, `workDurationMinutes`, dan metadata correction yang diubah. Lat/long, device id, location id, face data, dan `attendance_attempts` tidak disentuh.
+- Bila record absensi belum ada, dibuat record baru dengan lat/long/device/location/face = `null`. Ini menandai record sebagai correction-generated, bukan absensi mobile asli.
 
-Keputusan ini diambil karena `attendance_records` belum memiliki field audit trail (`correctionRequestId`, `correctedBy`, `correctedAt`, `correctionNote`). Mutasi langsung berisiko menghilangkan riwayat geofence/device/face attempt asli.
+### v1.2.0 baseline (history)
+
+Pada v1.2.0 approved correction hanya muncul sebagai overlay report tanpa mutasi `attendance_records`. v1.3.0 mempertahankan tabel overlay info di report sambil menambah apply engine penuh.
 
 ## Reporting & export
 
@@ -62,7 +66,10 @@ Action baru pada `audit_logs`:
 - `LEAVE_REQUEST_APPROVED`
 - `LEAVE_REQUEST_REJECTED`
 - `LEAVE_REQUEST_CANCELLED`
-- `ATTENDANCE_CORRECTION_APPROVED` (terjadi saat approve untuk `ATTENDANCE_CORRECTION`)
+- `ATTENDANCE_CORRECTION_APPROVED` (keputusan reviewer menyetujui ATTENDANCE_CORRECTION)
+- `ATTENDANCE_CORRECTION_APPLIED` (v1.3.0+; perubahan benar-benar diterapkan ke `attendance_records`)
+- `ATTENDANCE_CORRECTION_ALREADY_APPLIED` (v1.3.0+; idempotent guard)
+- `ATTENDANCE_CORRECTION_APPLY_FAILED` (v1.3.0+; apply gagal, transaksi rollback. Audit dicommit lewat `REQUIRES_NEW` untuk jejak)
 
 Metadata dijaga minimal: `requestType`, `status`, `startDate`, `endDate`, `reasonProvided`, `reviewNoteProvided`. `reason` penuh tidak disimpan ke audit log.
 
@@ -87,6 +94,9 @@ Menu sidebar **Pengajuan** (`/leave-requests`). Halaman memiliki:
 - Tombol Setujui / Tolak / Batalkan dengan field catatan reviewer.
 - Empty state: "Belum ada pengajuan izin."
 - Bila backend mengembalikan 403, halaman menampilkan pesan "Anda tidak memiliki akses ke halaman pengajuan."
+- Untuk request `ATTENDANCE_CORRECTION` ber-status `APPROVED`, kolom Catatan menampilkan teks hijau kecil "Koreksi ini sudah diterapkan ke data absensi." Karena v1.3.0 menjamin status APPROVED berarti apply sukses.
+
+Halaman `/attendance` menambahkan badge `"Dikoreksi"` (variant warning) pada row dengan `correctionApplied=true` agar admin dapat membedakan absensi mobile asli dari hasil koreksi.
 
 ## Mobile
 
@@ -97,13 +107,13 @@ Tab **Pengajuan** di bottom navigation:
 - Tombol "Batalkan" pada pengajuan ber-status `PENDING`.
 - Tidak ada attachment / parent flow / complex date picker hierarchy.
 
-## Limitation v1.2.0
+## Limitation v1.3.0
 
 - Belum ada leave balance / accrual / quota.
 - Belum ada attachment upload (kolom `attachment_url` reserved di DB tapi tidak diisi).
 - Belum ada holiday calendar.
-- Belum ada payroll integration.
-- Approval `ATTENDANCE_CORRECTION` belum payroll-grade — record absensi tidak diubah, hanya overlay di report/export.
+- Belum ada payroll integration penuh — apply correction sudah menerapkan ke `attendance_records` dengan audit trail, tapi belum payroll/timesheet engine penuh.
 - Reviewer dibatasi `TENANT_ADMIN` dan `SUPER_ADMIN`; hierarchy manager belum dibuka.
 - `PARENT` self-request belum tersedia.
 - Mobile belum mendukung approve/reject (admin pakai web).
+- Apply tidak punya endpoint manual — apply otomatis terjadi saat reviewer approve. Untuk rollback koreksi, gunakan operasi DB manual dengan jejak di `attendance_correction_applies`.
