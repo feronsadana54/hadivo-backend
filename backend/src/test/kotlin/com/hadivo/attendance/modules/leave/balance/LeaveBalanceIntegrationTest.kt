@@ -63,6 +63,7 @@ class LeaveBalanceIntegrationTest {
     @Autowired private lateinit var ledgers: LeaveBalanceLedgerRepository
     @Autowired private lateinit var policies: LeavePolicyRepository
     @Autowired private lateinit var auditLogs: AuditLogRepository
+    @Autowired private lateinit var balanceService: LeaveBalanceService
 
     @MockBean private lateinit var rabbit: RabbitTemplate
 
@@ -437,6 +438,108 @@ class LeaveBalanceIntegrationTest {
             it.tenantId == admin.tenantId && it.action == "LEAVE_BALANCE_DEDUCTED"
         }
         assertThat(deduct).isEmpty()
+    }
+
+    @Test
+    fun `employee cannot adjust balance`() {
+        val ctx = seedTenantWithUser(Role.EMPLOYEE)
+        val year = LocalDate.now().year
+
+        mvc.perform(
+            post("/api/v1/tenants/${ctx.tenantId}/members/${ctx.userId}/leave-balance/adjust")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${ctx.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf("year" to year, "days" to 1, "note" to "Test"),
+                    )
+                )
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `deductForApproval is idempotent at service level`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        val today = LocalDate.of(LocalDate.now().year, 6, 1)
+        val leave = leaves.save(
+            LeaveRequest(
+                tenantId = admin.tenantId,
+                requesterUserId = employee.userId,
+                requestType = LeaveRequestType.ANNUAL_LEAVE,
+                startDate = today,
+                endDate = today.plusDays(1),
+                reason = "Liburan singkat",
+            )
+        )
+
+        balanceService.deductForApproval(leave, admin.userId)
+        balanceService.deductForApproval(leave, admin.userId)
+
+        val balance = balances.findByTenantIdAndUserIdAndYear(admin.tenantId, employee.userId, today.year)
+        assertThat(balance).isNotNull
+        assertThat(balance!!.usedDays).isEqualByComparingTo(BigDecimal("2.00"))
+        assertThat(balance.remainingDays).isEqualByComparingTo(BigDecimal("10.00"))
+
+        val deductLedgers = ledgers.findAllByTenantIdAndUserIdAndYearOrderByCreatedAtDesc(
+            admin.tenantId, employee.userId, today.year,
+        ).filter { it.changeType == LeaveBalanceChangeType.DEDUCT && it.leaveRequestId == leave.id }
+        assertThat(deductLedgers).hasSize(1)
+    }
+
+    @Test
+    fun `balance ledger history captures initial adjust and deduct change types`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        val today = LocalDate.of(LocalDate.now().year, 6, 1)
+
+        mvc.perform(
+            get("/api/v1/tenants/${admin.tenantId}/members/${employee.userId}/leave-balance")
+                .param("year", today.year.toString())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+        )
+            .andExpect(status().isOk)
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/members/${employee.userId}/leave-balance/adjust")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf("year" to today.year, "days" to 1, "note" to "Bonus"),
+                    )
+                )
+        )
+            .andExpect(status().isOk)
+
+        val leave = leaves.save(
+            LeaveRequest(
+                tenantId = admin.tenantId,
+                requesterUserId = employee.userId,
+                requestType = LeaveRequestType.ANNUAL_LEAVE,
+                startDate = today,
+                endDate = today,
+                reason = "Cuti satu hari",
+            )
+        )
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/leave-requests/${leave.id}/approve")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("reviewNote" to "OK")))
+        )
+            .andExpect(status().isOk)
+
+        val history = ledgers.findAllByTenantIdAndUserIdAndYearOrderByCreatedAtDesc(
+            admin.tenantId, employee.userId, today.year,
+        )
+        val types = history.map { it.changeType }.toSet()
+        assertThat(types).containsExactlyInAnyOrder(
+            LeaveBalanceChangeType.INITIAL,
+            LeaveBalanceChangeType.ADJUST,
+            LeaveBalanceChangeType.DEDUCT,
+        )
     }
 
     private fun seedTenantWithUser(role: Role): TestContext {

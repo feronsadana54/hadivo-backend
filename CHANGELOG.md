@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.4.1 - Leave Balance QA Stabilization
+
+### Docs
+
+- Added leave balance QA guide at `docs/22-leave-balance-qa-guide.md` covering local setup, demo accounts, Postman variables, happy path, DB verification, idempotency (force-PENDING re-approve), insufficient balance via small adjust + 2-3 day request, SICK/PERMISSION/BUSINESS_TRIP/ATTENDANCE_CORRECTION non-deduct, cross-year rejection, adjustment guards, role/cross-tenant access, web `/leave-balances` and mobile profile card QA, troubleshooting, and v1.4.1 limitations.
+- Linked the new guide from `README.md` and `docs/21-leave-balance.md`.
+
+### Postman
+
+- Added `Leave Balance QA Flow` collection covering get/update policy, list/get/adjust balance, ANNUAL_LEAVE create/approve happy path, insufficient-balance flow (small adjust → 2-3 day request → expect 400), SICK and ATTENDANCE_CORRECTION non-deduct verification, and balance re-read after each step.
+- Added collection variables `memberUserId`, `balanceYear`, `adjustmentDays`.
+
+### Backend
+
+- Added 3 integration tests to harden v1.4.0 against regression:
+  - `employee cannot adjust balance` — closes role-guard gap (admin-only adjust).
+  - `deductForApproval is idempotent at service level` — invokes the service twice with the same approved request and verifies only one DEDUCT ledger.
+  - `balance ledger history captures initial adjust and deduct change types` — asserts the set `{INITIAL, ADJUST, DEDUCT}` after a full lifecycle, without depending on `created_at` ordering.
+
+### Notes
+
+- No endpoint, migration, schema, or service behavior changes. No payment / attendance correction apply engine changes. Web UI and mobile UI are not modified.
+
 ## v1.4.0 - Leave Balance / Quota Foundation
 
 ### Backend

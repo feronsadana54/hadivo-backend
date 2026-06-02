@@ -2,7 +2,7 @@
 
 Dokumen ini menjelaskan fondasi saldo cuti tahunan Hadivo v1.4.0. Tujuannya: tenant bisa mengatur jatah cuti per user, dan saldo otomatis berkurang saat `ANNUAL_LEAVE` disetujui — dengan jejak audit yang lengkap.
 
-Untuk policy umum leave/permission lihat [`docs/16-leave-permission.md`](16-leave-permission.md). Untuk QA leave secara umum lihat [`docs/17-leave-qa-guide.md`](17-leave-qa-guide.md).
+Untuk policy umum leave/permission lihat [`docs/16-leave-permission.md`](16-leave-permission.md). Untuk QA leave secara umum lihat [`docs/17-leave-qa-guide.md`](17-leave-qa-guide.md). Untuk QA manual khusus leave balance (Postman flow, SQL verifikasi, troubleshooting) lihat [`docs/22-leave-balance-qa-guide.md`](22-leave-balance-qa-guide.md).
 
 ## Konsep
 

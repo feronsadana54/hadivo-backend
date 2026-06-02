@@ -22,7 +22,10 @@
     { "key": "businessTripLeaveRequestId", "value": "" },
     { "key": "correctionLeaveRequestId", "value": "" },
     { "key": "fromDate", "value": "2026-06-01" },
-    { "key": "toDate", "value": "2026-06-02" }
+    { "key": "toDate", "value": "2026-06-02" },
+    { "key": "memberUserId", "value": "" },
+    { "key": "balanceYear", "value": "2026" },
+    { "key": "adjustmentDays", "value": "2" }
   ],
   "item": [
     {
@@ -998,6 +1001,370 @@
                 { "key": "to", "value": "{{toDate}}" }
               ]
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leave Balance QA Flow",
+      "item": [
+        {
+          "name": "Get leave policy",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-policy",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-policy"]
+            },
+            "description": "Login sebagai TENANT_ADMIN atau SUPER_ADMIN dulu. Default policy dibuat otomatis pada GET pertama untuk tenant baru."
+          }
+        },
+        {
+          "name": "Update leave policy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-policy",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-policy"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"annualLeaveQuotaDays\": 15,\n  \"sickLeaveRequiresBalance\": false,\n  \"permissionRequiresBalance\": false,\n  \"businessTripRequiresBalance\": false,\n  \"active\": true\n}"
+            },
+            "description": "Admin only. annualLeaveQuotaDays harus 0..365. Audit LEAVE_POLICY_UPDATED tercatat."
+          }
+        },
+        {
+          "name": "List leave balances",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-balances?year={{balanceYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-balances"],
+              "query": [{ "key": "year", "value": "{{balanceYear}}" }]
+            },
+            "description": "Admin only. Mengembalikan semua row leave_balances untuk tenant pada tahun terkait."
+          }
+        },
+        {
+          "name": "Get member leave balance",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/members/{{memberUserId}}/leave-balance?year={{balanceYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "members", "{{memberUserId}}", "leave-balance"],
+              "query": [{ "key": "year", "value": "{{balanceYear}}" }]
+            },
+            "description": "Admin dapat melihat balance member manapun. Employee hanya dapat melihat balance dirinya sendiri (memberUserId == self userId). Akses pertama akan membuat balance otomatis dari policy dan menulis ledger INITIAL."
+          }
+        },
+        {
+          "name": "Adjust leave balance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/members/{{memberUserId}}/leave-balance/adjust",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "members", "{{memberUserId}}", "leave-balance", "adjust"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": {{balanceYear}},\n  \"days\": {{adjustmentDays}},\n  \"note\": \"Bonus tahunan\"\n}"
+            },
+            "description": "Admin only. days boleh negatif untuk mengurangi. note wajib. Tidak boleh menghasilkan remaining negatif. Audit LEAVE_BALANCE_ADJUSTED tercatat dan ledger ADJUST ditulis."
+          }
+        },
+        {
+          "name": "Create annual leave request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('annualLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ANNUAL_LEAVE\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{toDate}}\",\n  \"reason\": \"Liburan keluarga\"\n}"
+            },
+            "description": "Login sebagai requester (EMPLOYEE/STUDENT/dll) dulu. Test script menulis id ke annualLeaveRequestId."
+          }
+        },
+        {
+          "name": "Approve annual leave request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{annualLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{annualLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Disetujui\"\n}"
+            },
+            "description": "Admin only. Approve ANNUAL_LEAVE memotong saldo requester di transaksi yang sama. Audit LEAVE_BALANCE_DEDUCTED tercatat dan ledger DEDUCT ditulis dengan leave_request_id terkait."
+          }
+        },
+        {
+          "name": "Get balance after annual leave deduction",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/members/{{memberUserId}}/leave-balance?year={{balanceYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "members", "{{memberUserId}}", "leave-balance"],
+              "query": [{ "key": "year", "value": "{{balanceYear}}" }]
+            },
+            "description": "Verifikasi usedDays bertambah sesuai jumlah hari ANNUAL_LEAVE yang disetujui dan remainingDays turun."
+          }
+        },
+        {
+          "name": "Adjust balance to small remaining (setup insufficient)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/members/{{memberUserId}}/leave-balance/adjust",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "members", "{{memberUserId}}", "leave-balance", "adjust"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": {{balanceYear}},\n  \"days\": -10,\n  \"note\": \"Setup test insufficient balance\"\n}"
+            },
+            "description": "Turunkan saldo cuti supaya cukup kecil (mis. tersisa 2 hari) sehingga request 3 hari berikutnya gagal saat approve. Pastikan hasil remaining tetap >= 0 atau adjust akan ditolak."
+          }
+        },
+        {
+          "name": "Create annual leave request with insufficient balance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('annualLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ANNUAL_LEAVE\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{toDate}}\",\n  \"reason\": \"Cuti pendek setelah saldo dikecilkan\"\n}"
+            },
+            "description": "Login sebagai requester. Pakai range pendek (2-3 hari) supaya tidak menyentuh batas range maksimal 31 hari. Sesuaikan fromDate/toDate jika overlap dengan request sebelumnya."
+          }
+        },
+        {
+          "name": "Approve annual leave with insufficient balance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{annualLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{annualLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Cek insufficient\"\n}"
+            },
+            "description": "Login sebagai admin. Expected 400 VALIDATION_FAILED dengan pesan 'Sisa cuti tahunan tidak mencukupi'. Request tetap PENDING. Tidak ada ledger DEDUCT baru untuk leave_request_id ini."
+          }
+        },
+        {
+          "name": "Create sick leave request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('sickLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"SICK\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{toDate}}\",\n  \"reason\": \"Demam dan istirahat di rumah\"\n}"
+            },
+            "description": "Login sebagai requester. Sesuaikan fromDate/toDate agar tidak overlap dengan pending/approved request lain."
+          }
+        },
+        {
+          "name": "Approve sick leave request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{sickLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{sickLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Disetujui\"\n}"
+            },
+            "description": "Admin only. SICK tidak memotong saldo di v1.4.1 (default policy). Status berubah ke APPROVED tanpa ledger DEDUCT baru."
+          }
+        },
+        {
+          "name": "Get balance after sick leave approval",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/members/{{memberUserId}}/leave-balance?year={{balanceYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "members", "{{memberUserId}}", "leave-balance"],
+              "query": [{ "key": "year", "value": "{{balanceYear}}" }]
+            },
+            "description": "Verifikasi usedDays tidak bertambah setelah SICK disetujui."
+          }
+        },
+        {
+          "name": "Create attendance correction request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('correctionLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ATTENDANCE_CORRECTION\",\n  \"startDate\": \"{{fromDate}}\",\n  \"endDate\": \"{{fromDate}}\",\n  \"requestedClockInTime\": \"{{fromDate}}T01:00:00Z\",\n  \"correctionNote\": \"Lupa clock-in\"\n}"
+            },
+            "description": "Login sebagai requester. Test script menulis id ke correctionLeaveRequestId."
+          }
+        },
+        {
+          "name": "Approve attendance correction request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{correctionLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{correctionLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Disetujui dan koreksi diterapkan\"\n}"
+            },
+            "description": "Admin only. ATTENDANCE_CORRECTION approve menerapkan koreksi ke attendance_records (v1.3.x) tapi tidak memotong saldo cuti."
+          }
+        },
+        {
+          "name": "Get balance after correction approval",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/members/{{memberUserId}}/leave-balance?year={{balanceYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "members", "{{memberUserId}}", "leave-balance"],
+              "query": [{ "key": "year", "value": "{{balanceYear}}" }]
+            },
+            "description": "Verifikasi usedDays tidak bertambah setelah ATTENDANCE_CORRECTION disetujui."
           }
         }
       ]
