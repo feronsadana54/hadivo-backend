@@ -1,5 +1,41 @@
 # Changelog
 
+## v1.5.0 - Holiday / Workday Calendar Foundation
+
+### Backend
+
+- Added `tenant_workday_settings` table (per-tenant UNIQUE) with seven `*_workday` booleans (Mon–Fri default true, Sat–Sun default false) and `active` flag. Migration `V11__add_holiday_workday_calendar.sql`.
+- Added `tenant_holidays` table with `holiday_date`, `name`, `type` (`CUSTOM`/`NATIONAL`/`COMPANY`/`SCHOOL`), and `active`. UNIQUE `(tenant_id, holiday_date, name)` and lookup index `(tenant_id, active, holiday_date)` for workday calc.
+- Added `WorkdaySettingsService` with `GET` / `PUT /api/v1/tenants/{tenantId}/workday-settings`. Default created lazily on first GET. Update rejects all-days-false with `VALIDATION_FAILED` "Minimal satu hari dalam seminggu harus menjadi hari kerja".
+- Added `HolidayService` with `GET` (range filter, max 366 days), `POST`, and `PATCH /api/v1/tenants/{tenantId}/holidays`. No DELETE endpoint; soft-disable via `PATCH active=false`. Duplicate `(date, name)` returns `409 CONFLICT`.
+- Added `WorkdayCalendarService.countWorkdays(tenantId, start, end)` returning the number of workdays in the inclusive range, excluding days marked non-workday in settings and active holidays. Range capped at 31 days.
+- Wired `WorkdayCalendarService` into `LeaveBalanceService.deductForApproval`. `ANNUAL_LEAVE` now deducts the **workday count**, not calendar count. Requests with 0 workdays (e.g. Sat–Sun under default settings) are rejected with `VALIDATION_FAILED` "Pengajuan cuti tidak memiliki hari kerja yang dapat dipotong." and stay PENDING.
+- Added `leaveDays` field to `LeaveRequestView` (computed via WorkdayCalendarService for ANNUAL_LEAVE only, null otherwise). Cross-year requests yield `null` to avoid throwing during view rendering.
+- Added audit actions `WORKDAY_SETTINGS_UPDATED`, `HOLIDAY_CREATED`, `HOLIDAY_UPDATED`.
+- Added `WorkdayHolidayIntegrationTest` (14 cases) covering policy/holiday CRUD with role and cross-tenant guards, list-range guards, duplicate conflict, and workday calculation (default weekend exclusion, Saturday opt-in, active/inactive holiday). Extended `LeaveBalanceIntegrationTest` with three workday-aware cases: Fri–Mon deducts 2 not 4, only-weekend approval rejected with PENDING preserved, holiday inside range reduces deduction.
+
+### Web Dashboard
+
+- Added `/calendar` page (Kalender Kerja) with three cards: workday checkboxes (Mon–Sun, Save), add holiday form (date + name + type), and holiday list with year filter and Activate/Deactivate toggle.
+- Added sidebar entry "Kalender Kerja" (`CalendarDays` icon) between "Saldo Cuti" and "Notifikasi".
+- `/leave-requests` now shows "X hari kerja" for `ANNUAL_LEAVE` rows when backend returns `leaveDays`, falling back to calendar count otherwise.
+- Added types `WorkdaySettings`, `UpdateWorkdaySettingsRequest`, `Holiday`, `HolidayType`, `CreateHolidayRequest`, `UpdateHolidayRequest`, and `leaveDays?: number | null` on `LeaveRequest`. Added endpoints, services, and hooks `useWorkdaySettings`, `useUpdateWorkdaySettings`, `useHolidays`, `useCreateHoliday`, `useUpdateHoliday`.
+
+### Mobile
+
+- No mobile changes. Backend response remains additive; mobile leave-request parser ignores the new `leaveDays` field.
+
+### Docs
+
+- Added `docs/23-holiday-workday-calendar.md` covering schema, endpoints, workday calculation, ANNUAL_LEAVE deduction impact with four worked examples (Fri–Mon, Saturday-on, holiday-in-range, weekend-only), audit actions, web UX, and limitations.
+- Updated `README.md` highlights and added pointer to the new doc.
+- Updated `docs/04-database-design.md`, `docs/05-api-contract.md`, `docs/16-leave-permission.md`, `docs/21-leave-balance.md`, and `docs/22-leave-balance-qa-guide.md` with v1.5.0 cross-references.
+
+### Notes
+
+- Workday calc applies only to `ANNUAL_LEAVE` deduction. Other leave types and attendance / shift / payroll flows remain on calendar logic.
+- Holiday auto sync from a national calendar provider, regional/branch overrides, half-day leave, calendar file import, Google Calendar integration, and DELETE endpoint for holidays are out of scope.
+
 ## v1.4.1 - Leave Balance QA Stabilization
 
 ### Docs

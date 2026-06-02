@@ -37,6 +37,7 @@ data class LeaveRequestView(
     val requestedClockInTime: Instant?,
     val requestedClockOutTime: Instant?,
     val correctionNote: String?,
+    val leaveDays: Int?,
     val createdAt: Instant,
     val updatedAt: Instant,
 )

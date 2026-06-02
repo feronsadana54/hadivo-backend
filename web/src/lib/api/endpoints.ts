@@ -29,6 +29,9 @@ export const endpoints = {
     `/tenants/${tenantId}/members/${userId}/leave-balance`,
   memberLeaveBalanceAdjust: (tenantId: string, userId: string) =>
     `/tenants/${tenantId}/members/${userId}/leave-balance/adjust`,
+  workdaySettings: (tenantId: string) => `/tenants/${tenantId}/workday-settings`,
+  holidays: (tenantId: string) => `/tenants/${tenantId}/holidays`,
+  holiday: (tenantId: string, holidayId: string) => `/tenants/${tenantId}/holidays/${holidayId}`,
   shifts: (tenantId: string) => `/tenants/${tenantId}/shifts`,
   shift: (tenantId: string, shiftId: string) => `/tenants/${tenantId}/shifts/${shiftId}`,
   memberShiftAssignments: (tenantId: string, userId: string) =>

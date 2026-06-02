@@ -2,7 +2,7 @@
 
 Dokumen ini menjelaskan fondasi saldo cuti tahunan Hadivo v1.4.0. Tujuannya: tenant bisa mengatur jatah cuti per user, dan saldo otomatis berkurang saat `ANNUAL_LEAVE` disetujui — dengan jejak audit yang lengkap.
 
-Untuk policy umum leave/permission lihat [`docs/16-leave-permission.md`](16-leave-permission.md). Untuk QA leave secara umum lihat [`docs/17-leave-qa-guide.md`](17-leave-qa-guide.md). Untuk QA manual khusus leave balance (Postman flow, SQL verifikasi, troubleshooting) lihat [`docs/22-leave-balance-qa-guide.md`](22-leave-balance-qa-guide.md).
+Untuk policy umum leave/permission lihat [`docs/16-leave-permission.md`](16-leave-permission.md). Untuk QA leave secara umum lihat [`docs/17-leave-qa-guide.md`](17-leave-qa-guide.md). Untuk QA manual khusus leave balance (Postman flow, SQL verifikasi, troubleshooting) lihat [`docs/22-leave-balance-qa-guide.md`](22-leave-balance-qa-guide.md). Untuk workday settings, holiday calendar, dan deduksi ANNUAL_LEAVE berbasis hari kerja v1.5.0 lihat [`docs/23-holiday-workday-calendar.md`](23-holiday-workday-calendar.md).
 
 ## Konsep
 
@@ -79,7 +79,7 @@ Integrasi terjadi di `LeaveRequestService.review()` untuk transition `PENDING �
 
 1. Hanya request dengan `requestType == ANNUAL_LEAVE`.
 2. `startYear` dan `endYear` harus sama → kalau berbeda, throw `VALIDATION_FAILED` dengan pesan _"Pengajuan cuti lintas tahun belum didukung."_. Status request tetap `PENDING`.
-3. `days = ChronoUnit.DAYS.between(start, end) + 1` (kalender, inclusive).
+3. `days = workdayCalendar.countWorkdays(tenantId, start, end)` — jumlah hari kerja efektif dalam rentang (lihat [`docs/23-holiday-workday-calendar.md`](23-holiday-workday-calendar.md)). v1.4.x memakai `ChronoUnit.DAYS.between(start, end) + 1`; v1.5.0 menggantinya dengan workday count. Jika hasilnya `0` → throw `VALIDATION_FAILED` "Pengajuan cuti tidak memiliki hari kerja yang dapat dipotong." dan request tetap `PENDING`.
 4. Balance di-init lazy dari policy jika belum ada (ledger `INITIAL`).
 5. Jika `remaining_days < days` → throw `VALIDATION_FAILED` dengan pesan _"Sisa cuti tahunan tidak mencukupi untuk pengajuan ini."_. Status request tetap `PENDING`.
 6. Update `used_days`, recompute `remaining_days`. Tulis ledger `DEDUCT` dengan `leave_request_id`.

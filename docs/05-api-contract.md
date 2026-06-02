@@ -236,6 +236,20 @@ Catatan v1.3.0: approve untuk `ATTENDANCE_CORRECTION` menerapkan koreksi ke `att
 
 Catatan v1.4.0: approve untuk `ANNUAL_LEAVE` mengurangi `leave_balances.used_days` requester di transaksi yang sama dan menulis ledger `DEDUCT`. Bila saldo tidak cukup atau request lintas tahun, endpoint mengembalikan `400 VALIDATION_FAILED` dan request tetap `PENDING`. SICK/PERMISSION/BUSINESS_TRIP/ATTENDANCE_CORRECTION tidak mengurangi saldo di v1.4.0.
 
+Catatan v1.5.0: deduksi `ANNUAL_LEAVE` memakai **workday count** (hari yang `workday_settings.isWorkday=true` dan tidak ada holiday aktif), bukan kalender count. Request dengan 0 workday (mis. Sab–Min default) ditolak `400 VALIDATION_FAILED` "Pengajuan cuti tidak memiliki hari kerja yang dapat dipotong." Response `LeaveRequestView.leaveDays` berisi workday count untuk `ANNUAL_LEAVE` (null untuk tipe lain atau cross-year).
+
+### Workday settings & Holidays (v1.5.0)
+
+Tenant-scoped:
+
+- `GET /tenants/{tenantId}/workday-settings` — semua member tenant. Membuat default Mon–Fri kalau belum ada.
+- `PUT /tenants/{tenantId}/workday-settings` — `TENANT_ADMIN` atau `SUPER_ADMIN`. Body opsional: 7 boolean `*Workday` + `active`. Minimal satu hari `true`.
+- `GET /tenants/{tenantId}/holidays?from=YYYY-MM-DD&to=YYYY-MM-DD` — semua member. Range max 366 hari; default 90 hari ke belakang sampai 365 hari ke depan.
+- `POST /tenants/{tenantId}/holidays` — admin. Body: `{ "holidayDate", "name", "type"?, "active"? }`. `type` ∈ `{CUSTOM, NATIONAL, COMPANY, SCHOOL}`. Duplicate `(date, name)` → `409 CONFLICT`.
+- `PATCH /tenants/{tenantId}/holidays/{holidayId}` — admin. Semua field opsional. Soft-disable dengan `{"active": false}`. Tidak ada endpoint DELETE.
+
+Detail lengkap di [`docs/23-holiday-workday-calendar.md`](23-holiday-workday-calendar.md).
+
 ### Leave policy & balance (v1.4.0)
 
 Tenant-scoped:

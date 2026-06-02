@@ -6,6 +6,7 @@ import { defaultTenantId } from "@/lib/config/env";
 import type {
   AdjustLeaveBalanceRequest,
   AttendanceSettings,
+  CreateHolidayRequest,
   CreateLeaveRequestRequest,
   CreateMemberShiftAssignmentRequest,
   CreateShiftTemplateRequest,
@@ -14,9 +15,11 @@ import type {
   NotificationDeliveryFilters,
   ReviewLeaveRequestRequest,
   SuperAdminTenantFilters,
+  UpdateHolidayRequest,
   UpdateLeavePolicyRequest,
   UpdateMemberShiftAssignmentRequest,
   UpdateShiftTemplateRequest,
+  UpdateWorkdaySettingsRequest,
 } from "@/types/api";
 
 export function useTenant() {
@@ -174,6 +177,46 @@ export function useAdjustLeaveBalance() {
       queryClient.invalidateQueries({ queryKey: ["leave-balances", defaultTenantId] });
       queryClient.invalidateQueries({ queryKey: ["member-leave-balance", defaultTenantId, variables.userId] });
     },
+  });
+}
+
+export function useWorkdaySettings() {
+  return useQuery({
+    queryKey: ["workday-settings", defaultTenantId],
+    queryFn: () => api.getWorkdaySettings(defaultTenantId),
+  });
+}
+
+export function useUpdateWorkdaySettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateWorkdaySettingsRequest) =>
+      api.updateWorkdaySettings(defaultTenantId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workday-settings", defaultTenantId] }),
+  });
+}
+
+export function useHolidays(from?: string, to?: string) {
+  return useQuery({
+    queryKey: ["holidays", defaultTenantId, from, to],
+    queryFn: () => api.listHolidays(defaultTenantId, from, to),
+  });
+}
+
+export function useCreateHoliday() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateHolidayRequest) => api.createHoliday(defaultTenantId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["holidays", defaultTenantId] }),
+  });
+}
+
+export function useUpdateHoliday() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ holidayId, payload }: { holidayId: string; payload: UpdateHolidayRequest }) =>
+      api.updateHoliday(defaultTenantId, holidayId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["holidays", defaultTenantId] }),
   });
 }
 

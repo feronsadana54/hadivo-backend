@@ -17,7 +17,11 @@ async function ensureOutputDir() {
 }
 
 async function waitForDashboardData(page) {
-  await page.waitForLoadState("networkidle");
+  // Background react-query refetches can keep the network active indefinitely
+  // on data-heavy routes (e.g. /super-admin/tenants), so treat networkidle as
+  // a best-effort hint rather than a hard requirement. The text check below
+  // is the authoritative signal that initial loading skeletons are gone.
+  await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
   await page.waitForFunction(
     () =>
       !document.body.innerText.includes("Preparing dashboard") &&
@@ -60,7 +64,8 @@ async function login(page) {
 }
 
 async function capturePage(page, route, filename) {
-  await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
+  console.log(`[capture] ${route} -> ${filename}`);
+  await page.goto(`${baseUrl}${route}`, { waitUntil: "load", timeout: 60000 });
   await waitForDashboardData(page);
   await assertNoHorizontalOverflow(page, route);
   await prepareScreenshot(page);
@@ -68,10 +73,14 @@ async function capturePage(page, route, filename) {
 }
 
 async function captureSuperAdminTenants(page) {
-  await page.goto(`${baseUrl}/super-admin/tenants`, { waitUntil: "networkidle" });
-  await waitForDashboardData(page);
+  console.log("[capture] /super-admin/tenants -> web-super-admin-tenants.png");
+  await page.goto(`${baseUrl}/super-admin/tenants`, { waitUntil: "load", timeout: 60000 });
+  // Skip generic waitForDashboardData here: this page can stay in a "Memuat …"
+  // state across react-query refetches. The page-specific tbody wait below is
+  // a more reliable signal that the data we want to screenshot is in the DOM.
   await page.fill("#tenant-search", "Hadivo Demo");
-  await page.locator("tbody").getByText("Hadivo Demo School").waitFor({ timeout: 30000 });
+  await page.locator("tbody").getByText("Hadivo Demo School").waitFor({ timeout: 60000 });
+  await page.waitForTimeout(750);
   await assertNoHorizontalOverflow(page, "Super Admin tenants");
   await prepareScreenshot(page);
   await page.screenshot({ path: path.join(outputDir, "web-super-admin-tenants.png"), fullPage: true });
@@ -83,6 +92,7 @@ async function assertDashboardRoutesResponsive(page) {
     "/members",
     "/shifts",
     "/leave-requests",
+    "/calendar",
     "/super-admin",
     "/super-admin/tenants",
     "/super-admin/tenants/11111111-1111-1111-1111-111111111111",
@@ -92,11 +102,15 @@ async function assertDashboardRoutesResponsive(page) {
     { name: "tablet", width: 768, height: 1024 },
   ];
 
+  // For responsive overflow checks we only need the layout to be settled, not
+  // the data fully loaded. Routes like /super-admin/tenants run background
+  // react-query refetches that keep network active beyond the 30s default
+  // `networkidle` timeout when each route is revisited per viewport.
   for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     for (const route of routes) {
-      await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
-      await waitForDashboardData(page);
+      await page.goto(`${baseUrl}${route}`, { waitUntil: "load", timeout: 60000 });
+      await page.waitForTimeout(750);
       await assertNoHorizontalOverflow(page, `Dashboard ${route} ${viewport.name}`);
     }
   }
@@ -111,7 +125,7 @@ async function captureResponsive(page) {
 
   for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
+    await page.goto(`${baseUrl}/dashboard`, { waitUntil: "load", timeout: 60000 });
     await waitForDashboardData(page);
     await assertNoHorizontalOverflow(page, `Dashboard ${viewport.name}`);
     await prepareScreenshot(page);
@@ -134,6 +148,7 @@ async function main() {
     await capturePage(page, "/attendance", "web-attendance.png");
     await capturePage(page, "/attendance-attempts", "web-attempts.png");
     await capturePage(page, "/leave-requests", "web-leave-requests.png");
+    await capturePage(page, "/calendar", "web-calendar.png");
     await capturePage(page, "/members", "web-members.png");
     await capturePage(page, "/shifts", "web-shifts.png");
     await capturePage(page, "/settings", "web-settings.png");

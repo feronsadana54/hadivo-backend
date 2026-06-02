@@ -114,6 +114,13 @@ Tab **Pengajuan** di bottom navigation:
 - Penyesuaian saldo oleh admin tercatat sebagai ledger `ADJUST` dengan note wajib.
 - `SICK` / `PERMISSION` / `BUSINESS_TRIP` / `ATTENDANCE_CORRECTION` masih tidak memotong saldo di v1.4.0.
 
+## Update v1.5.0
+
+- Ditambahkan `tenant_workday_settings` dan `tenant_holidays` untuk fondasi kalender hari kerja. Detail di [`docs/23-holiday-workday-calendar.md`](23-holiday-workday-calendar.md).
+- Deduksi `ANNUAL_LEAVE` memakai workday count: Jum–Sen default = 2 hari (bukan 4); request 0 workday (mis. Sab–Min default) ditolak dengan request tetap `PENDING`.
+- Field `leaveDays` ditambahkan ke `LeaveRequestView` untuk `ANNUAL_LEAVE` (null untuk tipe lain dan cross-year). Web `/leave-requests` menampilkan "X hari kerja".
+- SICK / PERMISSION / BUSINESS_TRIP / ATTENDANCE_CORRECTION tetap tidak menggunakan workday calc.
+
 ## Limitation v1.3.0
 - Belum ada attachment upload (kolom `attachment_url` reserved di DB tapi tidak diisi).
 - Belum ada holiday calendar.

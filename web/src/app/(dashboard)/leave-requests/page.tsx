@@ -272,7 +272,9 @@ export default function LeaveRequestsPage() {
                           <div className="text-xs text-muted-foreground">s.d. {row.endDate}</div>
                           {row.requestType === "ANNUAL_LEAVE" ? (
                             <div className="text-xs text-muted-foreground">
-                              {leaveDays(row.startDate, row.endDate)} hari
+                              {typeof row.leaveDays === "number"
+                                ? `${row.leaveDays} hari kerja`
+                                : `${leaveDays(row.startDate, row.endDate)} hari`}
                             </div>
                           ) : null}
                         </TableCell>

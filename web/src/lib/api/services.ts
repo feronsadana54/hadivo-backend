@@ -4,10 +4,12 @@ import type {
   AdjustLeaveBalanceRequest,
   AttendanceAttempt,
   AttendanceSettings,
+  CreateHolidayRequest,
   CreateLeaveRequestRequest,
   CreateMemberShiftAssignmentRequest,
   CreateShiftTemplateRequest,
   DailyReport,
+  Holiday,
   LeaveBalance,
   LeavePolicy,
   LeaveRequest,
@@ -30,10 +32,13 @@ import type {
   SubscriptionPayment,
   Tenant,
   TokenPair,
+  UpdateHolidayRequest,
   UpdateLeavePolicyRequest,
   UpdateMemberShiftAssignmentRequest,
   UpdateShiftTemplateRequest,
+  UpdateWorkdaySettingsRequest,
   UserDevice,
+  WorkdaySettings,
 } from "@/types/api";
 
 export const api = {
@@ -115,6 +120,25 @@ export const api = {
     return unwrap<LeaveBalance>(
       await apiClient.post(endpoints.memberLeaveBalanceAdjust(tenantId, userId), payload),
     );
+  },
+  async getWorkdaySettings(tenantId: string) {
+    return unwrap<WorkdaySettings>(await apiClient.get(endpoints.workdaySettings(tenantId)));
+  },
+  async updateWorkdaySettings(tenantId: string, payload: UpdateWorkdaySettingsRequest) {
+    return unwrap<WorkdaySettings>(await apiClient.put(endpoints.workdaySettings(tenantId), payload));
+  },
+  async listHolidays(tenantId: string, from?: string, to?: string) {
+    return unwrap<Holiday[]>(
+      await apiClient.get(endpoints.holidays(tenantId), {
+        params: { from, to },
+      }),
+    );
+  },
+  async createHoliday(tenantId: string, payload: CreateHolidayRequest) {
+    return unwrap<Holiday>(await apiClient.post(endpoints.holidays(tenantId), payload));
+  },
+  async updateHoliday(tenantId: string, holidayId: string, payload: UpdateHolidayRequest) {
+    return unwrap<Holiday>(await apiClient.patch(endpoints.holiday(tenantId, holidayId), payload));
   },
   async getShifts(tenantId: string) {
     return unwrap<ShiftTemplate[]>(await apiClient.get(endpoints.shifts(tenantId)));

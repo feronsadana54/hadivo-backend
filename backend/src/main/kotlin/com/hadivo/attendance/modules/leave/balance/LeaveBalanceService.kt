@@ -4,6 +4,7 @@ import com.hadivo.attendance.common.exception.DomainException
 import com.hadivo.attendance.common.exception.ErrorCode
 import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.auth.UserRepository
+import com.hadivo.attendance.modules.calendar.WorkdayCalendarService
 import com.hadivo.attendance.modules.leave.LeaveRequest
 import com.hadivo.attendance.modules.leave.LeaveRequestType
 import com.hadivo.attendance.modules.membership.MembershipRepository
@@ -13,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Service
@@ -24,6 +24,7 @@ class LeaveBalanceService(
     private val users: UserRepository,
     private val memberships: MembershipRepository,
     private val audit: AuditLogger,
+    private val workdayCalendar: WorkdayCalendarService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -194,8 +195,16 @@ class LeaveBalanceService(
             )
         }
 
-        val days = BigDecimal(ChronoUnit.DAYS.between(request.startDate, request.endDate) + 1)
-            .setScale(2, RoundingMode.HALF_UP)
+        val workdays = workdayCalendar.countWorkdays(
+            request.tenantId, request.startDate, request.endDate,
+        )
+        if (workdays <= 0) {
+            throw DomainException(
+                ErrorCode.VALIDATION_FAILED,
+                "Pengajuan cuti tidak memiliki hari kerja yang dapat dipotong.",
+            )
+        }
+        val days = BigDecimal(workdays).setScale(2, RoundingMode.HALF_UP)
         val balance = getOrInitialize(request.tenantId, request.requesterUserId, startYear)
         if (balance.remainingDays < days) {
             throw DomainException(

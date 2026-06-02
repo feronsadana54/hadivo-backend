@@ -358,6 +358,7 @@ export type LeaveRequest = {
   requestedClockInTime?: string | null;
   requestedClockOutTime?: string | null;
   correctionNote?: string | null;
+  leaveDays?: number | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -418,6 +419,47 @@ export type AdjustLeaveBalanceRequest = {
   days: number;
   note: string;
 };
+
+export type WorkdaySettings = {
+  id: string;
+  tenantId: string;
+  mondayWorkday: boolean;
+  tuesdayWorkday: boolean;
+  wednesdayWorkday: boolean;
+  thursdayWorkday: boolean;
+  fridayWorkday: boolean;
+  saturdayWorkday: boolean;
+  sundayWorkday: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UpdateWorkdaySettingsRequest = Partial<
+  Omit<WorkdaySettings, "id" | "tenantId" | "createdAt" | "updatedAt">
+>;
+
+export type HolidayType = "CUSTOM" | "NATIONAL" | "COMPANY" | "SCHOOL";
+
+export type Holiday = {
+  id: string;
+  tenantId: string;
+  holidayDate: string;
+  name: string;
+  type: HolidayType;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateHolidayRequest = {
+  holidayDate: string;
+  name: string;
+  type?: HolidayType;
+  active?: boolean;
+};
+
+export type UpdateHolidayRequest = Partial<CreateHolidayRequest>;
 
 export type SuperAdminTenantDetail = {
   tenantId: string;

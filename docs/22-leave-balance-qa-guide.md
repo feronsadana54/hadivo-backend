@@ -2,7 +2,9 @@
 
 Panduan ini dipakai untuk QA manual Leave Balance / Quota Foundation v1.4.0 / v1.4.1. Fokusnya memastikan policy, balance, ledger, dan deduction `ANNUAL_LEAVE` berjalan benar dengan jejak audit lengkap dan tidak ada double deduct.
 
-Untuk konsep keseluruhan lihat [`docs/21-leave-balance.md`](21-leave-balance.md). Untuk policy umum leave/permission lihat [`docs/16-leave-permission.md`](16-leave-permission.md). Untuk QA leave secara umum lihat [`docs/17-leave-qa-guide.md`](17-leave-qa-guide.md).
+Untuk konsep keseluruhan lihat [`docs/21-leave-balance.md`](21-leave-balance.md). Untuk policy umum leave/permission lihat [`docs/16-leave-permission.md`](16-leave-permission.md). Untuk QA leave secara umum lihat [`docs/17-leave-qa-guide.md`](17-leave-qa-guide.md). Untuk workday calc & holiday calendar v1.5.0 lihat [`docs/23-holiday-workday-calendar.md`](23-holiday-workday-calendar.md).
+
+> **Catatan v1.5.0**: deduksi `ANNUAL_LEAVE` sekarang memakai **workday count** (bukan kalender count). Saat menjalankan skenario QA di bawah, sesuaikan ekspektasi `usedDays`: cuti yang melewati Sabtu/Minggu (default non-workday) atau hari libur aktif akan turun lebih sedikit dari total hari kalender. Lihat dokumen v1.5.0 untuk contoh dan SQL verifikasi tambahan untuk `tenant_workday_settings` dan `tenant_holidays`.
 
 ## Prasyarat local dev
 

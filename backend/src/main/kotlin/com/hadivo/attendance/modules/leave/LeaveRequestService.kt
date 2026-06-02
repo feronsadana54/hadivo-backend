@@ -5,6 +5,7 @@ import com.hadivo.attendance.common.exception.ErrorCode
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.auth.UserRepository
+import com.hadivo.attendance.modules.calendar.WorkdayCalendarService
 import com.hadivo.attendance.modules.leave.balance.LeaveBalanceService
 import com.hadivo.attendance.modules.leave.correction.CorrectionApplyService
 import com.hadivo.attendance.modules.membership.MembershipGuard
@@ -28,6 +29,7 @@ class LeaveRequestService(
     private val publisher: NotificationPublisher,
     private val correctionApply: CorrectionApplyService,
     private val balanceService: LeaveBalanceService,
+    private val workdayCalendar: WorkdayCalendarService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -281,6 +283,7 @@ class LeaveRequestService(
     private fun LeaveRequest.toView(): LeaveRequestView {
         val requester = users.findById(requesterUserId).orElse(null)
         val reviewer = reviewerUserId?.let { users.findById(it).orElse(null) }
+        val leaveDays = computeLeaveDays(this)
         return LeaveRequestView(
             id = id ?: error("leave request id null"),
             tenantId = tenantId,
@@ -300,9 +303,18 @@ class LeaveRequestService(
             requestedClockInTime = requestedClockInAt,
             requestedClockOutTime = requestedClockOutAt,
             correctionNote = correctionNote,
+            leaveDays = leaveDays,
             createdAt = createdAt,
             updatedAt = updatedAt,
         )
+    }
+
+    private fun computeLeaveDays(request: LeaveRequest): Int? {
+        if (request.requestType != LeaveRequestType.ANNUAL_LEAVE) return null
+        if (request.startDate.year != request.endDate.year) return null
+        return runCatching {
+            workdayCalendar.countWorkdays(request.tenantId, request.startDate, request.endDate)
+        }.getOrNull()
     }
 
     companion object {

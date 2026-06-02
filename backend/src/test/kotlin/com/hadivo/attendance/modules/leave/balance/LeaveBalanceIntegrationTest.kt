@@ -5,6 +5,9 @@ import com.hadivo.attendance.common.security.JwtService
 import com.hadivo.attendance.modules.audit.AuditLogRepository
 import com.hadivo.attendance.modules.auth.User
 import com.hadivo.attendance.modules.auth.UserRepository
+import com.hadivo.attendance.modules.calendar.HolidayType
+import com.hadivo.attendance.modules.calendar.TenantHoliday
+import com.hadivo.attendance.modules.calendar.TenantHolidayRepository
 import com.hadivo.attendance.modules.leave.LeaveRequest
 import com.hadivo.attendance.modules.leave.LeaveRequestRepository
 import com.hadivo.attendance.modules.leave.LeaveRequestStatus
@@ -64,6 +67,7 @@ class LeaveBalanceIntegrationTest {
     @Autowired private lateinit var policies: LeavePolicyRepository
     @Autowired private lateinit var auditLogs: AuditLogRepository
     @Autowired private lateinit var balanceService: LeaveBalanceService
+    @Autowired private lateinit var tenantHolidays: TenantHolidayRepository
 
     @MockBean private lateinit var rabbit: RabbitTemplate
 
@@ -540,6 +544,102 @@ class LeaveBalanceIntegrationTest {
             LeaveBalanceChangeType.ADJUST,
             LeaveBalanceChangeType.DEDUCT,
         )
+    }
+
+    @Test
+    fun `annual leave Fri to Mon deducts workday count not calendar count`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        // 2026-06-05 Fri, 2026-06-08 Mon → 4 calendar days, 2 workdays.
+        val leave = leaves.save(
+            LeaveRequest(
+                tenantId = admin.tenantId,
+                requesterUserId = employee.userId,
+                requestType = LeaveRequestType.ANNUAL_LEAVE,
+                startDate = LocalDate.of(2026, 6, 5),
+                endDate = LocalDate.of(2026, 6, 8),
+                reason = "Liburan weekend panjang",
+            )
+        )
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/leave-requests/${leave.id}/approve")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("reviewNote" to "OK")))
+        )
+            .andExpect(status().isOk)
+
+        val balance = balances.findByTenantIdAndUserIdAndYear(admin.tenantId, employee.userId, 2026)
+        assertThat(balance).isNotNull
+        assertThat(balance!!.usedDays).isEqualByComparingTo(BigDecimal("2.00"))
+        assertThat(balance.remainingDays).isEqualByComparingTo(BigDecimal("10.00"))
+    }
+
+    @Test
+    fun `annual leave over only non workdays is rejected and stays pending`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        // 2026-06-06 Sat, 2026-06-07 Sun → 0 workdays under default Mon-Fri policy.
+        val leave = leaves.save(
+            LeaveRequest(
+                tenantId = admin.tenantId,
+                requesterUserId = employee.userId,
+                requestType = LeaveRequestType.ANNUAL_LEAVE,
+                startDate = LocalDate.of(2026, 6, 6),
+                endDate = LocalDate.of(2026, 6, 7),
+                reason = "Cuti weekend saja",
+            )
+        )
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/leave-requests/${leave.id}/approve")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("reviewNote" to "OK")))
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+
+        val refreshed = leaves.findById(leave.id!!).orElseThrow()
+        assertThat(refreshed.status).isEqualTo(LeaveRequestStatus.PENDING)
+    }
+
+    @Test
+    fun `holiday in range reduces workday deduction`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        tenantHolidays.save(
+            TenantHoliday(
+                tenantId = admin.tenantId,
+                holidayDate = LocalDate.of(2026, 6, 9),
+                name = "Hari Libur Internal",
+                type = HolidayType.COMPANY,
+                active = true,
+            )
+        )
+        // 2026-06-08 Mon, 06-09 Tue (holiday), 06-10 Wed → 3 weekdays, 2 workdays.
+        val leave = leaves.save(
+            LeaveRequest(
+                tenantId = admin.tenantId,
+                requesterUserId = employee.userId,
+                requestType = LeaveRequestType.ANNUAL_LEAVE,
+                startDate = LocalDate.of(2026, 6, 8),
+                endDate = LocalDate.of(2026, 6, 10),
+                reason = "Pakai libur internal",
+            )
+        )
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/leave-requests/${leave.id}/approve")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("reviewNote" to "OK")))
+        )
+            .andExpect(status().isOk)
+
+        val balance = balances.findByTenantIdAndUserIdAndYear(admin.tenantId, employee.userId, 2026)
+        assertThat(balance!!.usedDays).isEqualByComparingTo(BigDecimal("2.00"))
     }
 
     private fun seedTenantWithUser(role: Role): TestContext {
