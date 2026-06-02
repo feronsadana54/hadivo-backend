@@ -376,6 +376,49 @@ export type ReviewLeaveRequestRequest = {
   reviewNote?: string;
 };
 
+export type LeavePolicy = {
+  id: string;
+  tenantId: string;
+  name: string;
+  annualLeaveQuotaDays: number;
+  sickLeaveRequiresBalance: boolean;
+  permissionRequiresBalance: boolean;
+  businessTripRequiresBalance: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UpdateLeavePolicyRequest = {
+  name?: string;
+  annualLeaveQuotaDays?: number;
+  sickLeaveRequiresBalance?: boolean;
+  permissionRequiresBalance?: boolean;
+  businessTripRequiresBalance?: boolean;
+  active?: boolean;
+};
+
+export type LeaveBalance = {
+  id: string;
+  tenantId: string;
+  userId: string;
+  userFullName?: string | null;
+  userEmail?: string | null;
+  year: number;
+  annualQuotaDays: number;
+  usedDays: number;
+  adjustedDays: number;
+  remainingDays: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdjustLeaveBalanceRequest = {
+  year: number;
+  days: number;
+  note: string;
+};
+
 export type SuperAdminTenantDetail = {
   tenantId: string;
   tenantName: string;

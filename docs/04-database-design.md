@@ -25,6 +25,9 @@ PostgreSQL 16. Semua ID pakai UUID v4. Semua tabel utama punya `created_at` + `u
 | `leave_requests` | Pengajuan izin/sakit/cuti/dinas/koreksi absensi per tenant + user. Status `PENDING`/`APPROVED`/`REJECTED`/`CANCELLED`. Untuk `ATTENDANCE_CORRECTION` menyimpan `requested_clock_in_at` dan `requested_clock_out_at`. |
 | `attendance_correction_applies` | Audit trail satu-per-request untuk apply ATTENDANCE_CORRECTION. UNIQUE per `leave_request_id` agar idempotent. Menyimpan original vs applied `clock_in_at`/`clock_out_at`/`status`/`work_duration_minutes`, reviewer, applied_by, applied_at, dan flag `record_created_by_correction`. |
 | `attendance_records` (v1.3.0) | Tambahan kolom `correction_applied` (boolean), `correction_request_id`, `corrected_by`, `corrected_at`, `correction_note` untuk membedakan record hasil koreksi dari clock-in mobile asli. Geofence/device/face/attempt history TIDAK diubah saat apply. |
+| `leave_policies` (v1.4.0) | Satu policy aktif per tenant (UNIQUE `tenant_id`). Berisi `annual_leave_quota_days` (default 12, 0..365) dan flag opsional `*_requires_balance` untuk SICK/PERMISSION/BUSINESS_TRIP (default false). |
+| `leave_balances` (v1.4.0) | Saldo cuti per `(tenant_id, user_id, year)` UNIQUE. Kolom `annual_quota_days`, `used_days`, `adjusted_days`, `remaining_days` (`numeric(8,2)`). Dibuat lazy saat dibutuhkan. |
+| `leave_balance_ledgers` (v1.4.0) | Riwayat tiap perubahan saldo (`INITIAL`, `DEDUCT`, `ADJUST`, `RESTORE`) dengan snapshot before/after. Partial UNIQUE index `(leave_request_id) WHERE change_type='DEDUCT'` untuk menjamin idempotency deduct per leave request. |
 | `user_devices` | Trusted attendance device per tenant dan user. Satu active trusted device per (tenant_id, user_id). |
 | `notifications` | Notifikasi per user (payload jsonb). |
 | `notification_delivery_logs` | Delivery log notification gateway per tenant, channel, event type, status, provider, error, dan waktu kirim. |

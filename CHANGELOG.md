@@ -1,5 +1,41 @@
 # Changelog
 
+## v1.4.0 - Leave Balance / Quota Foundation
+
+### Backend
+
+- Added `leave_policies` table (per-tenant unique) with `annual_leave_quota_days` default 12 and per-type `*_requires_balance` flags (default false). Migration `V10__add_leave_balance_foundation.sql`.
+- Added `leave_balances` table with `(tenant_id, user_id, year)` UNIQUE and per-year quota / used / adjusted / remaining columns.
+- Added `leave_balance_ledgers` table tracking every change (`INITIAL`, `DEDUCT`, `ADJUST`, `RESTORE`) with before/after snapshot, optional `leave_request_id`, optional `note`, and partial UNIQUE index `(leave_request_id) WHERE change_type='DEDUCT'` for idempotency.
+- Added `LeavePolicyService` and endpoints `GET` / `PUT /api/v1/tenants/{tenantId}/leave-policy`. Default policy is created lazily on first GET. PUT allowed only for `TENANT_ADMIN` and `SUPER_ADMIN`. Quota validated `0..365`.
+- Added `LeaveBalanceService` and endpoints `GET /leave-balances?year=YYYY`, `GET /members/{userId}/leave-balance?year=YYYY`, and `POST /members/{userId}/leave-balance/adjust`. Employee can read own balance; admin can read all and adjust. Adjust requires `note`, rejects zero `days`, rejects `year` outside `[currentYear-1, currentYear+1]`, and rejects results that would make `remaining_days` negative.
+- Wired `LeaveBalanceService.deductForApproval` into `LeaveRequestService.review()` for `ANNUAL_LEAVE` approvals. Insufficient balance or cross-year requests throw `VALIDATION_FAILED`, rolling back the approve so the request stays `PENDING`. Sick / permission / business trip / attendance correction do not deduct in v1.4.0.
+- Cross-year `ANNUAL_LEAVE` requests are rejected with "Pengajuan cuti lintas tahun belum didukung."
+- Added audit actions `LEAVE_POLICY_UPDATED`, `LEAVE_BALANCE_INITIALIZED`, `LEAVE_BALANCE_ADJUSTED`, `LEAVE_BALANCE_DEDUCTED`.
+- Added `LeaveBalanceIntegrationTest` covering policy CRUD + role / cross-tenant guard, balance auto-init with INITIAL ledger, employee read-self + cross-user guard, adjust with note + ledger + audit, adjust negative guard, annual-leave deduct end-to-end with DEDUCT ledger, insufficient-balance rollback, cross-year rejection, sick/correction non-deduction.
+
+### Web Dashboard
+
+- Added `/leave-balances` page (admin) with year filter, member search, table showing kuota / terpakai / penyesuaian / sisa, remaining badge variants, and "Sesuaikan" modal with year / days / note fields.
+- Added sidebar entry "Saldo Cuti" (Sparkles icon).
+- `/leave-requests` row Periode column now shows the day count for `ANNUAL_LEAVE`.
+- Added `LeavePolicy`, `LeaveBalance`, `UpdateLeavePolicyRequest`, `AdjustLeaveBalanceRequest` types; new endpoints, services, and hooks (`useLeavePolicy`, `useUpdateLeavePolicy`, `useLeaveBalances`, `useMemberLeaveBalance`, `useAdjustLeaveBalance`).
+
+### Mobile
+
+- Added read-only "Sisa Cuti Tahunan" card on the Profile screen showing `Sisa N hari dari Q hari` + `Tahun YYYY • Terpakai X hari`. Uses `GET /members/{userId}/leave-balance` with userId derived from JWT `sub`. Errors render "Belum tersedia" without crashing.
+- Added `leave_balance` feature folder with domain model and Riverpod repository.
+
+### Docs
+
+- Added `docs/21-leave-balance.md` covering schema, endpoints, deduction flow, idempotency strategy, audit actions, web/mobile UX, and explicit limitations (no accrual, no carry-forward, no half-day, no holiday calendar, no approved-cancel restore, no cross-year, no payroll, no negative balance).
+- Updated `README.md` highlights and added pointer to the new doc.
+
+### Notes
+
+- Cancel APPROVED leave is still out of scope; only PENDING can be cancelled. `RESTORE` ledger type is allocated for the future but unused in v1.4.0.
+- Mobile balance card is read-only; adjustments and policy edits remain admin-only via web.
+
 ## v1.3.2 - Engineering Lifecycle & Release Checklist
 
 ### Docs

@@ -233,6 +233,20 @@ Filter:
 - `eventType`: `CLOCK_IN_SUCCESS`, `CLOCK_OUT_SUCCESS`, `ATTENDANCE_OUT_OF_RADIUS`, `DEVICE_MISMATCH`, `ATTENDANCE_FAILED_ATTEMPT`, `LEAVE_REQUEST_CREATED`, `LEAVE_REQUEST_APPROVED`, `LEAVE_REQUEST_REJECTED`, `LEAVE_REQUEST_CANCELLED`
 
 Catatan v1.3.0: approve untuk `ATTENDANCE_CORRECTION` menerapkan koreksi ke `attendance_records` di transaksi yang sama. Bila apply gagal, leave request tetap `PENDING` dan endpoint mengembalikan `422 UNPROCESSABLE`. Tidak ada endpoint apply manual.
+
+Catatan v1.4.0: approve untuk `ANNUAL_LEAVE` mengurangi `leave_balances.used_days` requester di transaksi yang sama dan menulis ledger `DEDUCT`. Bila saldo tidak cukup atau request lintas tahun, endpoint mengembalikan `400 VALIDATION_FAILED` dan request tetap `PENDING`. SICK/PERMISSION/BUSINESS_TRIP/ATTENDANCE_CORRECTION tidak mengurangi saldo di v1.4.0.
+
+### Leave policy & balance (v1.4.0)
+
+Tenant-scoped:
+
+- `GET /tenants/{tenantId}/leave-policy` — semua member tenant. Membuat policy default kalau belum ada.
+- `PUT /tenants/{tenantId}/leave-policy` — `TENANT_ADMIN` atau `SUPER_ADMIN`. Body opsional: `name`, `annualLeaveQuotaDays` (0..365), `sickLeaveRequiresBalance`, `permissionRequiresBalance`, `businessTripRequiresBalance`, `active`.
+- `GET /tenants/{tenantId}/leave-balances?year=YYYY` — `TENANT_ADMIN` atau `SUPER_ADMIN`.
+- `GET /tenants/{tenantId}/members/{userId}/leave-balance?year=YYYY` — admin (semua user) atau member untuk `userId == self`.
+- `POST /tenants/{tenantId}/members/{userId}/leave-balance/adjust` — `TENANT_ADMIN` atau `SUPER_ADMIN`. Body: `{ "year": number, "days": number, "note": string }`. `days` tidak boleh nol, `note` wajib, `year` ∈ `[currentYear-1, currentYear+1]`, hasil `remaining_days` tidak boleh negatif.
+
+Detail lengkap di [`docs/21-leave-balance.md`](21-leave-balance.md).
 - `channel`: `IN_APP`, `EMAIL`, `PUSH`
 - `status`: `PENDING`, `SENT`, `FAILED`, `SKIPPED`
 - `from` dan `to`: ISO-8601 datetime

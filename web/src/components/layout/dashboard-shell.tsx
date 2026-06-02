@@ -14,6 +14,7 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Users,
   WalletCards,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/attendance", label: "Absensi", icon: Clock3 },
   { href: "/attendance-attempts", label: "Percobaan", icon: ShieldAlert },
   { href: "/leave-requests", label: "Pengajuan", icon: ClipboardCheck },
+  { href: "/leave-balances", label: "Saldo Cuti", icon: Sparkles },
   { href: "/notifications", label: "Notifikasi", icon: Bell },
   { href: "/members", label: "Anggota", icon: Users },
   { href: "/shifts", label: "Shift", icon: CalendarClock },

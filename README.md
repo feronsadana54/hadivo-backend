@@ -34,6 +34,7 @@ Repository ini berisi backend Fase 1 (MVP), web dashboard admin Fase 2, dan mobi
 - Shift & Flexible Schedule v1.1.0 dengan shift template, assignment anggota, fallback ke attendance settings tenant, overnight shift sederhana, dan late calculation berdasarkan shift.
 - Leave / Permission Request Foundation v1.2.0 untuk pengajuan sakit, izin, cuti sederhana, dinas luar, dan koreksi absensi dengan flow approve/reject/cancel, overlay di daily report + export, audit log, dan event notifikasi.
 - Attendance Correction Apply Engine v1.3.0 menerapkan approved ATTENDANCE_CORRECTION ke `attendance_records` dalam transaksi yang sama dengan approve, dengan audit trail diff penuh di `attendance_correction_applies`, idempotency per leave request, dan jaminan tidak menyentuh lat/long/device/face/attempt history.
+- Leave Balance / Quota Foundation v1.4.0 menambahkan policy cuti tahunan per tenant, saldo cuti per user/tahun, ledger audit untuk setiap perubahan (`INITIAL` / `DEDUCT` / `ADJUST`), pengurangan saldo otomatis saat `ANNUAL_LEAVE` disetujui, halaman web `Saldo Cuti` untuk admin, dan card read-only di profile mobile.
 - Halaman Locations web memakai map picker berbasis Leaflet + OpenStreetMap dengan address search Nominatim untuk memilih titik absensi dan melihat radius geofence.
 - Flutter mobile MVP untuk login, attendance hari ini, clock-in, clock-out, history, profile, dan logout.
 - UX web dan mobile memakai label sederhana, status badge, empty state, dan pesan error yang lebih mudah dipahami user awam.
@@ -93,7 +94,7 @@ Halaman Attendance web dapat mengunduh laporan attendance dalam format CSV, Exce
 
 Halaman Subscription web dapat membuat payment request dari package catalog backend dan menampilkan riwayat payment tenant. Provider default adalah `mock` agar local dev dan CI tidak membutuhkan API key. Midtrans Snap bersifat optional; subscription hanya aktif setelah backend menerima webhook valid dan idempotent, bukan dari callback frontend.
 
-Panduan manual QA payment tersedia di [`docs/14-payment-qa-guide.md`](docs/14-payment-qa-guide.md). Panduan manual QA leave/permission tersedia di [`docs/17-leave-qa-guide.md`](docs/17-leave-qa-guide.md). Panduan manual QA attendance correction apply tersedia di [`docs/18-correction-qa-guide.md`](docs/18-correction-qa-guide.md).
+Panduan manual QA payment tersedia di [`docs/14-payment-qa-guide.md`](docs/14-payment-qa-guide.md). Panduan manual QA leave/permission tersedia di [`docs/17-leave-qa-guide.md`](docs/17-leave-qa-guide.md). Panduan manual QA attendance correction apply tersedia di [`docs/18-correction-qa-guide.md`](docs/18-correction-qa-guide.md). Detail policy, balance, dan ledger cuti tahunan tersedia di [`docs/21-leave-balance.md`](docs/21-leave-balance.md).
 
 Untuk mengaktifkan Resend, buat API key di Resend lalu set:
 

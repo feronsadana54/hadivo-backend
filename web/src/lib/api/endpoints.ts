@@ -23,6 +23,12 @@ export const endpoints = {
     `/tenants/${tenantId}/leave-requests/${requestId}/reject`,
   leaveRequestCancel: (tenantId: string, requestId: string) =>
     `/tenants/${tenantId}/leave-requests/${requestId}/cancel`,
+  leavePolicy: (tenantId: string) => `/tenants/${tenantId}/leave-policy`,
+  leaveBalances: (tenantId: string) => `/tenants/${tenantId}/leave-balances`,
+  memberLeaveBalance: (tenantId: string, userId: string) =>
+    `/tenants/${tenantId}/members/${userId}/leave-balance`,
+  memberLeaveBalanceAdjust: (tenantId: string, userId: string) =>
+    `/tenants/${tenantId}/members/${userId}/leave-balance/adjust`,
   shifts: (tenantId: string) => `/tenants/${tenantId}/shifts`,
   shift: (tenantId: string, shiftId: string) => `/tenants/${tenantId}/shifts/${shiftId}`,
   memberShiftAssignments: (tenantId: string, userId: string) =>

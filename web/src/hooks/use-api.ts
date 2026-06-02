@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/services";
 import { defaultTenantId } from "@/lib/config/env";
 import type {
+  AdjustLeaveBalanceRequest,
   AttendanceSettings,
   CreateLeaveRequestRequest,
   CreateMemberShiftAssignmentRequest,
@@ -13,6 +14,7 @@ import type {
   NotificationDeliveryFilters,
   ReviewLeaveRequestRequest,
   SuperAdminTenantFilters,
+  UpdateLeavePolicyRequest,
   UpdateMemberShiftAssignmentRequest,
   UpdateShiftTemplateRequest,
 } from "@/types/api";
@@ -130,6 +132,48 @@ export function useCancelLeaveRequest() {
   return useMutation({
     mutationFn: (requestId: string) => api.cancelLeaveRequest(defaultTenantId, requestId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leave-requests", defaultTenantId] }),
+  });
+}
+
+export function useLeavePolicy() {
+  return useQuery({
+    queryKey: ["leave-policy", defaultTenantId],
+    queryFn: () => api.getLeavePolicy(defaultTenantId),
+  });
+}
+
+export function useUpdateLeavePolicy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateLeavePolicyRequest) => api.updateLeavePolicy(defaultTenantId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leave-policy", defaultTenantId] }),
+  });
+}
+
+export function useLeaveBalances(year?: number) {
+  return useQuery({
+    queryKey: ["leave-balances", defaultTenantId, year],
+    queryFn: () => api.getLeaveBalances(defaultTenantId, year),
+  });
+}
+
+export function useMemberLeaveBalance(userId: string, year?: number, enabled = true) {
+  return useQuery({
+    queryKey: ["member-leave-balance", defaultTenantId, userId, year],
+    queryFn: () => api.getMemberLeaveBalance(defaultTenantId, userId, year),
+    enabled: Boolean(userId) && enabled,
+  });
+}
+
+export function useAdjustLeaveBalance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, payload }: { userId: string; payload: AdjustLeaveBalanceRequest }) =>
+      api.adjustLeaveBalance(defaultTenantId, userId, payload),
+    onSuccess: (_balance, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["leave-balances", defaultTenantId] });
+      queryClient.invalidateQueries({ queryKey: ["member-leave-balance", defaultTenantId, variables.userId] });
+    },
   });
 }
 

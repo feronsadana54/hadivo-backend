@@ -5,6 +5,7 @@ import com.hadivo.attendance.common.exception.ErrorCode
 import com.hadivo.attendance.common.security.AuthPrincipal
 import com.hadivo.attendance.modules.audit.AuditLogger
 import com.hadivo.attendance.modules.auth.UserRepository
+import com.hadivo.attendance.modules.leave.balance.LeaveBalanceService
 import com.hadivo.attendance.modules.leave.correction.CorrectionApplyService
 import com.hadivo.attendance.modules.membership.MembershipGuard
 import com.hadivo.attendance.modules.membership.Role
@@ -26,6 +27,7 @@ class LeaveRequestService(
     private val audit: AuditLogger,
     private val publisher: NotificationPublisher,
     private val correctionApply: CorrectionApplyService,
+    private val balanceService: LeaveBalanceService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -210,6 +212,12 @@ class LeaveRequestService(
         // the request stays PENDING.
         if (nextStatus == LeaveRequestStatus.APPROVED && saved.requestType.isAttendanceCorrection()) {
             correctionApply.apply(saved, principal.userId)
+        }
+
+        // For ANNUAL_LEAVE approvals, deduct from balance in the same transaction.
+        // Insufficient balance or cross-year requests throw, rolling back approve.
+        if (nextStatus == LeaveRequestStatus.APPROVED && saved.requestType == LeaveRequestType.ANNUAL_LEAVE) {
+            balanceService.deductForApproval(saved, principal.userId)
         }
 
         val action = if (nextStatus == LeaveRequestStatus.APPROVED) "LEAVE_REQUEST_APPROVED"

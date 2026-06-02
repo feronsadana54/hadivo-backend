@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/app_config.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../leave_balance/data/leave_balance_repository.dart';
+import '../../leave_balance/domain/leave_balance.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -12,6 +14,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
     final email = authState.email ?? '-';
+    final balanceAsync = ref.watch(myLeaveBalanceProvider);
 
     return SafeArea(
       child: ListView(
@@ -49,6 +52,8 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
+          _LeaveBalanceCard(balanceAsync: balanceAsync),
+          const SizedBox(height: 12),
           AppCard(
             child: Column(
               children: const [
@@ -75,6 +80,84 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+class _LeaveBalanceCard extends StatelessWidget {
+  const _LeaveBalanceCard({required this.balanceAsync});
+
+  final AsyncValue<LeaveBalance?> balanceAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.event_available_outlined, color: Colors.black45),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sisa Cuti Tahunan',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.black87),
+                ),
+                const SizedBox(height: 6),
+                balanceAsync.when(
+                  data: (balance) => _balanceBody(context, balance),
+                  loading: () => const Text(
+                    'Memuat...',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  error: (_, _) => const Text(
+                    'Belum tersedia',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _balanceBody(BuildContext context, LeaveBalance? balance) {
+    if (balance == null) {
+      return const Text(
+        'Belum tersedia',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      );
+    }
+    final remaining = _formatDays(balance.remainingDays);
+    final quota = _formatDays(balance.annualQuotaDays);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Sisa $remaining hari dari $quota hari',
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Tahun ${balance.year} • Terpakai ${_formatDays(balance.usedDays)} hari',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.black54),
+        ),
+      ],
+    );
+  }
+
+  String _formatDays(double value) {
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value.toStringAsFixed(2);
   }
 }
 

@@ -1,12 +1,15 @@
 import { apiClient, unwrap } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
 import type {
+  AdjustLeaveBalanceRequest,
   AttendanceAttempt,
   AttendanceSettings,
   CreateLeaveRequestRequest,
   CreateMemberShiftAssignmentRequest,
   CreateShiftTemplateRequest,
   DailyReport,
+  LeaveBalance,
+  LeavePolicy,
   LeaveRequest,
   Location,
   Membership,
@@ -27,6 +30,7 @@ import type {
   SubscriptionPayment,
   Tenant,
   TokenPair,
+  UpdateLeavePolicyRequest,
   UpdateMemberShiftAssignmentRequest,
   UpdateShiftTemplateRequest,
   UserDevice,
@@ -88,6 +92,29 @@ export const api = {
   },
   async cancelLeaveRequest(tenantId: string, requestId: string) {
     return unwrap<LeaveRequest>(await apiClient.post(endpoints.leaveRequestCancel(tenantId, requestId)));
+  },
+  async getLeavePolicy(tenantId: string) {
+    return unwrap<LeavePolicy>(await apiClient.get(endpoints.leavePolicy(tenantId)));
+  },
+  async updateLeavePolicy(tenantId: string, payload: UpdateLeavePolicyRequest) {
+    return unwrap<LeavePolicy>(await apiClient.put(endpoints.leavePolicy(tenantId), payload));
+  },
+  async getLeaveBalances(tenantId: string, year?: number) {
+    return unwrap<LeaveBalance[]>(
+      await apiClient.get(endpoints.leaveBalances(tenantId), { params: year ? { year } : undefined }),
+    );
+  },
+  async getMemberLeaveBalance(tenantId: string, userId: string, year?: number) {
+    return unwrap<LeaveBalance>(
+      await apiClient.get(endpoints.memberLeaveBalance(tenantId, userId), {
+        params: year ? { year } : undefined,
+      }),
+    );
+  },
+  async adjustLeaveBalance(tenantId: string, userId: string, payload: AdjustLeaveBalanceRequest) {
+    return unwrap<LeaveBalance>(
+      await apiClient.post(endpoints.memberLeaveBalanceAdjust(tenantId, userId), payload),
+    );
   },
   async getShifts(tenantId: string) {
     return unwrap<ShiftTemplate[]>(await apiClient.get(endpoints.shifts(tenantId)));

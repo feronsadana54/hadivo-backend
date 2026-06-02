@@ -107,9 +107,14 @@ Tab **Pengajuan** di bottom navigation:
 - Tombol "Batalkan" pada pengajuan ber-status `PENDING`.
 - Tidak ada attachment / parent flow / complex date picker hierarchy.
 
-## Limitation v1.3.0
+## Update v1.4.0
 
-- Belum ada leave balance / accrual / quota.
+- Ditambahkan `leave_policies`, `leave_balances`, dan `leave_balance_ledgers` untuk fondasi kuota cuti tahunan. Detail di [`docs/21-leave-balance.md`](21-leave-balance.md).
+- Approve `ANNUAL_LEAVE` sekarang mengurangi saldo requester (di transaksi yang sama) dan menulis ledger `DEDUCT`. Saldo tidak cukup atau request lintas tahun → request tetap `PENDING`.
+- Penyesuaian saldo oleh admin tercatat sebagai ledger `ADJUST` dengan note wajib.
+- `SICK` / `PERMISSION` / `BUSINESS_TRIP` / `ATTENDANCE_CORRECTION` masih tidak memotong saldo di v1.4.0.
+
+## Limitation v1.3.0
 - Belum ada attachment upload (kolom `attachment_url` reserved di DB tapi tidak diisi).
 - Belum ada holiday calendar.
 - Belum ada payroll integration penuh — apply correction sudah menerapkan ke `attendance_records` dengan audit trail, tapi belum payroll/timesheet engine penuh.

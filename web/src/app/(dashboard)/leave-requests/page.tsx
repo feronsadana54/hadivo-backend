@@ -270,6 +270,11 @@ export default function LeaveRequestsPage() {
                         <TableCell className="whitespace-nowrap">
                           <div>{row.startDate}</div>
                           <div className="text-xs text-muted-foreground">s.d. {row.endDate}</div>
+                          {row.requestType === "ANNUAL_LEAVE" ? (
+                            <div className="text-xs text-muted-foreground">
+                              {leaveDays(row.startDate, row.endDate)} hari
+                            </div>
+                          ) : null}
                         </TableCell>
                         <TableCell>
                           <Badge variant={STATUS_VARIANT[row.status]}>{STATUS_LABEL[row.status]}</Badge>
@@ -484,4 +489,12 @@ function buildCreatePayload(form: FormState) {
 
 function combineDateTime(date: string, time: string): string {
   return new Date(`${date}T${time}:00`).toISOString();
+}
+
+function leaveDays(start: string, end: string): number {
+  const startMs = Date.parse(start);
+  const endMs = Date.parse(end);
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return 1;
+  const diff = Math.round((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1;
+  return Math.max(1, diff);
 }
