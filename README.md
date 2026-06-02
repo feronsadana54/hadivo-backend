@@ -197,6 +197,10 @@ Repository ini memakai GitHub Actions untuk validasi setiap push dan pull reques
 
 CI memakai konfigurasi local/test dan tidak membutuhkan file `.env` asli atau secret production.
 
+## Engineering Lifecycle
+
+Hadivo memakai lifecycle pengembangan: Planning → Analysis → Implementation → Review → QA → Release → Stabilization. Aturan main per tahap, checklist sebelum coding, dan kebijakan stabilization tersedia di [`docs/19-development-lifecycle.md`](docs/19-development-lifecycle.md). Checklist eksekusi rilis (validation command, tag, GitHub Release, post-release) tersedia di [`docs/20-release-checklist.md`](docs/20-release-checklist.md).
+
 ## Security Baseline
 
 Hadivo memakai tenant isolation berbasis `tenantId` path dan membership guard untuk endpoint tenant-scoped. Refresh token disimpan sebagai hash, dirotasi saat refresh berhasil, dan dicabut saat logout.

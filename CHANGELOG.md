@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.3.2 - Engineering Lifecycle & Release Checklist
+
+### Docs
+
+- Added engineering lifecycle documentation at `docs/19-development-lifecycle.md` covering Planning, Analysis, Implementation Rules, Review, QA, Release, Stabilization Policy, Security & Secret Safety, and a recommended prompt pattern for new phases.
+- Added release checklist documentation at `docs/20-release-checklist.md` covering pre-release, validation commands, commit, GitHub Actions, tag & GitHub Release, and post-release steps with explicit CHANGELOG ↔ GitHub Release consistency checks.
+- Linked both documents from `README.md` under a new "Engineering Lifecycle" section.
+
+### Notes
+
+- No backend, web, mobile, endpoint, schema, migration, dependency, or screenshot changes.
+
+## v1.3.1 - Correction QA Stabilization
+
+### Docs
+
+- Added correction QA guide at `docs/18-correction-qa-guide.md` covering local setup, demo accounts, Postman variables, happy path, DB verification, idempotency, apply failed concept, and v1.3.1 limitations.
+
+### Postman
+
+- Added `Correction QA Flow` collection with create / approve attendance correction requests and auto-set variables for `correctionLeaveRequestId`.
+
+### Backend
+
+- Added correction apply QA test coverage to harden the v1.3.0 engine against regression. No endpoint, migration, schema, or service behavior changes.
+
 ## v1.3.0 - Attendance Correction Apply Engine
 
 ### Backend
