@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.5.1 - Holiday / Workday QA Stabilization
+
+### Docs
+
+- Added holiday/workday QA guide at `docs/24-holiday-workday-qa-guide.md` covering local setup, demo accounts, Postman variables, default and updated workday settings flow, holiday create/list/disable flow, ANNUAL_LEAVE Fri–Mon deduct = 2, Sat–Sun-only rejection, active holiday inside range (Mon–Wed = 2 instead of 3), inactive holiday no-impact, DB verification, cross-year limitation, role/cross-tenant access, web `/calendar` QA, mobile no-change note, troubleshooting, and v1.5.1 limitations.
+- Linked the new guide from `README.md` and `docs/23-holiday-workday-calendar.md`.
+
+### Postman
+
+- Added `Holiday Workday QA Flow` covering get/update workday settings, create/list/disable holiday, ANNUAL_LEAVE Fri–Mon happy path, weekend-only rejection at approve, active-holiday-in-range deduction, and balance re-read after each step.
+- Added collection variables `holidayId`, `holidayDate`, `holidayRangeFrom`, `holidayRangeTo`. Reused existing `annualLeaveRequestId`. Dates picked to avoid clashing with holidays seeded by earlier flows or tests (`2026-09-04..09-07` Fri–Mon, `2026-09-12..09-13` weekend, `2026-09-14..09-16` Mon–Wed with `2026-09-15` Tue as the active holiday).
+
+### Backend
+
+- Added 5 small integration tests in `WorkdayHolidayIntegrationTest` to close validation gaps in v1.5.0:
+  - `list rejects range more than one year` — exercises the 366-day cap on `GET /holidays`.
+  - `holiday create rejects missing holidayDate` — guards `CreateHolidayRequest.holidayDate`.
+  - `holiday create rejects blank name` — guards `name` trim/empty check.
+  - `holiday create rejects invalid type` — guards `HolidayType.parse` fallback.
+  - `employee can list holidays without mutation access` — positive read check for non-admin role on both `/holidays` and `/workday-settings`.
+
+### Notes
+
+- No endpoint, migration, schema, or service behavior changes. No payment / attendance correction apply / face recognition changes. Web UI and mobile UI are not modified.
+
 ## v1.5.0 - Holiday / Workday Calendar Foundation
 
 ### Backend

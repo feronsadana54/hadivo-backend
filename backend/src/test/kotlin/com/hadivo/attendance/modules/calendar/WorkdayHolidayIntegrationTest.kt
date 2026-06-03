@@ -339,6 +339,91 @@ class WorkdayHolidayIntegrationTest {
         assertThat(workdays).isEqualTo(3)
     }
 
+    @Test
+    fun `list rejects range more than one year`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+
+        mvc.perform(
+            get("/api/v1/tenants/${admin.tenantId}/holidays")
+                .param("from", "2026-01-01")
+                .param("to", "2027-06-01")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+    }
+
+    @Test
+    fun `holiday create rejects missing holidayDate`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/holidays")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(mapOf("name" to "Tanpa Tanggal", "type" to "CUSTOM")))
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+    }
+
+    @Test
+    fun `holiday create rejects blank name`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/holidays")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf("holidayDate" to "2026-09-01", "name" to "   ", "type" to "CUSTOM")
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+    }
+
+    @Test
+    fun `holiday create rejects invalid type`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+
+        mvc.perform(
+            post("/api/v1/tenants/${admin.tenantId}/holidays")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer ${admin.token}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    mapper.writeValueAsString(
+                        mapOf("holidayDate" to "2026-09-02", "name" to "Tipe Aneh", "type" to "RANDOM")
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"))
+    }
+
+    @Test
+    fun `employee can list holidays without mutation access`() {
+        val admin = seedTenantWithUser(Role.TENANT_ADMIN)
+        val employee = seedUserInTenant(admin.tenantId, Role.EMPLOYEE)
+        val employeeToken = jwt.issueAccessToken(employee.userId, employee.email).token
+
+        mvc.perform(
+            get("/api/v1/tenants/${admin.tenantId}/holidays")
+                .param("from", "2026-01-01")
+                .param("to", "2026-12-31")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer $employeeToken")
+        )
+            .andExpect(status().isOk)
+
+        mvc.perform(
+            get("/api/v1/tenants/${admin.tenantId}/workday-settings")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer $employeeToken")
+        )
+            .andExpect(status().isOk)
+    }
+
     private fun seedTenantWithUser(role: Role): TestContext {
         val tenant = tenants.save(
             Tenant(

@@ -25,7 +25,11 @@
     { "key": "toDate", "value": "2026-06-02" },
     { "key": "memberUserId", "value": "" },
     { "key": "balanceYear", "value": "2026" },
-    { "key": "adjustmentDays", "value": "2" }
+    { "key": "adjustmentDays", "value": "2" },
+    { "key": "holidayId", "value": "" },
+    { "key": "holidayDate", "value": "2026-09-15" },
+    { "key": "holidayRangeFrom", "value": "2026-01-01" },
+    { "key": "holidayRangeTo", "value": "2026-12-31" }
   ],
   "item": [
     {
@@ -1365,6 +1369,339 @@
               "query": [{ "key": "year", "value": "{{balanceYear}}" }]
             },
             "description": "Verifikasi usedDays tidak bertambah setelah ATTENDANCE_CORRECTION disetujui."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Holiday Workday QA Flow",
+      "item": [
+        {
+          "name": "Get workday settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/workday-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "workday-settings"]
+            },
+            "description": "Default Mon-Fri true, Sat-Sun false dibuat otomatis pada GET pertama. Semua member tenant dapat membaca."
+          }
+        },
+        {
+          "name": "Update workday settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/workday-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "workday-settings"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"saturdayWorkday\": true\n}"
+            },
+            "description": "Admin only (TENANT_ADMIN / SUPER_ADMIN). Semua field opsional; minimal satu hari true setelah merge atau ditolak 400 VALIDATION_FAILED. Audit WORKDAY_SETTINGS_UPDATED tercatat dengan changedFields."
+          }
+        },
+        {
+          "name": "Create custom holiday",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('holidayId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/holidays",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "holidays"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holidayDate\": \"{{holidayDate}}\",\n  \"name\": \"Cuti Bersama QA\",\n  \"type\": \"COMPANY\",\n  \"active\": true\n}"
+            },
+            "description": "Admin only. holidayDate dan name wajib, type CUSTOM/NATIONAL/COMPANY/SCHOOL (default CUSTOM). Duplicate (date, name) → 409 CONFLICT. Test script menulis id ke holidayId. Audit HOLIDAY_CREATED tercatat."
+          }
+        },
+        {
+          "name": "List holidays",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/holidays?from={{holidayRangeFrom}}&to={{holidayRangeTo}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "holidays"],
+              "query": [
+                { "key": "from", "value": "{{holidayRangeFrom}}" },
+                { "key": "to", "value": "{{holidayRangeTo}}" }
+              ]
+            },
+            "description": "Semua member tenant. Range max 366 hari; from > to atau range > 366 hari → 400 VALIDATION_FAILED. Default tanpa param: 90 hari ke belakang sampai 365 hari ke depan."
+          }
+        },
+        {
+          "name": "Disable holiday",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/holidays/{{holidayId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "holidays", "{{holidayId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}"
+            },
+            "description": "Admin only. Tidak ada endpoint DELETE — soft-disable dengan PATCH active=false. Holiday inactive tidak mengurangi workday count. Audit HOLIDAY_UPDATED tercatat."
+          }
+        },
+        {
+          "name": "Create annual leave Friday to Monday",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('annualLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ANNUAL_LEAVE\",\n  \"startDate\": \"2026-09-04\",\n  \"endDate\": \"2026-09-07\",\n  \"reason\": \"QA Jumat-Senin default workday\"\n}"
+            },
+            "description": "Login sebagai requester (EMPLOYEE). 2026-09-04 Jumat, 2026-09-07 Senin. Default Mon-Fri workday → 2 workdays (Sabtu/Minggu di-skip). Pastikan workday settings sudah kembali ke default (Sabtu off) sebelum approve agar deduct = 2."
+          }
+        },
+        {
+          "name": "Approve annual leave Friday to Monday",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{annualLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{annualLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Disetujui Jumat-Senin\"\n}"
+            },
+            "description": "Admin only. Deduct = 2 workdays (Jum + Sen). Sab/Min default tidak dihitung. Audit LEAVE_BALANCE_DEDUCTED tercatat dengan daysChanged=2 dan ledger DEDUCT ditulis."
+          }
+        },
+        {
+          "name": "Get balance after Friday-Monday deduction",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/members/{{memberUserId}}/leave-balance?year={{balanceYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "members", "{{memberUserId}}", "leave-balance"],
+              "query": [{ "key": "year", "value": "{{balanceYear}}" }]
+            },
+            "description": "Verifikasi usedDays bertambah 2.00 (workday count), bukan 4.00 (kalender count)."
+          }
+        },
+        {
+          "name": "Create annual leave only weekend",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('annualLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ANNUAL_LEAVE\",\n  \"startDate\": \"2026-09-12\",\n  \"endDate\": \"2026-09-13\",\n  \"reason\": \"QA weekend only - expected reject saat approve\"\n}"
+            },
+            "description": "Login sebagai requester. 2026-09-12 Sabtu, 2026-09-13 Minggu. Default Mon-Fri → 0 workdays. Create masih 201 PENDING; reject terjadi pada step approve."
+          }
+        },
+        {
+          "name": "Approve annual leave only weekend (expected fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{annualLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{annualLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Cek weekend only\"\n}"
+            },
+            "description": "Admin only. Expected 400 VALIDATION_FAILED pesan 'Pengajuan cuti tidak memiliki hari kerja yang dapat dipotong.'. Request tetap PENDING. Tidak ada ledger DEDUCT baru. Saldo tidak berubah."
+          }
+        },
+        {
+          "name": "Create active holiday in annual leave range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('holidayId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/holidays",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "holidays"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holidayDate\": \"2026-09-15\",\n  \"name\": \"Holiday Aktif QA Range\",\n  \"type\": \"COMPANY\",\n  \"active\": true\n}"
+            },
+            "description": "Admin only. 2026-09-15 Selasa, berada di tengah range Sen-Rab QA berikutnya. Test script menulis id ke holidayId. Jika nama identik sudah ada → 409 CONFLICT; ganti nama atau disable yang lama dulu."
+          }
+        },
+        {
+          "name": "Create annual leave with active holiday",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('annualLeaveRequestId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestType\": \"ANNUAL_LEAVE\",\n  \"startDate\": \"2026-09-14\",\n  \"endDate\": \"2026-09-16\",\n  \"reason\": \"QA Senin-Rabu dengan Selasa active holiday\"\n}"
+            },
+            "description": "Login sebagai requester. 2026-09-14 Sen, 2026-09-15 Sel (active holiday), 2026-09-16 Rab. Tanpa holiday = 3 workdays. Dengan holiday aktif di Selasa = 2 workdays. Jika holiday di-disable, workday count kembali ke 3."
+          }
+        },
+        {
+          "name": "Approve annual leave with active holiday",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/leave-requests/{{annualLeaveRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "leave-requests", "{{annualLeaveRequestId}}", "approve"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewNote\": \"Disetujui Sen-Rab dengan Selasa holiday\"\n}"
+            },
+            "description": "Admin only. Deduct = 2 workdays (Sen + Rab, Sel holiday aktif di-skip). Untuk verifikasi inactive holiday: PATCH disable holiday lalu approve request berbeda yang melewati tanggal yang sama → deduct = 3."
+          }
+        },
+        {
+          "name": "Get balance after holiday deduction",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/members/{{memberUserId}}/leave-balance?year={{balanceYear}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "tenants", "{{tenantId}}", "members", "{{memberUserId}}", "leave-balance"],
+              "query": [{ "key": "year", "value": "{{balanceYear}}" }]
+            },
+            "description": "Verifikasi usedDays bertambah 2.00 (bukan 3.00). Selisihnya adalah Selasa holiday aktif yang tidak ikut deduct."
           }
         }
       ]

@@ -2,7 +2,7 @@
 
 Dokumen ini menjelaskan fondasi kalender hari kerja dan hari libur Hadivo v1.5.0. Tujuannya: tenant bisa mendefinisikan hari kerja mingguan dan hari libur, dan `ANNUAL_LEAVE` di-deduct berdasarkan **hari kerja** bukan hari kalender.
 
-Untuk konsep leave balance lihat [`docs/21-leave-balance.md`](21-leave-balance.md). Untuk QA leave balance lihat [`docs/22-leave-balance-qa-guide.md`](22-leave-balance-qa-guide.md).
+Untuk panduan QA manual workday/holiday lihat [`docs/24-holiday-workday-qa-guide.md`](24-holiday-workday-qa-guide.md). Untuk konsep leave balance lihat [`docs/21-leave-balance.md`](21-leave-balance.md). Untuk QA leave balance lihat [`docs/22-leave-balance-qa-guide.md`](22-leave-balance-qa-guide.md).
 
 ## Konsep
 
