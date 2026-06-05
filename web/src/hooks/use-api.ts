@@ -11,6 +11,7 @@ import type {
   CreateMemberShiftAssignmentRequest,
   CreateShiftTemplateRequest,
   CreateSubscriptionPaymentRequest,
+  EnrollFaceRequest,
   Location,
   NotificationDeliveryFilters,
   ReviewLeaveRequestRequest,
@@ -50,6 +51,34 @@ export function useResetMemberDevices() {
     mutationFn: (userId: string) => api.resetMemberDevices(defaultTenantId, userId),
     onSuccess: (_devices, userId) => {
       queryClient.invalidateQueries({ queryKey: ["member-devices", defaultTenantId, userId] });
+    },
+  });
+}
+
+export function useMemberFaceProfile(userId: string, enabled = true) {
+  return useQuery({
+    queryKey: ["member-face-profile", defaultTenantId, userId],
+    queryFn: () => api.getMemberFaceProfile(defaultTenantId, userId),
+    enabled: Boolean(userId) && enabled,
+  });
+}
+
+export function useEnrollMemberFace(userId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: EnrollFaceRequest) => api.enrollMemberFace(defaultTenantId, userId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["member-face-profile", defaultTenantId, userId] });
+    },
+  });
+}
+
+export function useResetMemberFaceProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => api.resetMemberFaceProfile(defaultTenantId, userId),
+    onSuccess: (_profile, userId) => {
+      queryClient.invalidateQueries({ queryKey: ["member-face-profile", defaultTenantId, userId] });
     },
   });
 }

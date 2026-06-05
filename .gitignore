@@ -61,3 +61,6 @@ logs/
 docker/postgres/data/
 docker/rabbitmq/data/
 .claude/
+
+# Local face enrollment storage (biometric / sample images must never be committed)
+backend/storage/

@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Hadivo needs your location to submit attendance when demo location mode is disabled.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Hadivo uses the camera to capture your face enrollment photo. The photo is stored on the Hadivo server; face matching is not performed in this version.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Hadivo lets you pick an existing photo for face enrollment. The photo is stored on the Hadivo server; face matching is not performed in this version.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

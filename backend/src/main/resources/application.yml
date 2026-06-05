@@ -78,6 +78,10 @@ hadivo:
   seed:
     super-admin-email: ${SEED_SUPER_ADMIN_EMAIL:superadmin@hadivo.local}
     super-admin-password: ${SEED_SUPER_ADMIN_PASSWORD:ChangeMe123!}
+  face:
+    # Local on-disk storage for face enrollment samples. Must stay gitignored.
+    # v1.6.0 does not perform face detection / matching / liveness / anti-spoofing.
+    storage-dir: ${HADIVO_FACE_STORAGE_DIR:backend/storage/face}
 
 springdoc:
   api-docs:

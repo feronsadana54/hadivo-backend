@@ -29,3 +29,7 @@ Bean default-nya `DemoFaceVerifier`. Untuk Fase 2 cukup ganti `@Component` ke im
 - Tambah tabel `user_face_embeddings`.
 - Tambah endpoint enroll wajah saat onboarding member.
 - Ganti `FaceVerifier` dengan implementasi yang menghitung cosine similarity terhadap embedding tersimpan.
+
+## Status v1.6.0
+
+Foundation enrollment tersedia di [`docs/25-face-enrollment.md`](25-face-enrollment.md): tabel `user_face_profiles`, endpoint enroll / reset / get, local file storage di-`.gitignore`, dan layar enrollment di web dan mobile. **Belum** ada face detection, matching, liveness, anti-spoofing, atau embedding engine. Clock-in / clock-out flow tidak diubah dan tidak diblokir oleh status enrollment.

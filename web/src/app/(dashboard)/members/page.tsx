@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, ScanFace } from "lucide-react";
 import { useState } from "react";
 import { ActiveBadge, RoleBadge } from "@/components/attendance/status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useMemberDevices, useMemberShiftAssignments, useMemberships, useResetMemberDevices } from "@/hooks/use-api";
+import {
+  useMemberDevices,
+  useMemberFaceProfile,
+  useMemberShiftAssignments,
+  useMemberships,
+  useResetMemberDevices,
+  useResetMemberFaceProfile,
+} from "@/hooks/use-api";
 import { getErrorMessage } from "@/lib/api/client";
 import { tokenStorage } from "@/lib/auth/token-storage";
 import { displayEmail, displayName, formatDateTime, shortId } from "@/lib/utils";
-import type { Role, UserDevice } from "@/types/api";
+import type { FaceEnrollmentStatus, Role, UserDevice } from "@/types/api";
 
 export default function MembersPage() {
   const memberships = useMemberships();
@@ -42,6 +49,7 @@ export default function MembersPage() {
                 <TableHead>Shift</TableHead>
                 <TableHead>Perangkat absensi</TableHead>
                 <TableHead>Aksi</TableHead>
+                <TableHead>Wajah</TableHead>
                 <TableHead>Member ID</TableHead>
               </TableRow>
             </TableHeader>
@@ -60,6 +68,11 @@ export default function MembersPage() {
                   </TableCell>
                   <MemberShiftCell userId={membership.userId} canViewShift={canManageDevices} />
                   <MemberDeviceCells
+                    userId={membership.userId}
+                    fullName={membership.fullName}
+                    canManageDevices={canManageDevices}
+                  />
+                  <MemberFaceCell
                     userId={membership.userId}
                     fullName={membership.fullName}
                     canManageDevices={canManageDevices}
@@ -170,6 +183,97 @@ function MemberDeviceCells({
       </TableCell>
     </>
   );
+}
+
+function MemberFaceCell({
+  userId,
+  fullName,
+  canManageDevices,
+}: {
+  userId: string;
+  fullName?: string | null;
+  canManageDevices: boolean;
+}) {
+  const profile = useMemberFaceProfile(userId, canManageDevices);
+  const resetProfile = useResetMemberFaceProfile();
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function resetFace() {
+    const target = displayName(fullName);
+    const confirmed = window.confirm(
+      `Reset profil wajah ${target}? File enrollment lokal akan dicoba dihapus dan referensi dibersihkan. User dapat enroll ulang sesudahnya.`,
+    );
+    if (!confirmed) return;
+    setMessage(null);
+    try {
+      await resetProfile.mutateAsync(userId);
+      setMessage("Profil wajah direset.");
+    } catch (error) {
+      setMessage(getErrorMessage(error));
+    }
+  }
+
+  if (!canManageDevices) {
+    return (
+      <TableCell>
+        <span className="text-sm text-muted-foreground">Hanya admin</span>
+      </TableCell>
+    );
+  }
+  if (profile.isLoading) {
+    return (
+      <TableCell>
+        <span className="text-sm text-muted-foreground">Memuat profil wajah...</span>
+      </TableCell>
+    );
+  }
+  if (profile.isError) {
+    return (
+      <TableCell>
+        <span className="text-sm text-muted-foreground">{getErrorMessage(profile.error)}</span>
+      </TableCell>
+    );
+  }
+
+  const status = profile.data?.enrollmentStatus ?? "PENDING";
+  const imageStored = Boolean(profile.data?.imageStored);
+  return (
+    <TableCell>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <FaceStatusBadge status={status} />
+          {imageStored ? <Badge variant="muted">Foto tersimpan</Badge> : null}
+        </div>
+        <p className="max-w-56 text-xs text-muted-foreground">
+          Status ACTIVE berarti foto dan persetujuan tercatat. Pencocokan wajah belum aktif.
+        </p>
+        {imageStored ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={resetFace}
+            disabled={resetProfile.isPending}
+          >
+            <ScanFace className="mr-2 h-4 w-4" />
+            Reset Wajah
+          </Button>
+        ) : null}
+        {message ? <p className="max-w-48 text-xs text-muted-foreground">{message}</p> : null}
+      </div>
+    </TableCell>
+  );
+}
+
+function FaceStatusBadge({ status }: { status: FaceEnrollmentStatus }) {
+  switch (status) {
+    case "ACTIVE":
+      return <Badge variant="success">Terdaftar</Badge>;
+    case "RESET":
+      return <Badge variant="warning">Direset</Badge>;
+    default:
+      return <Badge variant="muted">Belum enroll</Badge>;
+  }
 }
 
 function DeviceSummary({ device }: { device: UserDevice }) {

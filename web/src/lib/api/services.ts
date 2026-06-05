@@ -9,6 +9,8 @@ import type {
   CreateMemberShiftAssignmentRequest,
   CreateShiftTemplateRequest,
   DailyReport,
+  EnrollFaceRequest,
+  FaceProfile,
   Holiday,
   LeaveBalance,
   LeavePolicy,
@@ -119,6 +121,19 @@ export const api = {
   async adjustLeaveBalance(tenantId: string, userId: string, payload: AdjustLeaveBalanceRequest) {
     return unwrap<LeaveBalance>(
       await apiClient.post(endpoints.memberLeaveBalanceAdjust(tenantId, userId), payload),
+    );
+  },
+  async getMemberFaceProfile(tenantId: string, userId: string) {
+    return unwrap<FaceProfile>(await apiClient.get(endpoints.memberFaceProfile(tenantId, userId)));
+  },
+  async enrollMemberFace(tenantId: string, userId: string, payload: EnrollFaceRequest) {
+    return unwrap<FaceProfile>(
+      await apiClient.post(endpoints.memberFaceProfileEnroll(tenantId, userId), payload),
+    );
+  },
+  async resetMemberFaceProfile(tenantId: string, userId: string) {
+    return unwrap<FaceProfile>(
+      await apiClient.post(endpoints.memberFaceProfileReset(tenantId, userId)),
     );
   },
   async getWorkdaySettings(tenantId: string) {

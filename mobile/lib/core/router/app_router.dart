@@ -7,6 +7,7 @@ import '../../features/attendance/presentation/home_screen.dart';
 import '../../features/auth/domain/auth_state.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/face_profile/presentation/face_enrollment_screen.dart';
 import '../../features/leave_request/presentation/leave_request_create_screen.dart';
 import '../../features/leave_request/presentation/leave_request_list_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
@@ -53,6 +54,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/profile',
             builder: (context, state) => const ProfileScreen(),
+            routes: [
+              GoRoute(
+                path: 'face',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const FaceEnrollmentScreen(),
+              ),
+            ],
           ),
         ],
       ),

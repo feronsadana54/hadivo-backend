@@ -461,6 +461,24 @@ export type CreateHolidayRequest = {
 
 export type UpdateHolidayRequest = Partial<CreateHolidayRequest>;
 
+export type FaceEnrollmentStatus = "PENDING" | "ACTIVE" | "RESET";
+
+export type FaceProfile = {
+  profileId: string;
+  enrollmentStatus: FaceEnrollmentStatus;
+  consentGiven: boolean;
+  imageStored: boolean;
+  enrolledAt?: string | null;
+  resetAt?: string | null;
+  updatedAt: string;
+  message: string;
+};
+
+export type EnrollFaceRequest = {
+  imageBase64: string;
+  consentGiven: boolean;
+};
+
 export type SuperAdminTenantDetail = {
   tenantId: string;
   tenantName: string;

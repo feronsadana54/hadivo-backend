@@ -21,14 +21,14 @@ async function waitForDashboardData(page) {
   // on data-heavy routes (e.g. /super-admin/tenants), so treat networkidle as
   // a best-effort hint rather than a hard requirement. The text check below
   // is the authoritative signal that initial loading skeletons are gone.
-  await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
+  await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
   await page.waitForFunction(
     () =>
       !document.body.innerText.includes("Preparing dashboard") &&
       !document.body.innerText.includes("Loading ") &&
       !document.body.innerText.includes("Memuat "),
     null,
-    { timeout: 30000 },
+    { timeout: 60000 },
   );
   await page.waitForTimeout(750);
 }
@@ -53,13 +53,16 @@ async function assertNoHorizontalOverflow(page, label) {
 }
 
 async function login(page) {
-  await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
+  // Dev-mode HMR keeps the network busy, so `networkidle` is unreliable here.
+  // Wait for `load` and then for the email field to actually be present.
+  await page.goto(`${baseUrl}/login`, { waitUntil: "load", timeout: 60000 });
+  await page.waitForSelector("#email", { timeout: 30000 });
   await prepareScreenshot(page);
   await page.screenshot({ path: path.join(outputDir, "web-login.png"), fullPage: true });
   await page.fill("#email", credentials.email);
   await page.fill("#password", credentials.password);
   await page.getByRole("button", { name: /Masuk|Sign in/i }).click();
-  await page.waitForURL("**/dashboard", { timeout: 30000 });
+  await page.waitForURL("**/dashboard", { timeout: 60000 });
   await waitForDashboardData(page);
 }
 

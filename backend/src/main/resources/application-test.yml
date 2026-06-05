@@ -21,6 +21,8 @@ hadivo:
   seed:
     super-admin-email: super@test.local
     super-admin-password: TestPass123!
+  face:
+    storage-dir: build/tmp/face-storage
 
 logging:
   level:

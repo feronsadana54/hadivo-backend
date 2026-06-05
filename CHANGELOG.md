@@ -1,5 +1,45 @@
 # Changelog
 
+## v1.6.0 - Face Recognition Enrollment Foundation
+
+### Backend
+
+- Added `user_face_profiles` table per (tenant, user) with `enrollment_status` (`PENDING` / `ACTIVE` / `RESET`), `consent_given` + `consent_given_at`, `image_reference` (relatif, bukan absolute path), `embedding_reference` (disiapkan, selalu null di v1.6.0), `enrolled_at`, dan `reset_at`. Migration `V12__add_face_enrollment_foundation.sql` dengan UNIQUE `(tenant_id, user_id)`.
+- Added `FaceEnrollmentService` dengan operasi `getOrEmpty` / `enroll` / `reset`. Enroll wajib `consentGiven=true`, kalau tidak ditolak `VALIDATION_FAILED`. Re-enroll mengganti referensi DB dan menghapus file enrollment lama. Reset membersihkan `image_reference` + `embedding_reference`, set status `RESET`, dan best-effort menghapus file lokal tanpa mengangkat error (log warning tanpa path lengkap).
+- Added `FaceImageStorage` yang menyimpan foto ke disk lokal di bawah `hadivo.face.storage-dir` (default `backend/storage/face`, env `HADIVO_FACE_STORAGE_DIR`). Validasi: base64 size cap (~5 MB), magic bytes JPEG (`FF D8 FF`) atau PNG (`89 50 4E 47`). Format lain ditolak. Path traversal dicegah saat delete.
+- Added `FaceEnrollmentController` dengan endpoint `GET` / `POST .../enroll` / `POST .../reset` di scope `/api/v1/tenants/{tenantId}/members/{userId}/face-profile`. Reset admin-only; enroll dan get boleh diri sendiri atau admin. Cross-user tanpa role admin ditolak.
+- Response `FaceProfileView` sengaja hanya mengembalikan `profileId`, `enrollmentStatus`, `consentGiven`, `imageStored`, `enrolledAt`, `resetAt`, `updatedAt`, dan `message`. `imageReference`, `embeddingReference`, absolute path, dan base64 tidak diekspos.
+- Audit actions `FACE_PROFILE_ENROLLED` dan `FACE_PROFILE_RESET`. Metadata hanya `userId`, `enrollmentStatus`, `consentGiven`, `imageStored`, dan `profileId`. Tidak menyimpan `imageBase64`, `imageReference`, `embeddingReference`, atau path.
+- Added `FaceEnrollmentIntegrationTest` (10 kasus): enroll happy path + file fisik tersimpan, tolak tanpa consent, tolak format selain JPEG/PNG, response tidak mengekspos `imageReference` / path / sample base64, admin reset clears references + delete file lokal, employee dilarang reset, re-enroll after reset menghasilkan referensi baru, re-enroll menghapus file sebelumnya, audit metadata bebas dari base64 / path, cross-user enroll forbidden, dan get untuk user belum-enroll mengembalikan `PENDING`.
+
+### Web Dashboard
+
+- Halaman `/members` menambahkan kolom `Wajah` per anggota dengan badge status (`Terdaftar` / `Direset` / `Belum enroll`), badge `Foto tersimpan` saat `imageStored=true`, tombol `Reset Wajah` (admin-only) saat foto tersimpan, dan catatan jelas: *Status ACTIVE berarti foto dan persetujuan tercatat. Pencocokan wajah belum aktif.*
+- Added types `FaceEnrollmentStatus`, `FaceProfile`, `EnrollFaceRequest`. Added endpoints `memberFaceProfile`, `memberFaceProfileEnroll`, `memberFaceProfileReset`. Added services `getMemberFaceProfile` / `enrollMemberFace` / `resetMemberFaceProfile` dan hooks `useMemberFaceProfile` / `useEnrollMemberFace` / `useResetMemberFaceProfile`.
+
+### Mobile
+
+- Added fitur `face_profile` dengan `FaceProfile` domain, `FaceProfileRepository`, dan layar `FaceEnrollmentScreen` (`/profile/face`) untuk memilih foto via `image_picker` (kamera atau galeri), centang consent, dan submit. Card baru di `ProfileScreen` menampilkan status terkini dan link ke layar enrollment.
+- Added `image_picker: ^1.1.2` di `pubspec.yaml`. Added `NSCameraUsageDescription` dan `NSPhotoLibraryUsageDescription` di iOS `Info.plist` dengan wording yang menjelaskan bahwa foto disimpan di server dan pencocokan wajah belum dilakukan. Tidak ada perubahan Android manifest.
+- Added unit test `face_profile_test.dart` untuk `FaceProfile.fromJson` (ACTIVE / RESET / unknown → PENDING). Tidak ada test yang memerlukan kamera real.
+
+### Privacy & storage
+
+- Added `backend/storage/` ke `.gitignore` agar sample image, base64 sample besar, dan biometric data tidak pernah masuk ke repo.
+- Storage strategy: local disk di bawah `hadivo.face.storage-dir`, layout `<root>/<tenantId>/<userId>-<timestampUtc>.<jpg|png>`, dengan path relatif tersimpan di DB. Reset best-effort menghapus file lokal; re-enroll menggantikan referensi dan menghapus file lama.
+
+### Docs
+
+- Added `docs/25-face-enrollment.md` covering scope, schema, status semantics, endpoints, response shape, validasi format (bukan validasi wajah), local storage layout, reset cleanup behavior, audit actions, web/mobile changes, dan limitations.
+- Updated `docs/08-face-verification-flow.md` dengan pointer ke `docs/25-face-enrollment.md` dan penegasan bahwa face detection / matching / liveness / anti-spoofing belum diimplementasi.
+- Updated `README.md` highlights dan link ke dokumen baru.
+
+### Notes
+
+- Clock-in / clock-out flow tidak diubah dan tidak diblokir oleh status enrollment.
+- Payment, leave, holiday, dan attendance correction flow tidak diubah.
+- v1.6.0 belum mengimplementasi face detection, face matching, liveness detection, anti-spoofing, embedding engine, maupun endpoint admin approve/reject enrollment.
+
 ## v1.5.1 - Holiday / Workday QA Stabilization
 
 ### Docs

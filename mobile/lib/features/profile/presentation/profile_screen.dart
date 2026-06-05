@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../face_profile/data/face_profile_repository.dart';
+import '../../face_profile/domain/face_profile.dart';
 import '../../leave_balance/data/leave_balance_repository.dart';
 import '../../leave_balance/domain/leave_balance.dart';
 
@@ -15,6 +18,7 @@ class ProfileScreen extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
     final email = authState.email ?? '-';
     final balanceAsync = ref.watch(myLeaveBalanceProvider);
+    final faceAsync = ref.watch(myFaceProfileProvider);
 
     return SafeArea(
       child: ListView(
@@ -53,6 +57,11 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           _LeaveBalanceCard(balanceAsync: balanceAsync),
+          const SizedBox(height: 12),
+          _FaceProfileCard(
+            faceAsync: faceAsync,
+            onOpen: () => context.go('/profile/face'),
+          ),
           const SizedBox(height: 12),
           AppCard(
             child: Column(
@@ -158,6 +167,83 @@ class _LeaveBalanceCard extends StatelessWidget {
   String _formatDays(double value) {
     if (value == value.roundToDouble()) return value.toStringAsFixed(0);
     return value.toStringAsFixed(2);
+  }
+}
+
+class _FaceProfileCard extends StatelessWidget {
+  const _FaceProfileCard({required this.faceAsync, required this.onOpen});
+
+  final AsyncValue<FaceProfile?> faceAsync;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.face_retouching_natural_outlined,
+                color: Colors.black45,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Profil Wajah',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          faceAsync.when(
+            data: (profile) => _summary(context, profile),
+            loading: () => const Text(
+              'Memuat status...',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            error: (_, _) => const Text(
+              'Belum tersedia',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Status ACTIVE berarti foto dan persetujuan tercatat. '
+            'Pencocokan wajah belum aktif.',
+            style: TextStyle(color: Colors.black54, fontSize: 12, height: 1.4),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onOpen,
+              icon: const Icon(Icons.arrow_forward),
+              label: const Text('Kelola enrollment'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summary(BuildContext context, FaceProfile? profile) {
+    final label = switch (profile?.enrollmentStatus) {
+      FaceEnrollmentStatus.active => 'Terdaftar',
+      FaceEnrollmentStatus.reset => 'Direset',
+      _ => 'Belum enroll',
+    };
+    return Text(
+      label,
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+    );
   }
 }
 
